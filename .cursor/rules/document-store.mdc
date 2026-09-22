@@ -7,7 +7,7 @@ alwaysApply: false
 # Document store (`src/data`)
 
 - Feature screens inject `DocumentStoreService` — do not import Dexie, `BudgetDatabase`, or `createDocumentStore` from UI code.
-- Collection names live in `COLLECTIONS` (`settings`, `categories`, …). Prefer those constants over raw strings.
+- Collection names live in `COLLECTIONS` (`settings`, `categories`, …). Store/service methods take `CollectionName` (derived from that object) — add new piles there first.
 - Domain payloads: parse with Zod schemas (`settingsSchema`, `categorySchema`) **before** `insert` / `update`. Store metadata (`id`, `updatedAt`, `deletedAt`) is added by the store, not by the schema.
 - Every document has sync metadata: `id`, `updatedAt`, `deletedAt` (`null` while active).
 - Soft-delete sets `deletedAt`; `list` hides tombstones; `getById` still returns them.

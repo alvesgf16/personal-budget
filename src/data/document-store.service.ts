@@ -1,4 +1,5 @@
 import { inject, Injectable, InjectionToken } from '@angular/core';
+import type { CollectionName } from './collections';
 import type { StoreDocument } from './document';
 import { createDocumentStore, type DocumentStore } from './store';
 
@@ -18,27 +19,30 @@ export const DOCUMENT_STORE = new InjectionToken<DocumentStore>('DOCUMENT_STORE'
 export class DocumentStoreService {
   private readonly store = inject(DOCUMENT_STORE);
 
-  insert<T extends object>(collection: string, payload: T): Promise<StoreDocument<T>> {
+  insert<T extends object>(collection: CollectionName, payload: T): Promise<StoreDocument<T>> {
     return this.store.insert(collection, payload);
   }
 
-  getById<T extends object>(collection: string, id: string): Promise<StoreDocument<T> | undefined> {
+  getById<T extends object>(
+    collection: CollectionName,
+    id: string,
+  ): Promise<StoreDocument<T> | undefined> {
     return this.store.getById(collection, id);
   }
 
   update<T extends object>(
-    collection: string,
+    collection: CollectionName,
     id: string,
     patch: Partial<T>,
   ): Promise<StoreDocument<T> | undefined> {
     return this.store.update(collection, id, patch);
   }
 
-  softDelete(collection: string, id: string): Promise<boolean> {
+  softDelete(collection: CollectionName, id: string): Promise<boolean> {
     return this.store.softDelete(collection, id);
   }
 
-  list<T extends object>(collection: string): Promise<StoreDocument<T>[]> {
+  list<T extends object>(collection: CollectionName): Promise<StoreDocument<T>[]> {
     return this.store.list(collection);
   }
 }

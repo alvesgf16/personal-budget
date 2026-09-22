@@ -1,3 +1,5 @@
+import type { CollectionName } from './collections';
+
 /**
  * Shared metadata on every persisted document.
  * Domain payloads (settings, categories, …) extend this via StoreDocument<T>.
@@ -17,5 +19,5 @@ export type StoreDocument<T extends object = Record<string, unknown>> = T & Docu
  * Callers never see `collection`; the API scopes by it.
  */
 export type StoredRow<T extends object = Record<string, unknown>> = StoreDocument<T> & {
-  collection: string;
+  collection: CollectionName;
 };

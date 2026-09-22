@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { COLLECTIONS } from './collections';
 import { DOCUMENT_STORE, DocumentStoreService } from './document-store.service';
 import { createDocumentStore, type DocumentStore } from './store';
 
@@ -28,8 +29,8 @@ describe('DocumentStoreService', () => {
   });
 
   it('inserts and reads a document by id', async () => {
-    const created = await service.insert('notes', { title: 'Rent' });
-    const found = await service.getById<{ title: string }>('notes', created.id);
+    const created = await service.insert(COLLECTIONS.settings, { title: 'Rent' });
+    const found = await service.getById<{ title: string }>(COLLECTIONS.settings, created.id);
 
     expect(found).toEqual(created);
     expect(found?.title).toBe('Rent');
@@ -37,15 +38,15 @@ describe('DocumentStoreService', () => {
   });
 
   it('soft-deletes so list hides the row but getById returns the tombstone', async () => {
-    const a = await service.insert('notes', { title: 'Keep' });
-    const b = await service.insert('notes', { title: 'Drop' });
+    const a = await service.insert(COLLECTIONS.settings, { title: 'Keep' });
+    const b = await service.insert(COLLECTIONS.settings, { title: 'Drop' });
 
-    expect(await service.softDelete('notes', b.id)).toBe(true);
+    expect(await service.softDelete(COLLECTIONS.settings, b.id)).toBe(true);
 
-    const listed = await service.list<{ title: string }>('notes');
+    const listed = await service.list<{ title: string }>(COLLECTIONS.settings);
     expect(listed.map((d) => d.id)).toEqual([a.id]);
 
-    const tombstone = await service.getById<{ title: string }>('notes', b.id);
+    const tombstone = await service.getById<{ title: string }>(COLLECTIONS.settings, b.id);
     expect(tombstone?.deletedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(tombstone?.title).toBe('Drop');
   });
