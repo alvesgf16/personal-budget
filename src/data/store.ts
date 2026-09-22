@@ -1,3 +1,4 @@
+import type { CollectionName } from './collections';
 import { BudgetDatabase } from './database';
 import type { StoreDocument, StoredRow } from './document';
 
@@ -22,7 +23,10 @@ function nowIso(): string {
 export class DocumentStore {
   constructor(private readonly db: BudgetDatabase) {}
 
-  async insert<T extends object>(collection: string, payload: T): Promise<StoreDocument<T>> {
+  async insert<T extends object>(
+    collection: CollectionName,
+    payload: T,
+  ): Promise<StoreDocument<T>> {
     const row: StoredRow<T> = {
       ...stripMeta(payload),
       collection,
@@ -35,7 +39,7 @@ export class DocumentStore {
   }
 
   async getById<T extends object>(
-    collection: string,
+    collection: CollectionName,
     id: string,
   ): Promise<StoreDocument<T> | undefined> {
     const row = await this.db.documents.get(id);
@@ -46,7 +50,7 @@ export class DocumentStore {
   }
 
   async update<T extends object>(
-    collection: string,
+    collection: CollectionName,
     id: string,
     patch: Partial<T>,
   ): Promise<StoreDocument<T> | undefined> {
@@ -66,7 +70,7 @@ export class DocumentStore {
     return toDocument(row);
   }
 
-  async softDelete(collection: string, id: string): Promise<boolean> {
+  async softDelete(collection: CollectionName, id: string): Promise<boolean> {
     const existing = await this.db.documents.get(id);
     if (!existing || existing.collection !== collection) {
       return false;
@@ -82,7 +86,7 @@ export class DocumentStore {
     return true;
   }
 
-  async list<T extends object>(collection: string): Promise<StoreDocument<T>[]> {
+  async list<T extends object>(collection: CollectionName): Promise<StoreDocument<T>[]> {
     // Query by collection, then drop soft-deleted rows in memory (null is not indexed).
     const rows = await this.db.documents.where('collection').equals(collection).toArray();
     return rows
@@ -96,7 +100,7 @@ export class DocumentStore {
 }
 
 function toDocument<T extends object>(row: StoredRow<T>): StoreDocument<T> {
-  const doc = { ...row } as StoreDocument<T> & { collection?: string };
+  const doc = { ...row } as StoreDocument<T> & { collection?: CollectionName };
   delete doc.collection;
   return doc;
 }
