@@ -21,12 +21,13 @@ See [AGENTS.md](AGENTS.md) for agent and contributor conventions.
 
 ## Git hooks
 
-Husky runs on every commit:
+Husky runs on every commit and push:
 
 - **pre-commit** — lint-staged (ESLint `--fix` + Prettier on staged files)
 - **commit-msg** — Conventional Commits via commitlint
+- **pre-push** — rejects direct pushes to `main` (use a feature branch and open a PR)
 
-Bad commit messages or unresolved lint errors are rejected locally.
+Bad commit messages, unresolved lint errors, or a direct push to `main` are rejected locally.
 
 ## Repository and CI
 

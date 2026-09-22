@@ -16,7 +16,8 @@ function nowIso(): string {
 }
 
 /**
- * Generic collection API over IndexedDB. Not an Angular service — PB-51 wraps this.
+ * Generic collection API over IndexedDB.
+ * Feature screens use DocumentStoreService; this class stays free of Angular DI.
  */
 export class DocumentStore {
   constructor(private readonly db: BudgetDatabase) {}
@@ -100,7 +101,7 @@ function toDocument<T extends object>(row: StoredRow<T>): StoreDocument<T> {
   return doc;
 }
 
-/** Factory used by tests (unique DB name) and later by PB-51. */
+/** Factory for tests (unique DB name) and the DOCUMENT_STORE token. */
 export function createDocumentStore(dbName?: string): DocumentStore {
   return new DocumentStore(new BudgetDatabase(dbName));
 }

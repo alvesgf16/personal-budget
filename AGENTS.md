@@ -4,7 +4,7 @@
 
 - Jira project: **PB** on [alvesgf.atlassian.net](https://alvesgf.atlassian.net)
 - Stack: **Angular web, local-only** (no cloud API, no native shell in v1)
-- Persistence: **document store, not SQL** (Dexie / IndexedDB — later tickets)
+- Persistence: **document store, not SQL** (Dexie / IndexedDB via `DocumentStoreService`)
 
 ## Working style
 
@@ -17,3 +17,8 @@
 - Conventional Commits (`feat:`, `fix:`, `chore:`, …)
 - Put the Jira key in the **commit body**, not the summary
 - Husky rejects bad messages and staged lint/format failures
+- `pre-push` blocks pushing to `main`. Do not use `--no-verify`
+
+## Branches
+
+- **Feature work:** one branch per story, open a PR — do not push feature commits to `main`

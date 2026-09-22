@@ -7,7 +7,7 @@ alwaysApply: true
 
 - Jira project **PB**. Prefer **one story per session**.
 - Stack: **Angular web, local-only** — no cloud API and no native shell in v1.
-- Persistence is a **document store, not SQL** (Dexie / IndexedDB comes later).
+- Persistence is a **document store** (Dexie / IndexedDB via `DocumentStoreService`), not SQL.
 - Commits: Conventional Commits; put the Jira key in the **body**, not the summary.
-- Do **not** add a `src/data/**` glob rule or Excel domain rules here (later tickets own those).
+- **Feature work:** one branch per story, open a PR — do not push feature commits to `main`. Never `--no-verify`.
 - Keep changes scoped; run `npm run lint` and `npm test` before claiming done.

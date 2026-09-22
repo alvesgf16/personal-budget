@@ -1,4 +1,3 @@
-import 'fake-indexeddb/auto';
 import { createDocumentStore, type DocumentStore } from './store';
 
 describe('DocumentStore', () => {

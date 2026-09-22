@@ -1,0 +1,14 @@
+---
+description: Document store API — inject DocumentStoreService; no Dexie/SQL from feature code
+globs: src/data/**
+alwaysApply: false
+---
+
+# Document store (`src/data`)
+
+- Feature screens inject `DocumentStoreService` — do not import Dexie, `BudgetDatabase`, or `createDocumentStore` from UI code.
+- Collections are string names (e.g. `'notes'`). Domain schemas are owned by later epics.
+- Every document has sync metadata: `id`, `updatedAt`, `deletedAt` (`null` while active).
+- Soft-delete sets `deletedAt`; `list` hides tombstones; `getById` still returns them.
+- Persistence is IndexedDB via Dexie — never query SQL from app code.
+- Tests override the `DOCUMENT_STORE` token with `createDocumentStore(uniqueName)`.
