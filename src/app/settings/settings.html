@@ -1,0 +1,21 @@
+<form (submit)="save($event)">
+  <label for="starting-year">Starting year</label>
+  <input
+    id="starting-year"
+    type="number"
+    name="startingYear"
+    inputmode="numeric"
+    step="1"
+    [value]="yearDraft()"
+    (input)="onYearDraft($event)"
+    [attr.aria-invalid]="error() ? 'true' : null"
+    [attr.aria-describedby]="
+      error() ? 'starting-year-help starting-year-error' : 'starting-year-help'
+    "
+  />
+  <p id="starting-year-help">This year appears in the Plan tab header.</p>
+  @if (error()) {
+    <p id="starting-year-error" role="alert">{{ error() }}</p>
+  }
+  <button type="submit">Save</button>
+</form>
