@@ -27,3 +27,15 @@ Husky runs on every commit:
 - **commit-msg** — Conventional Commits via commitlint
 
 Bad commit messages or unresolved lint errors are rejected locally.
+
+## Repository and CI
+
+Public repo: [github.com/alvesgf16/personal-budget](https://github.com/alvesgf16/personal-budget).
+
+On every push to `main` and every pull request, GitHub Actions runs:
+
+- `npm run lint`
+- `npm test`
+- `npm run build` (production)
+
+**Never commit user budget data** (IndexedDB dumps, local exports, or anything under ignored dump paths). Persistence is browser-local only.
