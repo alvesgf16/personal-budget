@@ -1,0 +1,13 @@
+---
+description: Core Personal Budget (PB) project constraints for every session
+alwaysApply: true
+---
+
+# Personal Budget (PB)
+
+- Jira project **PB**. Prefer **one story per session**.
+- Stack: **Angular web, local-only** — no cloud API and no native shell in v1.
+- Persistence is a **document store, not SQL** (Dexie / IndexedDB comes later).
+- Commits: Conventional Commits; put the Jira key in the **body**, not the summary.
+- Do **not** add a `src/data/**` glob rule or Excel domain rules here (later tickets own those).
+- Keep changes scoped; run `npm run lint` and `npm test` before claiming done.
