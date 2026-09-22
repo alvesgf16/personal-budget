@@ -1,1 +1,14 @@
-/* You can add global styles to this file, and also import other style files */
+/* Type colors from the Excel workbook (income green, expenses red, savings blue). */
+:root {
+  --color-income: #548235;
+  --color-expenses: #c00000;
+  --color-savings: #4472c4;
+}
+
+html,
+body {
+  margin: 0;
+  background: #fff;
+  color: #111;
+  font-family: system-ui, sans-serif;
+}

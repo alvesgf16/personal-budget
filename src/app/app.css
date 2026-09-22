@@ -1,0 +1,32 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+header {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+}
+
+nav a {
+  color: inherit;
+  padding: 0.5rem 0.75rem;
+  text-decoration: none;
+}
+
+nav a.is-active {
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 currentColor;
+}
+
+main {
+  flex: 1;
+  padding: 1rem;
+}
