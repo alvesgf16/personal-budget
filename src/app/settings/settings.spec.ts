@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../data/collections';
 import { DOCUMENT_STORE } from '../../data/document-store.service';
 import type { Settings as SettingsPayload } from '../../data/settings';
@@ -32,12 +32,8 @@ describe('Settings starting year', () => {
     return fixture;
   };
 
-  const submitYear = async (fixture: Awaited<ReturnType<typeof renderSettings>>, year: string) => {
-    const input = fixture.nativeElement.querySelector('#starting-year') as HTMLInputElement;
-    input.value = year;
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+  const submitYear = async (fixture: ComponentFixture<Settings>, year: string) => {
+    await startSubmit(fixture, year);
     await fixture.whenStable();
     fixture.detectChanges();
   };
@@ -77,4 +73,66 @@ describe('Settings starting year', () => {
     planFixture.detectChanges();
     expect(planFixture.nativeElement.querySelector('h1')?.textContent?.trim()).toBe('2027');
   });
+
+  it('keeps overlapping saves on a single settings document', async () => {
+    const originalInsert = store.insert.bind(store);
+    let releaseInsert: () => void = () => undefined;
+    const insertHold = new Promise<void>((resolve) => {
+      releaseInsert = resolve;
+    });
+    let enteredInsert: () => void = () => undefined;
+    const insertStarted = new Promise<void>((resolve) => {
+      enteredInsert = resolve;
+    });
+    store.insert = async (collection, payload) => {
+      enteredInsert();
+      await insertHold;
+      return originalInsert(collection, payload);
+    };
+
+    const fixture = await renderSettings();
+    await startSubmit(fixture, '2026');
+    await insertStarted;
+    await startSubmit(fixture, '2027');
+    releaseInsert();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const saved = await store.list<SettingsPayload>(COLLECTIONS.settings);
+    expect(saved).toHaveLength(1);
+    expect(saved[0]?.startingYear).toBe(2027);
+  });
+
+  it('shows an error when save persistence fails', async () => {
+    store.insert = async () => {
+      throw new Error('unavailable');
+    };
+
+    const fixture = await renderSettings();
+    await submitYear(fixture, '2026');
+
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Could not save',
+    );
+    expect(await store.list(COLLECTIONS.settings)).toEqual([]);
+  });
+
+  it('shows an error when settings cannot be loaded', async () => {
+    store.list = async () => {
+      throw new Error('unavailable');
+    };
+
+    const fixture = await renderSettings();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Could not load',
+    );
+  });
 });
+
+async function startSubmit(fixture: ComponentFixture<Settings>, year: string): Promise<void> {
+  const input = fixture.nativeElement.querySelector('#starting-year') as HTMLInputElement;
+  input.value = year;
+  input.dispatchEvent(new Event('input'));
+  fixture.detectChanges();
+  fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+}

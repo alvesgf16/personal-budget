@@ -13,6 +13,7 @@ export class Settings implements OnInit {
   private readonly store = inject(DocumentStoreService);
   private readonly pendingTasks = inject(PendingTasks);
   private readonly documentId = signal<string | null>(null);
+  private persistChain: Promise<void> = Promise.resolve();
 
   protected readonly yearDraft = signal('');
   protected readonly error = signal<string | null>(null);
@@ -36,17 +37,26 @@ export class Settings implements OnInit {
       return;
     }
 
+    this.persistChain = this.persistChain
+      .catch(() => undefined)
+      .then(() => this.persist(parsed.data));
+    await this.persistChain;
+  }
+
+  private async persist(payload: SettingsPayload): Promise<void> {
     const done = this.pendingTasks.add();
     try {
       this.error.set(null);
       const existingId = this.documentId();
       if (existingId) {
-        await this.store.update(COLLECTIONS.settings, existingId, parsed.data);
+        await this.store.update(COLLECTIONS.settings, existingId, payload);
         return;
       }
 
-      const created = await this.store.insert(COLLECTIONS.settings, parsed.data);
+      const created = await this.store.insert(COLLECTIONS.settings, payload);
       this.documentId.set(created.id);
+    } catch {
+      this.error.set('Could not save the starting year. Try again.');
     } finally {
       done();
     }
@@ -61,6 +71,8 @@ export class Settings implements OnInit {
       }
       this.documentId.set(doc.id);
       this.yearDraft.set(String(doc.startingYear));
+    } catch {
+      this.error.set('Could not load the starting year. Refresh and try again.');
     } finally {
       done();
     }
