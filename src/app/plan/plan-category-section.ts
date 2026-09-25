@@ -1,5 +1,5 @@
 import { Component, inject, input, OnInit, PendingTasks, signal } from '@angular/core';
-import type { Category, CategoryType } from '../../data/category';
+import { categorySchema, type Category, type CategoryType } from '../../data/category';
 import { CategoryService } from '../../data/category.service';
 import type { StoreDocument } from '../../data/document';
 
@@ -39,14 +39,20 @@ export class PlanCategorySection implements OnInit {
 
   protected async add(event: Event): Promise<void> {
     event.preventDefault();
+    const parsed = categorySchema.shape.name.safeParse(this.nameDraft());
+    if (!parsed.success) {
+      this.error.set('Enter a category name.');
+      return;
+    }
+
     const done = this.pendingTasks.add();
     try {
       this.error.set(null);
-      await this.categories.add(this.type(), this.nameDraft());
+      await this.categories.add(this.type(), parsed.data);
       this.nameDraft.set('');
       await this.refresh();
     } catch {
-      this.error.set('Enter a category name.');
+      this.error.set('Could not save the category. Try again.');
     } finally {
       done();
     }

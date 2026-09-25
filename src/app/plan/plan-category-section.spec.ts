@@ -77,4 +77,21 @@ describe('PlanCategorySection', () => {
     );
     expect(items).toEqual(['Salary', 'Bonus']);
   });
+
+  it('shows an error when add persistence fails and keeps the draft', async () => {
+    store.insert = async () => {
+      throw new Error('unavailable');
+    };
+
+    const fixture = await render();
+    await submitName(fixture, 'Salary');
+
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Could not save',
+    );
+    expect(
+      (fixture.nativeElement.querySelector('#category-name-income') as HTMLInputElement).value,
+    ).toBe('Salary');
+    expect(await store.list(COLLECTIONS.categories)).toEqual([]);
+  });
 });
