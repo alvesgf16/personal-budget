@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../data/collections';
-import { DOCUMENT_STORE } from '../../data/document-store.service';
+import { DOCUMENT_STORE } from '../../data/document-store.token';
 import { createDocumentStore, type DocumentStore } from '../../data/store';
 import { Plan } from './plan';
 

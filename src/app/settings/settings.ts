@@ -1,7 +1,6 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
-import { COLLECTIONS } from '../../data/collections';
-import { DocumentStoreService } from '../../data/document-store.service';
-import { settingsSchema, type Settings as SettingsPayload } from '../../data/settings';
+import { settingsSchema } from '../../data/settings';
+import { SettingsService } from '../../data/settings.service';
 
 /** Settings tab: persist the Plan starting year (PB-19). */
 @Component({
@@ -10,10 +9,8 @@ import { settingsSchema, type Settings as SettingsPayload } from '../../data/set
   templateUrl: './settings.html',
 })
 export class Settings implements OnInit {
-  private readonly store = inject(DocumentStoreService);
+  private readonly settings = inject(SettingsService);
   private readonly pendingTasks = inject(PendingTasks);
-  private readonly documentId = signal<string | null>(null);
-  private persistChain: Promise<void> = Promise.resolve();
 
   protected readonly yearDraft = signal('');
   protected readonly error = signal<string | null>(null);
@@ -37,24 +34,10 @@ export class Settings implements OnInit {
       return;
     }
 
-    this.persistChain = this.persistChain
-      .catch(() => undefined)
-      .then(() => this.persist(parsed.data));
-    await this.persistChain;
-  }
-
-  private async persist(payload: SettingsPayload): Promise<void> {
     const done = this.pendingTasks.add();
     try {
       this.error.set(null);
-      const existingId = this.documentId();
-      if (existingId) {
-        await this.store.update(COLLECTIONS.settings, existingId, payload);
-        return;
-      }
-
-      const created = await this.store.insert(COLLECTIONS.settings, payload);
-      this.documentId.set(created.id);
+      await this.settings.save(parsed.data);
     } catch {
       this.error.set('Could not save the starting year. Try again.');
     } finally {
@@ -65,12 +48,10 @@ export class Settings implements OnInit {
   private async load(): Promise<void> {
     const done = this.pendingTasks.add();
     try {
-      const [doc] = await this.store.list<SettingsPayload>(COLLECTIONS.settings);
-      if (!doc) {
-        return;
+      const doc = await this.settings.load();
+      if (doc) {
+        this.yearDraft.set(String(doc.startingYear));
       }
-      this.documentId.set(doc.id);
-      this.yearDraft.set(String(doc.startingYear));
     } catch {
       this.error.set('Could not load the starting year. Refresh and try again.');
     } finally {

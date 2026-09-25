@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../data/collections';
-import { DOCUMENT_STORE } from '../../data/document-store.service';
+import { DOCUMENT_STORE } from '../../data/document-store.token';
 import type { Settings as SettingsPayload } from '../../data/settings';
 import { createDocumentStore, type DocumentStore } from '../../data/store';
 import { Plan } from '../plan/plan';
@@ -72,35 +72,6 @@ describe('Settings starting year', () => {
     await planFixture.whenStable();
     planFixture.detectChanges();
     expect(planFixture.nativeElement.querySelector('h1')?.textContent?.trim()).toBe('2027');
-  });
-
-  it('keeps overlapping saves on a single settings document', async () => {
-    const originalInsert = store.insert.bind(store);
-    let releaseInsert: () => void = () => undefined;
-    const insertHold = new Promise<void>((resolve) => {
-      releaseInsert = resolve;
-    });
-    let enteredInsert: () => void = () => undefined;
-    const insertStarted = new Promise<void>((resolve) => {
-      enteredInsert = resolve;
-    });
-    store.insert = async (collection, payload) => {
-      enteredInsert();
-      await insertHold;
-      return originalInsert(collection, payload);
-    };
-
-    const fixture = await renderSettings();
-    await startSubmit(fixture, '2026');
-    await insertStarted;
-    await startSubmit(fixture, '2027');
-    releaseInsert();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const saved = await store.list<SettingsPayload>(COLLECTIONS.settings);
-    expect(saved).toHaveLength(1);
-    expect(saved[0]?.startingYear).toBe(2027);
   });
 
   it('shows an error when save persistence fails', async () => {

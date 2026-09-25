@@ -1,7 +1,5 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
-import { COLLECTIONS } from '../../data/collections';
-import { DocumentStoreService } from '../../data/document-store.service';
-import type { Settings as SettingsPayload } from '../../data/settings';
+import { SettingsService } from '../../data/settings.service';
 
 /** Plan tab year header, driven by Settings (PB-19). */
 @Component({
@@ -10,7 +8,7 @@ import type { Settings as SettingsPayload } from '../../data/settings';
   templateUrl: './plan.html',
 })
 export class Plan implements OnInit {
-  private readonly store = inject(DocumentStoreService);
+  private readonly settings = inject(SettingsService);
   private readonly pendingTasks = inject(PendingTasks);
 
   protected readonly startingYear = signal<number | null>(null);
@@ -22,7 +20,7 @@ export class Plan implements OnInit {
   private async load(): Promise<void> {
     const done = this.pendingTasks.add();
     try {
-      const [doc] = await this.store.list<SettingsPayload>(COLLECTIONS.settings);
+      const doc = await this.settings.load();
       this.startingYear.set(doc?.startingYear ?? null);
     } finally {
       done();

@@ -1,7 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from './collections';
-import { DOCUMENT_STORE, DocumentStoreService } from './document-store.service';
+import { DocumentStoreService } from './document-store.service';
+import { DOCUMENT_STORE } from './document-store.token';
 import { createDocumentStore, type DocumentStore } from './store';
 
 describe('DocumentStoreService', () => {
