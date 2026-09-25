@@ -1,0 +1,25 @@
+<section [attr.data-type]="type()">
+  <h2>{{ title }}</h2>
+  <form (submit)="add($event)">
+    <label [attr.for]="'category-name-' + type()">Name</label>
+    <input
+      [id]="'category-name-' + type()"
+      type="text"
+      name="categoryName"
+      autocomplete="off"
+      [value]="nameDraft()"
+      (input)="onNameDraft($event)"
+      [attr.aria-invalid]="error() ? 'true' : null"
+      [attr.aria-describedby]="error() ? 'category-error-' + type() : null"
+    />
+    <button type="submit">Add</button>
+  </form>
+  @if (error()) {
+    <p [id]="'category-error-' + type()" role="alert">{{ error() }}</p>
+  }
+  <ul>
+    @for (row of rows(); track row.id) {
+      <li>{{ row.name }}</li>
+    }
+  </ul>
+</section>

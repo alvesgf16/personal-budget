@@ -40,3 +40,7 @@ On every push to `main` and every pull request, GitHub Actions runs:
 - `npm run build` (production)
 
 **Never commit user budget data** (IndexedDB dumps, local exports, or anything under ignored dump paths). Persistence is browser-local only.
+
+## Data model notes
+
+Categories live in the document store collection `categories` (`COLLECTIONS.categories`). That list is the source of truth for Plan category rows **and** for later Tracking assignment dropdowns — Tracking must not grow a second catalog.

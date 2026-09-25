@@ -1,9 +1,11 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
 import { SettingsService } from '../../data/settings.service';
+import { PlanCategorySection } from './plan-category-section';
 
-/** Plan tab year header, driven by Settings (PB-19). */
+/** Plan tab: year header (PB-19) and income categories (PB-20). */
 @Component({
   selector: 'app-plan',
+  imports: [PlanCategorySection],
   styleUrl: './plan.css',
   templateUrl: './plan.html',
 })
