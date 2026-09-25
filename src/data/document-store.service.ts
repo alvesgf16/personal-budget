@@ -1,15 +1,7 @@
-import { inject, Injectable, InjectionToken } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import type { CollectionName } from './collections';
 import type { StoreDocument } from './document';
-import { createDocumentStore, type DocumentStore } from './store';
-
-/**
- * Root token for the plain DocumentStore. Tests override this with a unique DB name.
- */
-export const DOCUMENT_STORE = new InjectionToken<DocumentStore>('DOCUMENT_STORE', {
-  providedIn: 'root',
-  factory: () => createDocumentStore(),
-});
+import { DOCUMENT_STORE } from './document-store.token';
 
 /**
  * Injectable facade over the Dexie collection API.

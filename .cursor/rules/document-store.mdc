@@ -6,7 +6,8 @@ alwaysApply: false
 
 # Document store (`src/data`)
 
-- Feature screens inject `DocumentStoreService` — do not import Dexie, `BudgetDatabase`, or `createDocumentStore` from UI code.
+- Feature screens inject a facade (`DocumentStoreService`, or a domain service such as `SettingsService`) — do not import Dexie, `BudgetDatabase`, or `createDocumentStore` from UI code.
+- Domain services may inject the `DOCUMENT_STORE` token directly (side by side with `DocumentStoreService`, not nested on it).
 - Collection names live in `COLLECTIONS` (`settings`, `categories`, …). Store/service methods take `CollectionName` (derived from that object) — add new piles there first.
 - Domain payloads: parse with Zod schemas (`settingsSchema`, `categorySchema`) **before** `insert` / `update`. Store metadata (`id`, `updatedAt`, `deletedAt`) is added by the store, not by the schema.
 - Every document has sync metadata: `id`, `updatedAt`, `deletedAt` (`null` while active).
