@@ -1,0 +1,43 @@
+.grid-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+}
+
+th,
+td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #e8e8e8;
+  text-align: left;
+  white-space: nowrap;
+}
+
+thead th {
+  font-weight: 600;
+}
+
+tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #fff;
+  font-weight: 600;
+  min-width: 8rem;
+}
+
+td input {
+  width: 5.5rem;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+}
+
+[role='alert'] {
+  margin: 0 0 0.75rem;
+  color: #b00000;
+}
