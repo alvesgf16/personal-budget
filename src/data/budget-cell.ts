@@ -14,8 +14,8 @@ export const budgetCellSchema = z.object({
   year: z.number().int().min(1900).max(2100),
   /** Calendar month 1–12. */
   month: z.number().int().min(1).max(12),
-  /** Planned amount in integer cents (non-negative). */
-  amountCents: z.number().int().nonnegative(),
+  /** Planned amount in integer cents (non-negative, within Number.MAX_SAFE_INTEGER). */
+  amountCents: z.number().int().nonnegative().safe(),
 });
 
 /** Inferred TypeScript type — one source of truth with the Zod schema. */

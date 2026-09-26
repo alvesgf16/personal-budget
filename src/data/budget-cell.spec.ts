@@ -39,6 +39,12 @@ describe('budgetCellSchema', () => {
     expect(() => budgetCellSchema.parse({ ...valid, amountCents: -1 })).toThrow();
   });
 
+  it('rejects amountCents outside the safe-integer range', () => {
+    expect(() =>
+      budgetCellSchema.parse({ ...valid, amountCents: Number.MAX_SAFE_INTEGER + 1 }),
+    ).toThrow();
+  });
+
   it('rejects a year outside the allowed range', () => {
     expect(() => budgetCellSchema.parse({ ...valid, year: 1899 })).toThrow();
     expect(() => budgetCellSchema.parse({ ...valid, year: 2101 })).toThrow();
