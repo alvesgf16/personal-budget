@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { BudgetCell } from '../../data/budget-cell';
 import { COLLECTIONS } from '../../data/collections';
 import { DOCUMENT_STORE } from '../../data/document-store.token';
 import { createDocumentStore, type DocumentStore } from '../../data/store';
@@ -9,7 +10,7 @@ describe('PlanCategorySection', () => {
   let dbName: string;
 
   beforeEach(async () => {
-    dbName = `pb-20-plan-section-${crypto.randomUUID()}`;
+    dbName = `pb-21-plan-section-${crypto.randomUUID()}`;
     store = createDocumentStore(dbName);
     await TestBed.configureTestingModule({
       imports: [PlanCategorySection],
@@ -22,9 +23,10 @@ describe('PlanCategorySection', () => {
     indexedDB.deleteDatabase(dbName);
   });
 
-  const render = async () => {
+  const render = async (year: number | null = null) => {
     const fixture = TestBed.createComponent(PlanCategorySection);
     fixture.componentRef.setInput('type', 'income');
+    fixture.componentRef.setInput('year', year);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -37,6 +39,22 @@ describe('PlanCategorySection', () => {
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+
+  const setCell = async (
+    fixture: ComponentFixture<PlanCategorySection>,
+    ariaLabel: string,
+    value: string,
+  ) => {
+    const input = fixture.nativeElement.querySelector(
+      `input[aria-label="${ariaLabel}"]`,
+    ) as HTMLInputElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    input.dispatchEvent(new Event('blur'));
     await fixture.whenStable();
     fixture.detectChanges();
   };
@@ -93,5 +111,36 @@ describe('PlanCategorySection', () => {
       (fixture.nativeElement.querySelector('#category-name-income') as HTMLInputElement).value,
     ).toBe('Salary');
     expect(await store.list(COLLECTIONS.categories)).toEqual([]);
+  });
+
+  it('saves January without changing February', async () => {
+    const fixture = await render(2026);
+    await submitName(fixture, 'Salary');
+    await setCell(fixture, 'Salary January', '1000');
+
+    const cells = await store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    expect(cells).toHaveLength(1);
+    expect(cells[0]).toMatchObject({ year: 2026, month: 1, amountCents: 100_000 });
+
+    const february = fixture.nativeElement.querySelector(
+      'input[aria-label="Salary February"]',
+    ) as HTMLInputElement;
+    expect(february.value).toBe('');
+  });
+
+  it('reloads saved January amount after recreating the section', async () => {
+    const first = await render(2026);
+    await submitName(first, 'Salary');
+    await setCell(first, 'Salary January', '2500.50');
+    first.destroy();
+
+    const second = await render(2026);
+    await second.whenStable();
+    second.detectChanges();
+
+    const january = second.nativeElement.querySelector(
+      'input[aria-label="Salary January"]',
+    ) as HTMLInputElement;
+    expect(january.value).toBe('2500.50');
   });
 });

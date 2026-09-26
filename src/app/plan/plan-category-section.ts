@@ -1,7 +1,8 @@
-import { Component, inject, input, OnInit, PendingTasks, signal } from '@angular/core';
+import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
 import { categorySchema, type Category, type CategoryType } from '../../data/category';
 import { CategoryService } from '../../data/category.service';
 import type { StoreDocument } from '../../data/document';
+import { PlanAmountGrid } from './plan-amount-grid';
 
 const SECTION_TITLES: Record<CategoryType, string> = {
   income: 'Income',
@@ -9,17 +10,23 @@ const SECTION_TITLES: Record<CategoryType, string> = {
   savings: 'Savings',
 };
 
-/** Add and list categories for one Plan section type (income / expense / savings). */
+/**
+ * Add and list categories for one Plan section type (income / expense / savings).
+ * When `year` is set, mounts the amount grid for that year.
+ */
 @Component({
   selector: 'app-plan-category-section',
+  imports: [PlanAmountGrid],
   styleUrl: './plan-category-section.css',
   templateUrl: './plan-category-section.html',
 })
-export class PlanCategorySection implements OnInit {
+export class PlanCategorySection {
   private readonly categories = inject(CategoryService);
   private readonly pendingTasks = inject(PendingTasks);
 
   readonly type = input.required<CategoryType>();
+  /** Plan year from Settings; null hides the amount columns (PB-49 owns empty state). */
+  readonly year = input<number | null>(null);
 
   protected readonly nameDraft = signal('');
   protected readonly error = signal<string | null>(null);
@@ -29,8 +36,11 @@ export class PlanCategorySection implements OnInit {
     return SECTION_TITLES[this.type()];
   }
 
-  ngOnInit(): void {
-    void this.load();
+  constructor() {
+    effect(() => {
+      this.type();
+      void this.load();
+    });
   }
 
   protected onNameDraft(event: Event): void {

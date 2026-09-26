@@ -17,9 +17,13 @@
   @if (error()) {
     <p [id]="'category-error-' + type()" role="alert">{{ error() }}</p>
   }
-  <ul>
-    @for (row of rows(); track row.id) {
-      <li>{{ row.name }}</li>
-    }
-  </ul>
+  @if (year(); as planYear) {
+    <app-plan-amount-grid [year]="planYear" [rows]="rows()" />
+  } @else {
+    <ul>
+      @for (row of rows(); track row.id) {
+        <li>{{ row.name }}</li>
+      }
+    </ul>
+  }
 </section>

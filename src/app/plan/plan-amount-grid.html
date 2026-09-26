@@ -1,0 +1,35 @@
+@if (error()) {
+  <p role="alert">{{ error() }}</p>
+}
+<div class="grid-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Category</th>
+        @for (month of months; track month) {
+          <th scope="col">{{ monthShort[month - 1] }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.id) {
+        <tr>
+          <th scope="row">{{ row.name }}</th>
+          @for (month of months; track month) {
+            <td>
+              <input
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                [attr.aria-label]="row.name + ' ' + monthLong[month - 1]"
+                [value]="draftFor(row.id, month)"
+                (input)="onCellDraft(row.id, month, $event)"
+                (blur)="saveCell(row.id, month)"
+              />
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
