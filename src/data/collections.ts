@@ -5,6 +5,7 @@
 export const COLLECTIONS = {
   settings: 'settings',
   categories: 'categories',
+  budgetCells: 'budgetCells',
 } as const;
 
 /** Union of known collection names — derived from COLLECTIONS. */
