@@ -1,0 +1,62 @@
+section {
+  margin-top: 1.5rem;
+}
+
+h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+section[data-type='income'] h2 {
+  color: var(--color-income);
+}
+
+section[data-type='expense'] h2 {
+  color: var(--color-expenses);
+}
+
+section[data-type='savings'] h2 {
+  color: var(--color-savings);
+}
+
+form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+label {
+  font-weight: 600;
+}
+
+input,
+button {
+  font: inherit;
+}
+
+input {
+  padding: 0.35rem 0.5rem;
+}
+
+button {
+  padding: 0.35rem 0.75rem;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+[role='alert'] {
+  margin: 0 0 0.75rem;
+  color: #b00000;
+}
