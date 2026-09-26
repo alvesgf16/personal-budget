@@ -59,8 +59,11 @@ export class PlanAmountGrid {
 
   constructor() {
     effect(() => {
-      this.year();
-      void this.loadCells();
+      const year = this.year();
+      // Drop stale drafts immediately so a blur cannot save the previous year into this one.
+      this.cellDrafts.set({});
+      this.error.set(null);
+      void this.loadCells(year);
     });
   }
 
@@ -77,6 +80,7 @@ export class PlanAmountGrid {
   }
 
   protected async saveCell(categoryId: string, month: number): Promise<void> {
+    const year = this.year();
     let amountCents: number | null;
     try {
       amountCents = dollarsToCents(this.draftFor(categoryId, month));
@@ -88,7 +92,10 @@ export class PlanAmountGrid {
     const done = this.pendingTasks.add();
     try {
       this.error.set(null);
-      await this.budgetCells.save(categoryId, this.year(), month, amountCents);
+      await this.budgetCells.save(categoryId, year, month, amountCents);
+      if (this.year() !== year) {
+        return;
+      }
       this.cellDrafts.update((drafts) => {
         const next = { ...drafts };
         const key = cellKey(categoryId, month);
@@ -100,16 +107,21 @@ export class PlanAmountGrid {
         return next;
       });
     } catch {
-      this.error.set('Could not save the amount. Try again.');
+      if (this.year() === year) {
+        this.error.set('Could not save the amount. Try again.');
+      }
     } finally {
       done();
     }
   }
 
-  private async loadCells(): Promise<void> {
+  private async loadCells(year: number): Promise<void> {
     const done = this.pendingTasks.add();
     try {
-      const cells = await this.budgetCells.listForYear(this.year());
+      const cells = await this.budgetCells.listForYear(year);
+      if (this.year() !== year) {
+        return;
+      }
       const drafts: Record<string, string> = {};
       for (const cell of cells) {
         drafts[cellKey(cell.categoryId, cell.month)] = centsToDollarInput(cell.amountCents);
@@ -117,7 +129,9 @@ export class PlanAmountGrid {
       this.cellDrafts.set(drafts);
       this.error.set(null);
     } catch {
-      this.error.set('Could not load amounts. Refresh and try again.');
+      if (this.year() === year) {
+        this.error.set('Could not load amounts. Refresh and try again.');
+      }
     } finally {
       done();
     }
