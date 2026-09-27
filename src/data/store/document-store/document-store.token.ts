@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { createDocumentStore, type DocumentStore } from './store';
+import { createDocumentStore, type DocumentStore } from './document-store';
 
 /**
  * Root token for the plain DocumentStore.

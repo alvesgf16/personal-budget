@@ -1,6 +1,6 @@
-import { COLLECTIONS } from './collections';
-import { settingsSchema, type Settings } from './settings';
-import { createDocumentStore, type DocumentStore } from './store';
+import { COLLECTIONS } from '../../store/types';
+import { useTestStore } from '../../store/document-store/document-store.testing';
+import { parseStartingYear, settingsSchema, type Settings } from './settings';
 
 describe('settingsSchema', () => {
   it('accepts a valid starting year', () => {
@@ -25,29 +25,27 @@ describe('settingsSchema', () => {
   });
 });
 
+describe('parseStartingYear', () => {
+  it('parses a whole year in range', () => {
+    expect(parseStartingYear(' 2026 ')).toEqual({ startingYear: 2026 });
+  });
+
+  it('returns null for empty or invalid input', () => {
+    expect(parseStartingYear('')).toBeNull();
+    expect(parseStartingYear('1899')).toBeNull();
+    expect(parseStartingYear('2026.5')).toBeNull();
+  });
+});
+
 describe('settings store round-trip', () => {
-  let store: DocumentStore;
-  let dbName: string;
+  const testDb = useTestStore('pb-settings-test');
 
-  beforeEach(() => {
-    dbName = `pb-settings-test-${crypto.randomUUID()}`;
-    store = createDocumentStore(dbName);
-  });
-
-  afterEach(() => {
-    store.close();
-    indexedDB.deleteDatabase(dbName);
-  });
-
-  it('inserts and reads a settings document with store metadata', async () => {
+  it('inserts and reads a parsed settings payload', async () => {
     const payload = settingsSchema.parse({ startingYear: 2026 });
-    const created = await store.insert(COLLECTIONS.settings, payload);
-    const found = await store.getById<Settings>(COLLECTIONS.settings, created.id);
+    const created = await testDb.store.insert(COLLECTIONS.settings, payload);
+    const found = await testDb.store.getById<Settings>(COLLECTIONS.settings, created.id);
 
     expect(found).toEqual(created);
     expect(found?.startingYear).toBe(2026);
-    expect(found?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-    expect(found?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(found?.deletedAt).toBeNull();
   });
 });

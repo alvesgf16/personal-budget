@@ -1,6 +1,5 @@
-import type { CollectionName } from './collections';
-import { BudgetDatabase } from './database';
-import type { StoreDocument, StoredRow } from './document';
+import type { CollectionName, StoreDocument, StoredRow } from '../types';
+import { BudgetDatabase } from '../database';
 
 const META_KEYS = new Set(['id', 'updatedAt', 'deletedAt', 'collection']);
 
@@ -18,7 +17,7 @@ function nowIso(): string {
 
 /**
  * Generic collection API over IndexedDB.
- * Feature screens use DocumentStoreService; this class stays free of Angular DI.
+ * Domain services inject DOCUMENT_STORE; this class stays free of Angular DI.
  */
 export class DocumentStore {
   constructor(private readonly db: BudgetDatabase) {}

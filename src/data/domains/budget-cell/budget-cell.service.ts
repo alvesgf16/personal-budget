@@ -1,18 +1,18 @@
 import { inject, Injectable } from '@angular/core';
 import { budgetCellSchema, type BudgetCell } from './budget-cell';
-import { COLLECTIONS } from './collections';
-import type { StoreDocument } from './document';
-import { DOCUMENT_STORE } from './document-store.token';
+import { COLLECTIONS, type StoreDocument } from '../../store/types';
+import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
+import { PersistQueue } from '../../lib/persist-queue';
 
 /**
  * Budget-cell document access: list by plan year and upsert/clear one month cell.
  * Sparse — a missing document means “no amount entered,” not zero.
- * Feature screens inject this — they do not call DocumentStoreService for cells.
+ * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
  */
 @Injectable({ providedIn: 'root' })
 export class BudgetCellService {
   private readonly store = inject(DOCUMENT_STORE);
-  private persistChain: Promise<void> = Promise.resolve();
+  private readonly persist = new PersistQueue();
 
   async listForYear(year: number): Promise<StoreDocument<BudgetCell>[]> {
     const docs = await this.store.list<BudgetCell>(COLLECTIONS.budgetCells);
@@ -24,10 +24,7 @@ export class BudgetCellService {
    * Saves are serialized so rapid tabbing cannot insert duplicate triples.
    */
   save(categoryId: string, year: number, month: number, amountCents: number | null): Promise<void> {
-    this.persistChain = this.persistChain
-      .catch(() => undefined)
-      .then(() => this.upsert(categoryId, year, month, amountCents));
-    return this.persistChain;
+    return this.persist.enqueue(() => this.upsert(categoryId, year, month, amountCents));
   }
 
   private async upsert(
@@ -58,9 +55,7 @@ export class BudgetCellService {
     year: number,
     month: number,
   ): Promise<StoreDocument<BudgetCell> | undefined> {
-    const docs = await this.store.list<BudgetCell>(COLLECTIONS.budgetCells);
-    return docs.find(
-      (doc) => doc.categoryId === categoryId && doc.year === year && doc.month === month,
-    );
+    const docs = await this.listForYear(year);
+    return docs.find((doc) => doc.categoryId === categoryId && doc.month === month);
   }
 }

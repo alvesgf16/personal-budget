@@ -1,17 +1,18 @@
 import { inject, Injectable } from '@angular/core';
-import { COLLECTIONS } from './collections';
-import { DOCUMENT_STORE } from './document-store.token';
+import { COLLECTIONS } from '../../store/types';
+import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
+import { PersistQueue } from '../../lib/persist-queue';
 import type { Settings } from './settings';
 
 /**
  * Settings document access: load the singleton and serialize overlapping saves.
- * Feature screens inject this — they do not call DocumentStoreService for settings.
+ * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly store = inject(DOCUMENT_STORE);
+  private readonly persist = new PersistQueue();
   private documentId: string | null = null;
-  private persistChain: Promise<void> = Promise.resolve();
 
   async load(): Promise<Settings | null> {
     const [doc] = await this.store.list<Settings>(COLLECTIONS.settings);
@@ -20,8 +21,7 @@ export class SettingsService {
   }
 
   save(payload: Settings): Promise<void> {
-    this.persistChain = this.persistChain.catch(() => undefined).then(() => this.upsert(payload));
-    return this.persistChain;
+    return this.persist.enqueue(() => this.upsert(payload));
   }
 
   private async upsert(payload: Settings): Promise<void> {

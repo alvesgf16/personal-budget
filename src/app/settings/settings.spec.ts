@@ -1,28 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { COLLECTIONS } from '../../data/collections';
-import { DOCUMENT_STORE } from '../../data/document-store.token';
-import type { Settings as SettingsPayload } from '../../data/settings';
-import { createDocumentStore, type DocumentStore } from '../../data/store';
+import { COLLECTIONS } from '../../data/store/types';
+import { provideTestDocumentStore } from '../../data/store/document-store/document-store.testing';
+import type { Settings as SettingsPayload } from '../../data/domains/settings/settings';
 import { Plan } from '../plan/plan';
 import { Settings } from './settings';
 
 describe('Settings starting year', () => {
-  let store: DocumentStore;
-  let dbName: string;
-
-  beforeEach(async () => {
-    dbName = `pb-19-settings-${crypto.randomUUID()}`;
-    store = createDocumentStore(dbName);
-    await TestBed.configureTestingModule({
-      imports: [Settings, Plan],
-      providers: [{ provide: DOCUMENT_STORE, useValue: store }],
-    }).compileComponents();
-  });
-
-  afterEach(() => {
-    store.close();
-    indexedDB.deleteDatabase(dbName);
-  });
+  const testDb = provideTestDocumentStore('pb-19-settings', { imports: [Settings, Plan] });
 
   const renderSettings = async () => {
     const fixture = TestBed.createComponent(Settings);
@@ -43,13 +27,13 @@ describe('Settings starting year', () => {
 
     await submitYear(fixture, '');
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('1900');
-    expect(await store.list(COLLECTIONS.settings)).toEqual([]);
+    expect(await testDb.store.list(COLLECTIONS.settings)).toEqual([]);
 
     await submitYear(fixture, '1899');
-    expect(await store.list(COLLECTIONS.settings)).toEqual([]);
+    expect(await testDb.store.list(COLLECTIONS.settings)).toEqual([]);
 
     await submitYear(fixture, '2026.5');
-    expect(await store.list(COLLECTIONS.settings)).toEqual([]);
+    expect(await testDb.store.list(COLLECTIONS.settings)).toEqual([]);
   });
 
   it('saves a starting year that Plan shows after a fresh load', async () => {
@@ -57,12 +41,12 @@ describe('Settings starting year', () => {
     await submitYear(settingsFixture, '2026');
     expect(settingsFixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
 
-    const saved = await store.list<SettingsPayload>(COLLECTIONS.settings);
+    const saved = await testDb.store.list<SettingsPayload>(COLLECTIONS.settings);
     expect(saved).toHaveLength(1);
     expect(saved[0]?.startingYear).toBe(2026);
 
     await submitYear(settingsFixture, '2027');
-    const updated = await store.list<SettingsPayload>(COLLECTIONS.settings);
+    const updated = await testDb.store.list<SettingsPayload>(COLLECTIONS.settings);
     expect(updated).toHaveLength(1);
     expect(updated[0]?.startingYear).toBe(2027);
     settingsFixture.destroy();
@@ -75,7 +59,7 @@ describe('Settings starting year', () => {
   });
 
   it('shows an error when save persistence fails', async () => {
-    store.insert = async () => {
+    testDb.store.insert = async () => {
       throw new Error('unavailable');
     };
 
@@ -85,11 +69,11 @@ describe('Settings starting year', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
       'Could not save',
     );
-    expect(await store.list(COLLECTIONS.settings)).toEqual([]);
+    expect(await testDb.store.list(COLLECTIONS.settings)).toEqual([]);
   });
 
   it('shows an error when settings cannot be loaded', async () => {
-    store.list = async () => {
+    testDb.store.list = async () => {
       throw new Error('unavailable');
     };
 

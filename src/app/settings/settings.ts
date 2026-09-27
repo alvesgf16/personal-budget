@@ -1,6 +1,8 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
-import { settingsSchema } from '../../data/settings';
-import { SettingsService } from '../../data/settings.service';
+import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../data/lib/plan-year';
+import { parseStartingYear } from '../../data/domains/settings/settings';
+import { SettingsService } from '../../data/domains/settings/settings.service';
+import { withPendingTask } from '../shared/with-pending-task';
 
 /** Settings tab: persist the Plan starting year (PB-19). */
 @Component({
@@ -25,37 +27,32 @@ export class Settings implements OnInit {
 
   protected async save(event: Event): Promise<void> {
     event.preventDefault();
-    const raw = this.yearDraft().trim();
-    const parsed = settingsSchema.safeParse({
-      startingYear: raw === '' ? Number.NaN : Number(raw),
-    });
-    if (!parsed.success) {
-      this.error.set('Enter a whole year between 1900 and 2100.');
+    const parsed = parseStartingYear(this.yearDraft());
+    if (!parsed) {
+      this.error.set(`Enter a whole year between ${PLAN_YEAR_MIN} and ${PLAN_YEAR_MAX}.`);
       return;
     }
 
-    const done = this.pendingTasks.add();
     try {
-      this.error.set(null);
-      await this.settings.save(parsed.data);
+      await withPendingTask(this.pendingTasks, async () => {
+        this.error.set(null);
+        await this.settings.save(parsed);
+      });
     } catch {
       this.error.set('Could not save the starting year. Try again.');
-    } finally {
-      done();
     }
   }
 
   private async load(): Promise<void> {
-    const done = this.pendingTasks.add();
     try {
-      const doc = await this.settings.load();
-      if (doc) {
-        this.yearDraft.set(String(doc.startingYear));
-      }
+      await withPendingTask(this.pendingTasks, async () => {
+        const doc = await this.settings.load();
+        if (doc) {
+          this.yearDraft.set(String(doc.startingYear));
+        }
+      });
     } catch {
       this.error.set('Could not load the starting year. Refresh and try again.');
-    } finally {
-      done();
     }
   }
 }

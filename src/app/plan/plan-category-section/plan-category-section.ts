@@ -1,8 +1,13 @@
 import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
-import { categorySchema, type Category, type CategoryType } from '../../data/category';
-import { CategoryService } from '../../data/category.service';
-import type { StoreDocument } from '../../data/document';
-import { PlanAmountGrid } from './plan-amount-grid';
+import {
+  parseCategoryName,
+  type Category,
+  type CategoryType,
+} from '../../../data/domains/category/category';
+import { CategoryService } from '../../../data/domains/category/category.service';
+import type { StoreDocument } from '../../../data/store/types';
+import { withPendingTask } from '../../shared/with-pending-task';
+import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';
 
 const SECTION_TITLES: Record<CategoryType, string> = {
   income: 'Income',
@@ -49,33 +54,31 @@ export class PlanCategorySection {
 
   protected async add(event: Event): Promise<void> {
     event.preventDefault();
-    const parsed = categorySchema.shape.name.safeParse(this.nameDraft());
-    if (!parsed.success) {
+    const name = parseCategoryName(this.nameDraft());
+    if (!name) {
       this.error.set('Enter a category name.');
       return;
     }
 
-    const done = this.pendingTasks.add();
     try {
-      this.error.set(null);
-      await this.categories.add(this.type(), parsed.data);
-      this.nameDraft.set('');
-      await this.refresh();
+      await withPendingTask(this.pendingTasks, async () => {
+        this.error.set(null);
+        await this.categories.add(this.type(), name);
+        this.nameDraft.set('');
+        await this.refresh();
+      });
     } catch {
       this.error.set('Could not save the category. Try again.');
-    } finally {
-      done();
     }
   }
 
   private async load(): Promise<void> {
-    const done = this.pendingTasks.add();
     try {
-      await this.refresh();
+      await withPendingTask(this.pendingTasks, async () => {
+        await this.refresh();
+      });
     } catch {
       this.error.set('Could not load categories. Refresh and try again.');
-    } finally {
-      done();
     }
   }
 

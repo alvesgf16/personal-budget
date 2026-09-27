@@ -21,3 +21,9 @@ export const categorySchema = z.object({
 
 /** Inferred TypeScript type — one source of truth with the Zod schema. */
 export type Category = z.infer<typeof categorySchema>;
+
+/** Parse a typed category name. Blank or whitespace-only → `null`. */
+export function parseCategoryName(raw: string): string | null {
+  const parsed = categorySchema.shape.name.safeParse(raw);
+  return parsed.success ? parsed.data : null;
+}

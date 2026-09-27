@@ -1,16 +1,24 @@
 ---
-description: Document store API — inject DocumentStoreService; no Dexie/SQL from feature code
+description: Document store API — inject domain services; no Dexie/SQL from feature code
 globs: src/data/**
 alwaysApply: false
 ---
 
 # Document store (`src/data`)
 
-- Feature screens inject a facade (`DocumentStoreService`, or a domain service such as `SettingsService`) — do not import Dexie, `BudgetDatabase`, or `createDocumentStore` from UI code.
-- Domain services may inject the `DOCUMENT_STORE` token directly (side by side with `DocumentStoreService`, not nested on it).
+## Folder map
+
+- `domains/` — persisted domain folders (`settings/`, `category/`, `budget-cell/`): Zod model + service + specs
+- `lib/` — pure helpers (`plan-year`, `period-balance`, `persist-queue`)
+- `store/` — `types.ts` (collections + document shapes), `database.ts` (Dexie), `document-store/` (DocumentStore, token, testing, specs)
+
+## Rules
+
+- Feature screens inject a domain service (`SettingsService`, `CategoryService`, …) — do not import Dexie, `BudgetDatabase`, or `createDocumentStore` from UI code.
+- Domain services inject the `DOCUMENT_STORE` token (not nested behind another Angular store facade).
 - Collection names live in `COLLECTIONS` (`settings`, `categories`, …). Store/service methods take `CollectionName` (derived from that object) — add new piles there first.
 - Domain payloads: parse with Zod schemas (`settingsSchema`, `categorySchema`) **before** `insert` / `update`. Store metadata (`id`, `updatedAt`, `deletedAt`) is added by the store, not by the schema.
 - Every document has sync metadata: `id`, `updatedAt`, `deletedAt` (`null` while active).
 - Soft-delete sets `deletedAt`; `list` hides tombstones; `getById` still returns them.
 - Persistence is IndexedDB via Dexie — never query SQL from app code.
-- Tests override the `DOCUMENT_STORE` token with `createDocumentStore(uniqueName)`.
+- Tests use `useTestStore` / `provideTestDocumentStore` (unique DB name, token override, close + deleteDatabase).
