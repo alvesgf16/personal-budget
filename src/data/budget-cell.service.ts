@@ -56,9 +56,7 @@ export class BudgetCellService {
     year: number,
     month: number,
   ): Promise<StoreDocument<BudgetCell> | undefined> {
-    const docs = await this.store.list<BudgetCell>(COLLECTIONS.budgetCells);
-    return docs.find(
-      (doc) => doc.categoryId === categoryId && doc.year === year && doc.month === month,
-    );
+    const docs = await this.listForYear(year);
+    return docs.find((doc) => doc.categoryId === categoryId && doc.month === month);
   }
 }
