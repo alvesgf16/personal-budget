@@ -3,7 +3,7 @@ import { SettingsService } from '../../data/domains/settings/settings.service';
 import { withPendingTask } from '../shared/with-pending-task';
 import { PlanCategorySection } from './plan-category-section/plan-category-section';
 
-/** Plan tab: year header, income categories, income amounts. */
+/** Plan tab: year header and income / expense / savings category sections. */
 @Component({
   selector: 'app-plan',
   imports: [PlanCategorySection],
