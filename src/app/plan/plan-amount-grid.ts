@@ -3,6 +3,7 @@ import { centsToDollarInput, dollarsToCents } from '../../data/budget-cell';
 import { BudgetCellService } from '../../data/budget-cell.service';
 import type { Category } from '../../data/category';
 import type { StoreDocument } from '../../data/document';
+import { withPendingTask } from '../with-pending-task';
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
@@ -89,51 +90,49 @@ export class PlanAmountGrid {
       return;
     }
 
-    const done = this.pendingTasks.add();
     try {
-      this.error.set(null);
-      await this.budgetCells.save(categoryId, year, month, amountCents);
-      if (this.year() !== year) {
-        return;
-      }
-      this.cellDrafts.update((drafts) => {
-        const next = { ...drafts };
-        const key = cellKey(categoryId, month);
-        if (amountCents === null) {
-          delete next[key];
-        } else {
-          next[key] = centsToDollarInput(amountCents);
+      await withPendingTask(this.pendingTasks, async () => {
+        this.error.set(null);
+        await this.budgetCells.save(categoryId, year, month, amountCents);
+        if (this.year() !== year) {
+          return;
         }
-        return next;
+        this.cellDrafts.update((drafts) => {
+          const next = { ...drafts };
+          const key = cellKey(categoryId, month);
+          if (amountCents === null) {
+            delete next[key];
+          } else {
+            next[key] = centsToDollarInput(amountCents);
+          }
+          return next;
+        });
       });
     } catch {
       if (this.year() === year) {
         this.error.set('Could not save the amount. Try again.');
       }
-    } finally {
-      done();
     }
   }
 
   private async loadCells(year: number): Promise<void> {
-    const done = this.pendingTasks.add();
     try {
-      const cells = await this.budgetCells.listForYear(year);
-      if (this.year() !== year) {
-        return;
-      }
-      const drafts: Record<string, string> = {};
-      for (const cell of cells) {
-        drafts[cellKey(cell.categoryId, cell.month)] = centsToDollarInput(cell.amountCents);
-      }
-      this.cellDrafts.set(drafts);
-      this.error.set(null);
+      await withPendingTask(this.pendingTasks, async () => {
+        const cells = await this.budgetCells.listForYear(year);
+        if (this.year() !== year) {
+          return;
+        }
+        const drafts: Record<string, string> = {};
+        for (const cell of cells) {
+          drafts[cellKey(cell.categoryId, cell.month)] = centsToDollarInput(cell.amountCents);
+        }
+        this.cellDrafts.set(drafts);
+        this.error.set(null);
+      });
     } catch {
       if (this.year() === year) {
         this.error.set('Could not load amounts. Refresh and try again.');
       }
-    } finally {
-      done();
     }
   }
 }

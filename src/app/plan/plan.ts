@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
 import { SettingsService } from '../../data/settings.service';
+import { withPendingTask } from '../with-pending-task';
 import { PlanCategorySection } from './plan-category-section';
 
 /** Plan tab: year header, income categories, income amounts. */
@@ -20,12 +21,9 @@ export class Plan implements OnInit {
   }
 
   private async load(): Promise<void> {
-    const done = this.pendingTasks.add();
-    try {
+    await withPendingTask(this.pendingTasks, async () => {
       const doc = await this.settings.load();
       this.startingYear.set(doc?.startingYear ?? null);
-    } finally {
-      done();
-    }
+    });
   }
 }

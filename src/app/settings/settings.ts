@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
 import { settingsSchema } from '../../data/settings';
 import { SettingsService } from '../../data/settings.service';
+import { withPendingTask } from '../with-pending-task';
 
 /** Settings tab: persist the Plan starting year (PB-19). */
 @Component({
@@ -34,28 +35,26 @@ export class Settings implements OnInit {
       return;
     }
 
-    const done = this.pendingTasks.add();
     try {
-      this.error.set(null);
-      await this.settings.save(parsed.data);
+      await withPendingTask(this.pendingTasks, async () => {
+        this.error.set(null);
+        await this.settings.save(parsed.data);
+      });
     } catch {
       this.error.set('Could not save the starting year. Try again.');
-    } finally {
-      done();
     }
   }
 
   private async load(): Promise<void> {
-    const done = this.pendingTasks.add();
     try {
-      const doc = await this.settings.load();
-      if (doc) {
-        this.yearDraft.set(String(doc.startingYear));
-      }
+      await withPendingTask(this.pendingTasks, async () => {
+        const doc = await this.settings.load();
+        if (doc) {
+          this.yearDraft.set(String(doc.startingYear));
+        }
+      });
     } catch {
       this.error.set('Could not load the starting year. Refresh and try again.');
-    } finally {
-      done();
     }
   }
 }

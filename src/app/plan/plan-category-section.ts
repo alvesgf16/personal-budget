@@ -2,6 +2,7 @@ import { Component, effect, inject, input, PendingTasks, signal } from '@angular
 import { categorySchema, type Category, type CategoryType } from '../../data/category';
 import { CategoryService } from '../../data/category.service';
 import type { StoreDocument } from '../../data/document';
+import { withPendingTask } from '../with-pending-task';
 import { PlanAmountGrid } from './plan-amount-grid';
 
 const SECTION_TITLES: Record<CategoryType, string> = {
@@ -55,27 +56,25 @@ export class PlanCategorySection {
       return;
     }
 
-    const done = this.pendingTasks.add();
     try {
-      this.error.set(null);
-      await this.categories.add(this.type(), parsed.data);
-      this.nameDraft.set('');
-      await this.refresh();
+      await withPendingTask(this.pendingTasks, async () => {
+        this.error.set(null);
+        await this.categories.add(this.type(), parsed.data);
+        this.nameDraft.set('');
+        await this.refresh();
+      });
     } catch {
       this.error.set('Could not save the category. Try again.');
-    } finally {
-      done();
     }
   }
 
   private async load(): Promise<void> {
-    const done = this.pendingTasks.add();
     try {
-      await this.refresh();
+      await withPendingTask(this.pendingTasks, async () => {
+        await this.refresh();
+      });
     } catch {
       this.error.set('Could not load categories. Refresh and try again.');
-    } finally {
-      done();
     }
   }
 
