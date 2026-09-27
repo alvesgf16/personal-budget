@@ -52,6 +52,13 @@ describe('CategoryService', () => {
     expect(second.sortOrder).toBe(1);
   });
 
+  it('lists an added expense only under expense', async () => {
+    await service.add('expense', 'Rent');
+
+    expect((await service.listByType('expense')).map((doc) => doc.name)).toEqual(['Rent']);
+    expect(await service.listByType('income')).toEqual([]);
+  });
+
   it('rejects a blank name', async () => {
     await expect(service.add('income', '   ')).rejects.toThrow();
     expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
