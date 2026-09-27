@@ -1,4 +1,4 @@
-import { categorySchema, type Category } from './category';
+import { categorySchema, parseCategoryName, type Category } from './category';
 import { COLLECTIONS } from './collections';
 import { useTestStore } from './document-store.testing';
 
@@ -42,6 +42,17 @@ describe('categorySchema', () => {
 
   it('rejects a non-boolean active', () => {
     expect(() => categorySchema.parse({ ...valid, active: 'yes' })).toThrow();
+  });
+});
+
+describe('parseCategoryName', () => {
+  it('trims a non-empty name', () => {
+    expect(parseCategoryName('  Rent  ')).toBe('Rent');
+  });
+
+  it('returns null for blank input', () => {
+    expect(parseCategoryName('')).toBeNull();
+    expect(parseCategoryName('   ')).toBeNull();
   });
 });
 

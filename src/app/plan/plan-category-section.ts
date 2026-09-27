@@ -1,5 +1,5 @@
 import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
-import { categorySchema, type Category, type CategoryType } from '../../data/category';
+import { parseCategoryName, type Category, type CategoryType } from '../../data/category';
 import { CategoryService } from '../../data/category.service';
 import type { StoreDocument } from '../../data/document';
 import { withPendingTask } from '../with-pending-task';
@@ -50,8 +50,8 @@ export class PlanCategorySection {
 
   protected async add(event: Event): Promise<void> {
     event.preventDefault();
-    const parsed = categorySchema.shape.name.safeParse(this.nameDraft());
-    if (!parsed.success) {
+    const name = parseCategoryName(this.nameDraft());
+    if (!name) {
       this.error.set('Enter a category name.');
       return;
     }
@@ -59,7 +59,7 @@ export class PlanCategorySection {
     try {
       await withPendingTask(this.pendingTasks, async () => {
         this.error.set(null);
-        await this.categories.add(this.type(), parsed.data);
+        await this.categories.add(this.type(), name);
         this.nameDraft.set('');
         await this.refresh();
       });

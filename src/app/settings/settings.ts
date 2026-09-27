@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
-import { settingsSchema } from '../../data/settings';
+import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../data/plan-year';
+import { parseStartingYear } from '../../data/settings';
 import { SettingsService } from '../../data/settings.service';
 import { withPendingTask } from '../with-pending-task';
 
@@ -26,19 +27,16 @@ export class Settings implements OnInit {
 
   protected async save(event: Event): Promise<void> {
     event.preventDefault();
-    const raw = this.yearDraft().trim();
-    const parsed = settingsSchema.safeParse({
-      startingYear: raw === '' ? Number.NaN : Number(raw),
-    });
-    if (!parsed.success) {
-      this.error.set('Enter a whole year between 1900 and 2100.');
+    const parsed = parseStartingYear(this.yearDraft());
+    if (!parsed) {
+      this.error.set(`Enter a whole year between ${PLAN_YEAR_MIN} and ${PLAN_YEAR_MAX}.`);
       return;
     }
 
     try {
       await withPendingTask(this.pendingTasks, async () => {
         this.error.set(null);
-        await this.settings.save(parsed.data);
+        await this.settings.save(parsed);
       });
     } catch {
       this.error.set('Could not save the starting year. Try again.');

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { planYearSchema } from './plan-year';
 
 /**
  * App settings payload (domain fields only).
@@ -6,8 +7,17 @@ import { z } from 'zod';
  */
 export const settingsSchema = z.object({
   /** Calendar year that drives the Plan year header (PB-19). */
-  startingYear: z.number().int().min(1900).max(2100),
+  startingYear: planYearSchema,
 });
 
 /** Inferred TypeScript type — one source of truth with the Zod schema. */
 export type Settings = z.infer<typeof settingsSchema>;
+
+/** Parse a typed year string. Empty or out of range → `null`. */
+export function parseStartingYear(raw: string): Settings | null {
+  const trimmed = raw.trim();
+  const parsed = settingsSchema.safeParse({
+    startingYear: trimmed === '' ? Number.NaN : Number(trimmed),
+  });
+  return parsed.success ? parsed.data : null;
+}

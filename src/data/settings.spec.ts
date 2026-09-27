@@ -1,6 +1,6 @@
 import { COLLECTIONS } from './collections';
 import { useTestStore } from './document-store.testing';
-import { settingsSchema, type Settings } from './settings';
+import { parseStartingYear, settingsSchema, type Settings } from './settings';
 
 describe('settingsSchema', () => {
   it('accepts a valid starting year', () => {
@@ -22,6 +22,18 @@ describe('settingsSchema', () => {
   it('rejects a year outside the allowed range', () => {
     expect(() => settingsSchema.parse({ startingYear: 1899 })).toThrow();
     expect(() => settingsSchema.parse({ startingYear: 2101 })).toThrow();
+  });
+});
+
+describe('parseStartingYear', () => {
+  it('parses a whole year in range', () => {
+    expect(parseStartingYear(' 2026 ')).toEqual({ startingYear: 2026 });
+  });
+
+  it('returns null for empty or invalid input', () => {
+    expect(parseStartingYear('')).toBeNull();
+    expect(parseStartingYear('1899')).toBeNull();
+    expect(parseStartingYear('2026.5')).toBeNull();
   });
 });
 

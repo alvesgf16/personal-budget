@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { planYearSchema } from './plan-year';
 
 /**
  * One planned amount for a category in a calendar month (domain fields only).
@@ -11,7 +12,7 @@ export const budgetCellSchema = z.object({
   /** Category document id this cell belongs to. */
   categoryId: z.string().min(1),
   /** Plan year (same bounds as settings.startingYear). */
-  year: z.number().int().min(1900).max(2100),
+  year: planYearSchema,
   /** Calendar month 1–12. */
   month: z.number().int().min(1).max(12),
   /** Planned amount in integer cents (non-negative, within Number.MAX_SAFE_INTEGER). */
