@@ -6,7 +6,7 @@ import { DOCUMENT_STORE } from './document-store.token';
 
 /**
  * Category document access: list active rows by type and append with a stable sortOrder.
- * Feature screens inject this — they do not call DocumentStoreService for categories.
+ * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
  */
 @Injectable({ providedIn: 'root' })
 export class CategoryService {

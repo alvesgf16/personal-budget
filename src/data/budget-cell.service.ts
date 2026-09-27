@@ -7,7 +7,7 @@ import { DOCUMENT_STORE } from './document-store.token';
 /**
  * Budget-cell document access: list by plan year and upsert/clear one month cell.
  * Sparse — a missing document means “no amount entered,” not zero.
- * Feature screens inject this — they do not call DocumentStoreService for cells.
+ * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
  */
 @Injectable({ providedIn: 'root' })
 export class BudgetCellService {

@@ -5,7 +5,7 @@ import type { Settings } from './settings';
 
 /**
  * Settings document access: load the singleton and serialize overlapping saves.
- * Feature screens inject this — they do not call DocumentStoreService for settings.
+ * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {

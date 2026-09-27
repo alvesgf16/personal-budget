@@ -18,7 +18,7 @@ function nowIso(): string {
 
 /**
  * Generic collection API over IndexedDB.
- * Feature screens use DocumentStoreService; this class stays free of Angular DI.
+ * Domain services inject DOCUMENT_STORE; this class stays free of Angular DI.
  */
 export class DocumentStore {
   constructor(private readonly db: BudgetDatabase) {}
