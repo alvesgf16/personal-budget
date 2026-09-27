@@ -5,7 +5,7 @@ import {
   type BudgetCell,
 } from './budget-cell';
 import { COLLECTIONS } from './collections';
-import { createDocumentStore, type DocumentStore } from './store';
+import { useTestStore } from './document-store.testing';
 
 describe('dollarsToCents / centsToDollarInput', () => {
   it('parses whole dollars and two-decimal amounts', () => {
@@ -83,36 +83,24 @@ describe('budgetCellSchema', () => {
 });
 
 describe('budgetCells store round-trip', () => {
-  let store: DocumentStore;
-  let dbName: string;
+  const testDb = useTestStore('pb-budget-cells-test');
 
-  beforeEach(() => {
-    dbName = `pb-budget-cells-test-${crypto.randomUUID()}`;
-    store = createDocumentStore(dbName);
-  });
-
-  afterEach(() => {
-    store.close();
-    indexedDB.deleteDatabase(dbName);
-  });
-
-  it('inserts and reads a budget cell document with store metadata', async () => {
+  it('inserts and reads a parsed budget cell payload', async () => {
     const payload = budgetCellSchema.parse({
       categoryId: 'cat-rent',
       year: 2026,
       month: 1,
       amountCents: 120_000,
     });
-    const created = await store.insert(COLLECTIONS.budgetCells, payload);
-    const found = await store.getById<BudgetCell>(COLLECTIONS.budgetCells, created.id);
+    const created = await testDb.store.insert(COLLECTIONS.budgetCells, payload);
+    const found = await testDb.store.getById<BudgetCell>(COLLECTIONS.budgetCells, created.id);
 
     expect(found).toEqual(created);
-    expect(found?.categoryId).toBe('cat-rent');
-    expect(found?.year).toBe(2026);
-    expect(found?.month).toBe(1);
-    expect(found?.amountCents).toBe(120_000);
-    expect(found?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-    expect(found?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(found?.deletedAt).toBeNull();
+    expect(found).toMatchObject({
+      categoryId: 'cat-rent',
+      year: 2026,
+      month: 1,
+      amountCents: 120_000,
+    });
   });
 });

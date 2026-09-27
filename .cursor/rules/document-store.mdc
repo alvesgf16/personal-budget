@@ -13,4 +13,4 @@ alwaysApply: false
 - Every document has sync metadata: `id`, `updatedAt`, `deletedAt` (`null` while active).
 - Soft-delete sets `deletedAt`; `list` hides tombstones; `getById` still returns them.
 - Persistence is IndexedDB via Dexie — never query SQL from app code.
-- Tests override the `DOCUMENT_STORE` token with `createDocumentStore(uniqueName)`.
+- Tests use `useTestStore` / `provideTestDocumentStore` (unique DB name, token override, close + deleteDatabase).

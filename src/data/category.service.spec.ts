@@ -1,48 +1,36 @@
 import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from './collections';
 import { CategoryService } from './category.service';
-import { DOCUMENT_STORE } from './document-store.token';
-import { createDocumentStore, type DocumentStore } from './store';
+import { provideTestDocumentStore } from './document-store.testing';
 
 describe('CategoryService', () => {
-  let store: DocumentStore;
-  let dbName: string;
+  const testDb = provideTestDocumentStore('pb-20-category-service');
   let service: CategoryService;
 
   beforeEach(() => {
-    dbName = `pb-20-category-service-${crypto.randomUUID()}`;
-    store = createDocumentStore(dbName);
-    TestBed.configureTestingModule({
-      providers: [{ provide: DOCUMENT_STORE, useValue: store }],
-    });
     service = TestBed.inject(CategoryService);
   });
 
-  afterEach(() => {
-    store.close();
-    indexedDB.deleteDatabase(dbName);
-  });
-
   it('lists only active income categories in sortOrder', async () => {
-    await store.insert(COLLECTIONS.categories, {
+    await testDb.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Bonus',
       sortOrder: 1,
       active: true,
     });
-    await store.insert(COLLECTIONS.categories, {
+    await testDb.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Salary',
       sortOrder: 0,
       active: true,
     });
-    await store.insert(COLLECTIONS.categories, {
+    await testDb.store.insert(COLLECTIONS.categories, {
       type: 'expense',
       name: 'Rent',
       sortOrder: 0,
       active: true,
     });
-    await store.insert(COLLECTIONS.categories, {
+    await testDb.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Hidden',
       sortOrder: 2,
@@ -66,11 +54,11 @@ describe('CategoryService', () => {
 
   it('rejects a blank name', async () => {
     await expect(service.add('income', '   ')).rejects.toThrow();
-    expect(await store.list(COLLECTIONS.categories)).toEqual([]);
+    expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
   });
 
   it('does not reuse sortOrder of inactive siblings', async () => {
-    await store.insert(COLLECTIONS.categories, {
+    await testDb.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Old',
       sortOrder: 0,
@@ -82,7 +70,7 @@ describe('CategoryService', () => {
   });
 
   it('keeps overlapping adds on distinct sortOrders', async () => {
-    const originalInsert = store.insert.bind(store);
+    const originalInsert = testDb.store.insert.bind(testDb.store);
     let releaseInsert: () => void = () => undefined;
     const insertHold = new Promise<void>((resolve) => {
       releaseInsert = resolve;
@@ -91,7 +79,7 @@ describe('CategoryService', () => {
     const insertStarted = new Promise<void>((resolve) => {
       enteredInsert = resolve;
     });
-    store.insert = async (collection, payload) => {
+    testDb.store.insert = async (collection, payload) => {
       enteredInsert();
       await insertHold;
       return originalInsert(collection, payload);
@@ -105,6 +93,6 @@ describe('CategoryService', () => {
 
     expect([a.sortOrder, b.sortOrder]).toEqual([0, 1]);
     expect([a.name, b.name]).toEqual(['Salary', 'Bonus']);
-    expect(await store.list(COLLECTIONS.categories)).toHaveLength(2);
+    expect(await testDb.store.list(COLLECTIONS.categories)).toHaveLength(2);
   });
 });

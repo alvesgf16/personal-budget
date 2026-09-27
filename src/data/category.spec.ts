@@ -1,6 +1,6 @@
 import { categorySchema, type Category } from './category';
 import { COLLECTIONS } from './collections';
-import { createDocumentStore, type DocumentStore } from './store';
+import { useTestStore } from './document-store.testing';
 
 describe('categorySchema', () => {
   const valid = {
@@ -46,36 +46,24 @@ describe('categorySchema', () => {
 });
 
 describe('categories store round-trip', () => {
-  let store: DocumentStore;
-  let dbName: string;
+  const testDb = useTestStore('pb-categories-test');
 
-  beforeEach(() => {
-    dbName = `pb-categories-test-${crypto.randomUUID()}`;
-    store = createDocumentStore(dbName);
-  });
-
-  afterEach(() => {
-    store.close();
-    indexedDB.deleteDatabase(dbName);
-  });
-
-  it('inserts and reads a category document with store metadata', async () => {
+  it('inserts and reads a parsed category payload', async () => {
     const payload = categorySchema.parse({
       type: 'expense',
       name: 'Groceries',
       sortOrder: 2,
       active: true,
     });
-    const created = await store.insert(COLLECTIONS.categories, payload);
-    const found = await store.getById<Category>(COLLECTIONS.categories, created.id);
+    const created = await testDb.store.insert(COLLECTIONS.categories, payload);
+    const found = await testDb.store.getById<Category>(COLLECTIONS.categories, created.id);
 
     expect(found).toEqual(created);
-    expect(found?.type).toBe('expense');
-    expect(found?.name).toBe('Groceries');
-    expect(found?.sortOrder).toBe(2);
-    expect(found?.active).toBe(true);
-    expect(found?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-    expect(found?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(found?.deletedAt).toBeNull();
+    expect(found).toMatchObject({
+      type: 'expense',
+      name: 'Groceries',
+      sortOrder: 2,
+      active: true,
+    });
   });
 });

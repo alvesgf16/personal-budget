@@ -2,33 +2,21 @@ import { TestBed } from '@angular/core/testing';
 import { BudgetCellService } from './budget-cell.service';
 import type { BudgetCell } from './budget-cell';
 import { COLLECTIONS } from './collections';
-import { DOCUMENT_STORE } from './document-store.token';
-import { createDocumentStore, type DocumentStore } from './store';
+import { provideTestDocumentStore } from './document-store.testing';
 
 describe('BudgetCellService', () => {
-  let store: DocumentStore;
-  let dbName: string;
+  const testDb = provideTestDocumentStore('pb-21-budget-cell-service');
   let service: BudgetCellService;
 
   beforeEach(() => {
-    dbName = `pb-21-budget-cell-service-${crypto.randomUUID()}`;
-    store = createDocumentStore(dbName);
-    TestBed.configureTestingModule({
-      providers: [{ provide: DOCUMENT_STORE, useValue: store }],
-    });
     service = TestBed.inject(BudgetCellService);
-  });
-
-  afterEach(() => {
-    store.close();
-    indexedDB.deleteDatabase(dbName);
   });
 
   it('upserts the same March cell twice as one document', async () => {
     await service.save('cat-salary', 2026, 3, 100_000);
     await service.save('cat-salary', 2026, 3, 250_000);
 
-    const cells = await store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
       categoryId: 'cat-salary',
@@ -52,7 +40,7 @@ describe('BudgetCellService', () => {
     await service.save('cat-salary', 2026, 1, null);
 
     expect(await service.listForYear(2026)).toEqual([]);
-    expect(await store.list(COLLECTIONS.budgetCells)).toEqual([]);
+    expect(await testDb.store.list(COLLECTIONS.budgetCells)).toEqual([]);
   });
 
   it('lists only cells for the requested year', async () => {

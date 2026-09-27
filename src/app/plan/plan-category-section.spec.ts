@@ -1,26 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { BudgetCell } from '../../data/budget-cell';
 import { COLLECTIONS } from '../../data/collections';
-import { DOCUMENT_STORE } from '../../data/document-store.token';
-import { createDocumentStore, type DocumentStore } from '../../data/store';
+import { provideTestDocumentStore } from '../../data/document-store.testing';
 import { PlanCategorySection } from './plan-category-section';
 
 describe('PlanCategorySection', () => {
-  let store: DocumentStore;
-  let dbName: string;
-
-  beforeEach(async () => {
-    dbName = `pb-21-plan-section-${crypto.randomUUID()}`;
-    store = createDocumentStore(dbName);
-    await TestBed.configureTestingModule({
-      imports: [PlanCategorySection],
-      providers: [{ provide: DOCUMENT_STORE, useValue: store }],
-    }).compileComponents();
-  });
-
-  afterEach(() => {
-    store.close();
-    indexedDB.deleteDatabase(dbName);
+  const testDb = provideTestDocumentStore('pb-21-plan-section', {
+    imports: [PlanCategorySection],
   });
 
   const render = async (year: number | null = null) => {
@@ -69,7 +55,7 @@ describe('PlanCategorySection', () => {
     );
     expect(items).toEqual(['Salary']);
 
-    const saved = await store.list(COLLECTIONS.categories);
+    const saved = await testDb.store.list(COLLECTIONS.categories);
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({ type: 'income', name: 'Salary', sortOrder: 0, active: true });
   });
@@ -82,7 +68,7 @@ describe('PlanCategorySection', () => {
       'category name',
     );
     expect(fixture.nativeElement.querySelectorAll('li')).toHaveLength(0);
-    expect(await store.list(COLLECTIONS.categories)).toEqual([]);
+    expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
   });
 
   it('keeps add order across two income categories', async () => {
@@ -97,7 +83,7 @@ describe('PlanCategorySection', () => {
   });
 
   it('shows an error when add persistence fails and keeps the draft', async () => {
-    store.insert = async () => {
+    testDb.store.insert = async () => {
       throw new Error('unavailable');
     };
 
@@ -110,7 +96,7 @@ describe('PlanCategorySection', () => {
     expect(
       (fixture.nativeElement.querySelector('#category-name-income') as HTMLInputElement).value,
     ).toBe('Salary');
-    expect(await store.list(COLLECTIONS.categories)).toEqual([]);
+    expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
   });
 
   it('saves January without changing February', async () => {
@@ -118,7 +104,7 @@ describe('PlanCategorySection', () => {
     await submitName(fixture, 'Salary');
     await setCell(fixture, 'Salary January', '1000');
 
-    const cells = await store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({ year: 2026, month: 1, amountCents: 100_000 });
 

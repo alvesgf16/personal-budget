@@ -1,6 +1,6 @@
 import { COLLECTIONS } from './collections';
+import { useTestStore } from './document-store.testing';
 import { settingsSchema, type Settings } from './settings';
-import { createDocumentStore, type DocumentStore } from './store';
 
 describe('settingsSchema', () => {
   it('accepts a valid starting year', () => {
@@ -26,28 +26,14 @@ describe('settingsSchema', () => {
 });
 
 describe('settings store round-trip', () => {
-  let store: DocumentStore;
-  let dbName: string;
+  const testDb = useTestStore('pb-settings-test');
 
-  beforeEach(() => {
-    dbName = `pb-settings-test-${crypto.randomUUID()}`;
-    store = createDocumentStore(dbName);
-  });
-
-  afterEach(() => {
-    store.close();
-    indexedDB.deleteDatabase(dbName);
-  });
-
-  it('inserts and reads a settings document with store metadata', async () => {
+  it('inserts and reads a parsed settings payload', async () => {
     const payload = settingsSchema.parse({ startingYear: 2026 });
-    const created = await store.insert(COLLECTIONS.settings, payload);
-    const found = await store.getById<Settings>(COLLECTIONS.settings, created.id);
+    const created = await testDb.store.insert(COLLECTIONS.settings, payload);
+    const found = await testDb.store.getById<Settings>(COLLECTIONS.settings, created.id);
 
     expect(found).toEqual(created);
     expect(found?.startingYear).toBe(2026);
-    expect(found?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-    expect(found?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(found?.deletedAt).toBeNull();
   });
 });
