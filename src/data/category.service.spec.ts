@@ -80,4 +80,31 @@ describe('CategoryService', () => {
     const next = await service.add('income', 'New');
     expect(next.sortOrder).toBe(1);
   });
+
+  it('keeps overlapping adds on distinct sortOrders', async () => {
+    const originalInsert = store.insert.bind(store);
+    let releaseInsert: () => void = () => undefined;
+    const insertHold = new Promise<void>((resolve) => {
+      releaseInsert = resolve;
+    });
+    let enteredInsert: () => void = () => undefined;
+    const insertStarted = new Promise<void>((resolve) => {
+      enteredInsert = resolve;
+    });
+    store.insert = async (collection, payload) => {
+      enteredInsert();
+      await insertHold;
+      return originalInsert(collection, payload);
+    };
+
+    const first = service.add('income', 'Salary');
+    await insertStarted;
+    const second = service.add('income', 'Bonus');
+    releaseInsert();
+    const [a, b] = await Promise.all([first, second]);
+
+    expect([a.sortOrder, b.sortOrder]).toEqual([0, 1]);
+    expect([a.name, b.name]).toEqual(['Salary', 'Bonus']);
+    expect(await store.list(COLLECTIONS.categories)).toHaveLength(2);
+  });
 });

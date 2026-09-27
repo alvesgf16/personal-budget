@@ -3,6 +3,7 @@ import { budgetCellSchema, type BudgetCell } from './budget-cell';
 import { COLLECTIONS } from './collections';
 import type { StoreDocument } from './document';
 import { DOCUMENT_STORE } from './document-store.token';
+import { PersistQueue } from './persist-queue';
 
 /**
  * Budget-cell document access: list by plan year and upsert/clear one month cell.
@@ -12,7 +13,7 @@ import { DOCUMENT_STORE } from './document-store.token';
 @Injectable({ providedIn: 'root' })
 export class BudgetCellService {
   private readonly store = inject(DOCUMENT_STORE);
-  private persistChain: Promise<void> = Promise.resolve();
+  private readonly persist = new PersistQueue();
 
   async listForYear(year: number): Promise<StoreDocument<BudgetCell>[]> {
     const docs = await this.store.list<BudgetCell>(COLLECTIONS.budgetCells);
@@ -24,10 +25,7 @@ export class BudgetCellService {
    * Saves are serialized so rapid tabbing cannot insert duplicate triples.
    */
   save(categoryId: string, year: number, month: number, amountCents: number | null): Promise<void> {
-    this.persistChain = this.persistChain
-      .catch(() => undefined)
-      .then(() => this.upsert(categoryId, year, month, amountCents));
-    return this.persistChain;
+    return this.persist.enqueue(() => this.upsert(categoryId, year, month, amountCents));
   }
 
   private async upsert(
