@@ -1,9 +1,9 @@
 import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
-import { centsToDollarInput, dollarsToCents } from '../../data/budget-cell';
-import { BudgetCellService } from '../../data/budget-cell.service';
-import type { Category } from '../../data/category';
-import type { StoreDocument } from '../../data/document';
-import { withPendingTask } from '../with-pending-task';
+import { centsToDollarInput, dollarsToCents } from './helpers';
+import { BudgetCellService } from '../../../data/domains/budget-cell/budget-cell.service';
+import type { Category } from '../../../data/domains/category/category';
+import type { StoreDocument } from '../../../data/store/types';
+import { withPendingTask } from '../../shared/with-pending-task';
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 

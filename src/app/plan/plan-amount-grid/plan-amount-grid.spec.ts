@@ -1,9 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { COLLECTIONS } from '../../data/collections';
-import type { Category } from '../../data/category';
-import type { StoreDocument } from '../../data/document';
-import { provideTestDocumentStore } from '../../data/document-store.testing';
-import type { DocumentStore } from '../../data/store';
+import { COLLECTIONS, type StoreDocument } from '../../../data/store/types';
+import type { Category } from '../../../data/domains/category/category';
+import { provideTestDocumentStore } from '../../../data/store/document-store/document-store.testing';
+import type { DocumentStore } from '../../../data/store/document-store/document-store';
 import { PlanAmountGrid } from './plan-amount-grid';
 
 describe('PlanAmountGrid', () => {

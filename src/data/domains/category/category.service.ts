@@ -1,9 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { categorySchema, type Category, type CategoryType } from './category';
-import { COLLECTIONS } from './collections';
-import type { StoreDocument } from './document';
-import { DOCUMENT_STORE } from './document-store.token';
-import { PersistQueue } from './persist-queue';
+import { COLLECTIONS, type StoreDocument } from '../../store/types';
+import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
+import { PersistQueue } from '../../lib/persist-queue';
 
 /**
  * Category document access: list active rows by type and append with a stable sortOrder.

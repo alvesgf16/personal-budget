@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { StoredRow } from './document';
+import type { StoredRow } from './types';
 
 /**
  * Browser-local document database (IndexedDB via Dexie).

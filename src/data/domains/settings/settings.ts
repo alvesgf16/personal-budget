@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { planYearSchema } from './plan-year';
+import { planYearSchema } from '../../lib/plan-year';
 
 /**
  * App settings payload (domain fields only).

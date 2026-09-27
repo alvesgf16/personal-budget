@@ -1,7 +1,7 @@
 import type { TestModuleMetadata } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT_STORE } from './document-store.token';
-import { createDocumentStore, type DocumentStore } from './store';
+import { createDocumentStore, type DocumentStore } from './document-store';
 
 export interface TestDocumentStore {
   store: DocumentStore;

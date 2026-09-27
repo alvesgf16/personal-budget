@@ -1,9 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { budgetCellSchema, type BudgetCell } from './budget-cell';
-import { COLLECTIONS } from './collections';
-import type { StoreDocument } from './document';
-import { DOCUMENT_STORE } from './document-store.token';
-import { PersistQueue } from './persist-queue';
+import { COLLECTIONS, type StoreDocument } from '../../store/types';
+import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
+import { PersistQueue } from '../../lib/persist-queue';
 
 /**
  * Budget-cell document access: list by plan year and upsert/clear one month cell.

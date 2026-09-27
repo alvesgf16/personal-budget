@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { COLLECTIONS } from './collections';
+import { COLLECTIONS } from '../../store/types';
 import { CategoryService } from './category.service';
-import { provideTestDocumentStore } from './document-store.testing';
+import { provideTestDocumentStore } from '../../store/document-store/document-store.testing';
 
 describe('CategoryService', () => {
   const testDb = provideTestDocumentStore('pb-20-category-service');

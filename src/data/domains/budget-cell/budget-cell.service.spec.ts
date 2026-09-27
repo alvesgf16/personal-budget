@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { BudgetCellService } from './budget-cell.service';
 import type { BudgetCell } from './budget-cell';
-import { COLLECTIONS } from './collections';
-import { provideTestDocumentStore } from './document-store.testing';
+import { COLLECTIONS } from '../../store/types';
+import { provideTestDocumentStore } from '../../store/document-store/document-store.testing';
 
 describe('BudgetCellService', () => {
   const testDb = provideTestDocumentStore('pb-21-budget-cell-service');

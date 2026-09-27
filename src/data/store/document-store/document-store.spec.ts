@@ -1,4 +1,4 @@
-import { COLLECTIONS } from './collections';
+import { COLLECTIONS } from '../types';
 import { useTestStore } from './document-store.testing';
 
 describe('DocumentStore', () => {

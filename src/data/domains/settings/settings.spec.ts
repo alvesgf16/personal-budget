@@ -1,5 +1,5 @@
-import { COLLECTIONS } from './collections';
-import { useTestStore } from './document-store.testing';
+import { COLLECTIONS } from '../../store/types';
+import { useTestStore } from '../../store/document-store/document-store.testing';
 import { parseStartingYear, settingsSchema, type Settings } from './settings';
 
 describe('settingsSchema', () => {

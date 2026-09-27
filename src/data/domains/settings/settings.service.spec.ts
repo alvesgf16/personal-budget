@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { COLLECTIONS } from './collections';
-import { provideTestDocumentStore } from './document-store.testing';
+import { COLLECTIONS } from '../../store/types';
+import { provideTestDocumentStore } from '../../store/document-store/document-store.testing';
 import type { Settings } from './settings';
 import { SettingsService } from './settings.service';
 

@@ -1,9 +1,13 @@
 import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
-import { parseCategoryName, type Category, type CategoryType } from '../../data/category';
-import { CategoryService } from '../../data/category.service';
-import type { StoreDocument } from '../../data/document';
-import { withPendingTask } from '../with-pending-task';
-import { PlanAmountGrid } from './plan-amount-grid';
+import {
+  parseCategoryName,
+  type Category,
+  type CategoryType,
+} from '../../../data/domains/category/category';
+import { CategoryService } from '../../../data/domains/category/category.service';
+import type { StoreDocument } from '../../../data/store/types';
+import { withPendingTask } from '../../shared/with-pending-task';
+import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';
 
 const SECTION_TITLES: Record<CategoryType, string> = {
   income: 'Income',

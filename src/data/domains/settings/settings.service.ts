@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { COLLECTIONS } from './collections';
-import { DOCUMENT_STORE } from './document-store.token';
-import { PersistQueue } from './persist-queue';
+import { COLLECTIONS } from '../../store/types';
+import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
+import { PersistQueue } from '../../lib/persist-queue';
 import type { Settings } from './settings';
 
 /**

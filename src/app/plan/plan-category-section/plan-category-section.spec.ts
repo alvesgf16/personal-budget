@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { BudgetCell } from '../../data/budget-cell';
-import { COLLECTIONS } from '../../data/collections';
-import { provideTestDocumentStore } from '../../data/document-store.testing';
+import type { BudgetCell } from '../../../data/domains/budget-cell/budget-cell';
+import { COLLECTIONS } from '../../../data/store/types';
+import { provideTestDocumentStore } from '../../../data/store/document-store/document-store.testing';
 import { PlanCategorySection } from './plan-category-section';
 
 describe('PlanCategorySection', () => {

@@ -6,6 +6,14 @@ alwaysApply: false
 
 # Document store (`src/data`)
 
+## Folder map
+
+- `domains/` — persisted domain folders (`settings/`, `category/`, `budget-cell/`): Zod model + service + specs
+- `lib/` — pure helpers (`plan-year`, `period-balance`, `persist-queue`)
+- `store/` — `types.ts` (collections + document shapes), `database.ts` (Dexie), `document-store/` (DocumentStore, token, testing, specs)
+
+## Rules
+
 - Feature screens inject a domain service (`SettingsService`, `CategoryService`, …) — do not import Dexie, `BudgetDatabase`, or `createDocumentStore` from UI code.
 - Domain services inject the `DOCUMENT_STORE` token (not nested behind another Angular store facade).
 - Collection names live in `COLLECTIONS` (`settings`, `categories`, …). Store/service methods take `CollectionName` (derived from that object) — add new piles there first.

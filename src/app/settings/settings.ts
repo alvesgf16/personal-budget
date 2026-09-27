@@ -1,8 +1,8 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
-import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../data/plan-year';
-import { parseStartingYear } from '../../data/settings';
-import { SettingsService } from '../../data/settings.service';
-import { withPendingTask } from '../with-pending-task';
+import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../data/lib/plan-year';
+import { parseStartingYear } from '../../data/domains/settings/settings';
+import { SettingsService } from '../../data/domains/settings/settings.service';
+import { withPendingTask } from '../shared/with-pending-task';
 
 /** Settings tab: persist the Plan starting year (PB-19). */
 @Component({
