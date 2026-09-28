@@ -109,34 +109,42 @@ describe('PlanCategorySection', () => {
     expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
   });
 
-  it('saves January without changing February', async () => {
-    const fixture = await render('income', 2026);
-    await submitName(fixture, 'income', 'Salary');
-    await setCell(fixture, 'Salary January', '1000');
+  (
+    [
+      ['income', 'Salary'],
+      ['expense', 'Rent'],
+      ['savings', 'Emergency'],
+    ] as const
+  ).forEach(([type, name]) => {
+    it(`saves ${type} January without changing February`, async () => {
+      const fixture = await render(type, 2026);
+      await submitName(fixture, type, name);
+      await setCell(fixture, `${name} January`, '1000');
 
-    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
-    expect(cells).toHaveLength(1);
-    expect(cells[0]).toMatchObject({ year: 2026, month: 1, amountCents: 100_000 });
+      const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+      expect(cells).toHaveLength(1);
+      expect(cells[0]).toMatchObject({ year: 2026, month: 1, amountCents: 100_000 });
 
-    const february = fixture.nativeElement.querySelector(
-      'input[aria-label="Salary February"]',
-    ) as HTMLInputElement;
-    expect(february.value).toBe('');
-  });
+      const february = fixture.nativeElement.querySelector(
+        `input[aria-label="${name} February"]`,
+      ) as HTMLInputElement;
+      expect(february.value).toBe('');
+    });
 
-  it('reloads saved January amount after recreating the section', async () => {
-    const first = await render('income', 2026);
-    await submitName(first, 'income', 'Salary');
-    await setCell(first, 'Salary January', '2500.50');
-    first.destroy();
+    it(`reloads saved ${type} January amount after recreating the section`, async () => {
+      const first = await render(type, 2026);
+      await submitName(first, type, name);
+      await setCell(first, `${name} January`, '2500.50');
+      first.destroy();
 
-    const second = await render('income', 2026);
-    await second.whenStable();
-    second.detectChanges();
+      const second = await render(type, 2026);
+      await second.whenStable();
+      second.detectChanges();
 
-    const january = second.nativeElement.querySelector(
-      'input[aria-label="Salary January"]',
-    ) as HTMLInputElement;
-    expect(january.value).toBe('2500.50');
+      const january = second.nativeElement.querySelector(
+        `input[aria-label="${name} January"]`,
+      ) as HTMLInputElement;
+      expect(january.value).toBe('2500.50');
+    });
   });
 });

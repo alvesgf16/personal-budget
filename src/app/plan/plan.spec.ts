@@ -29,7 +29,7 @@ describe('Plan year header', () => {
 });
 
 describe('Plan category sections', () => {
-  provideTestDocumentStore('pb-53-plan', { imports: [Plan] });
+  const testDb = provideTestDocumentStore('pb-53-plan', { imports: [Plan] });
 
   const render = async () => {
     const fixture = TestBed.createComponent(Plan);
@@ -48,6 +48,18 @@ describe('Plan category sections', () => {
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     section.querySelector('form')!.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+
+  const setCell = async (fixture: ComponentFixture<Plan>, ariaLabel: string, value: string) => {
+    const input = fixture.nativeElement.querySelector(
+      `input[aria-label="${ariaLabel}"]`,
+    ) as HTMLInputElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    input.dispatchEvent(new Event('blur'));
     await fixture.whenStable();
     fixture.detectChanges();
   };
@@ -81,5 +93,29 @@ describe('Plan category sections', () => {
     expect(listNames(fixture, 'expense')).toEqual(['Rent']);
     expect(listNames(fixture, 'income')).toEqual([]);
     expect(listNames(fixture, 'savings')).toEqual([]);
+  });
+
+  it('persists expense and savings January amounts independently', async () => {
+    await testDb.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
+
+    const fixture = await render();
+    await submitInSection(fixture, 'expense', 'Rent');
+    await submitInSection(fixture, 'savings', 'Emergency');
+    await setCell(fixture, 'Rent January', '1200');
+    await setCell(fixture, 'Emergency January', '300');
+
+    const rentJanuary = fixture.nativeElement.querySelector(
+      'input[aria-label="Rent January"]',
+    ) as HTMLInputElement;
+    const emergencyJanuary = fixture.nativeElement.querySelector(
+      'input[aria-label="Emergency January"]',
+    ) as HTMLInputElement;
+    expect(rentJanuary.value).toBe('1200');
+    expect(emergencyJanuary.value).toBe('300');
+
+    const rentFebruary = fixture.nativeElement.querySelector(
+      'input[aria-label="Rent February"]',
+    ) as HTMLInputElement;
+    expect(rentFebruary.value).toBe('');
   });
 });
