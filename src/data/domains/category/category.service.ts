@@ -5,7 +5,7 @@ import { DOCUMENT_STORE } from '../../store/document-store/document-store.token'
 import { PersistQueue } from '../../lib/persist-queue';
 
 /**
- * Category document access: list active rows by type and append with a stable sortOrder.
+ * Category document access: list/add and rename (name-only patch).
  * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
  */
 @Injectable({ providedIn: 'root' })
@@ -24,6 +24,11 @@ export class CategoryService {
     return this.persist.enqueue(() => this.create(type, name));
   }
 
+  /** Patch display name only — sortOrder, type, active, and budgetCells stay put. */
+  rename(id: string, name: string): Promise<StoreDocument<Category>> {
+    return this.persist.enqueue(() => this.applyRename(id, name));
+  }
+
   private async create(type: CategoryType, name: string): Promise<StoreDocument<Category>> {
     const siblings = (await this.store.list<Category>(COLLECTIONS.categories)).filter(
       (doc) => doc.type === type,
@@ -32,5 +37,20 @@ export class CategoryService {
       siblings.length === 0 ? 0 : Math.max(...siblings.map((doc) => doc.sortOrder)) + 1;
     const payload = categorySchema.parse({ type, name, sortOrder, active: true });
     return this.store.insert(COLLECTIONS.categories, payload);
+  }
+
+  private async applyRename(id: string, name: string): Promise<StoreDocument<Category>> {
+    const trimmed = categorySchema.shape.name.parse(name);
+    const existing = await this.store.getById<Category>(COLLECTIONS.categories, id);
+    if (!existing) {
+      throw new Error(`Category not found: ${id}`);
+    }
+    const updated = await this.store.update<Category>(COLLECTIONS.categories, id, {
+      name: trimmed,
+    });
+    if (!updated) {
+      throw new Error(`Category not found: ${id}`);
+    }
+    return updated;
   }
 }
