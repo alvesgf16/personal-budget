@@ -18,11 +18,21 @@
     <p [id]="'category-error-' + type()" role="alert">{{ error() }}</p>
   }
   @if (year(); as planYear) {
-    <app-plan-amount-grid [year]="planYear" [rows]="rows()" />
+    <app-plan-amount-grid
+      [year]="planYear"
+      [rows]="rows()"
+      (nameChange)="rename($event.id, $event.name)"
+    />
   } @else {
     <ul>
       @for (row of rows(); track row.id) {
-        <li>{{ row.name }}</li>
+        <li>
+          <app-plan-category-name-input
+            [categoryId]="row.id"
+            [name]="row.name"
+            (nameChange)="rename($event.id, $event.name)"
+          />
+        </li>
       }
     </ul>
   }

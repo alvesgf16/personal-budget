@@ -67,8 +67,8 @@ describe('Plan category sections', () => {
   };
 
   const listNames = (fixture: ComponentFixture<Plan>, type: string) =>
-    [...fixture.nativeElement.querySelectorAll(`section[data-type="${type}"] li`)].map(
-      (el: Element) => el.textContent?.trim(),
+    [...fixture.nativeElement.querySelectorAll(`section[data-type="${type}"] li input`)].map(
+      (el: Element) => (el as HTMLInputElement).value,
     );
 
   it('renders income, expense, and savings sections', async () => {

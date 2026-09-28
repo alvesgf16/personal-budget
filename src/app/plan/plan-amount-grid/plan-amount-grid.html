@@ -14,7 +14,13 @@
     <tbody>
       @for (row of rows(); track row.id) {
         <tr>
-          <th scope="row">{{ row.name }}</th>
+          <th scope="row">
+            <app-plan-category-name-input
+              [categoryId]="row.id"
+              [name]="row.name"
+              (nameChange)="nameChange.emit($event)"
+            />
+          </th>
           @for (month of months; track month) {
             <td>
               <app-plan-amount-cell

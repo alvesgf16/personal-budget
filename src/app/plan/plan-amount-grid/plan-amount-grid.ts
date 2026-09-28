@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
+import { Component, effect, inject, input, output, PendingTasks, signal } from '@angular/core';
 import {
   amountsFromCells,
   cellKey,
@@ -11,11 +11,12 @@ import type { Category } from '../../../data/domains/category/category';
 import type { StoreDocument } from '../../../data/store/types';
 import { runPending } from '../../shared/with-pending-task';
 import { PlanAmountCell } from './plan-amount-cell/plan-amount-cell';
+import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
 
 /** Sticky/scrollable category × Jan–Dec amount grid for one plan year. */
 @Component({
   selector: 'app-plan-amount-grid',
-  imports: [PlanAmountCell],
+  imports: [PlanAmountCell, PlanCategoryNameInput],
   styleUrl: './plan-amount-grid.css',
   templateUrl: './plan-amount-grid.html',
 })
@@ -25,6 +26,8 @@ export class PlanAmountGrid {
 
   readonly year = input.required<number>();
   readonly rows = input.required<StoreDocument<Category>[]>();
+  /** Parent owns rename persist; name input only drafts and notifies on blur. */
+  readonly nameChange = output<{ id: string; name: string }>();
 
   protected readonly months = PLAN_MONTHS;
   protected readonly monthShort = PLAN_MONTH_SHORT;

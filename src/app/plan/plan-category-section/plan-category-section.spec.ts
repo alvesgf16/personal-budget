@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { BudgetCell } from '../../../data/domains/budget-cell/budget-cell';
-import type { CategoryType } from '../../../data/domains/category/category';
+import type { Category, CategoryType } from '../../../data/domains/category/category';
 import { COLLECTIONS } from '../../../data/store/types';
 import { provideTestDocumentStore } from '../../../data/store/document-store/document-store.testing';
 import { PlanCategorySection } from './plan-category-section';
@@ -50,8 +50,26 @@ describe('PlanCategorySection', () => {
     fixture.detectChanges();
   };
 
+  const renameByAriaLabel = async (
+    fixture: ComponentFixture<PlanCategorySection>,
+    currentName: string,
+    nextName: string,
+  ) => {
+    const input = fixture.nativeElement.querySelector(
+      `input[aria-label="Rename ${currentName}"]`,
+    ) as HTMLInputElement;
+    input.value = nextName;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    input.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+
   const listItems = (fixture: ComponentFixture<PlanCategorySection>) =>
-    [...fixture.nativeElement.querySelectorAll('li')].map((el: Element) => el.textContent?.trim());
+    [...fixture.nativeElement.querySelectorAll('li input')].map(
+      (el: Element) => (el as HTMLInputElement).value,
+    );
 
   (
     [
@@ -107,6 +125,67 @@ describe('PlanCategorySection', () => {
       (fixture.nativeElement.querySelector('#category-name-income') as HTMLInputElement).value,
     ).toBe('Salary');
     expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
+  });
+
+  it('renames in the list without changing sortOrder', async () => {
+    const fixture = await render('income');
+    await submitName(fixture, 'income', 'Salary');
+    await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
+
+    expect(listItems(fixture)).toEqual(['Paycheck']);
+    const saved = await testDb.store.list(COLLECTIONS.categories);
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({
+      name: 'Paycheck',
+      sortOrder: 0,
+      type: 'income',
+      active: true,
+    });
+  });
+
+  it('renames in the grid, updates aria-labels, and leaves budgetCells intact', async () => {
+    const fixture = await render('income', 2026);
+    await submitName(fixture, 'income', 'Salary');
+    await setCell(fixture, 'Salary January', '1000');
+    await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
+
+    expect(
+      (
+        fixture.nativeElement.querySelector(
+          'input[aria-label="Rename Paycheck"]',
+        ) as HTMLInputElement
+      ).value,
+    ).toBe('Paycheck');
+    expect(
+      fixture.nativeElement.querySelector('input[aria-label="Paycheck January"]'),
+    ).not.toBeNull();
+
+    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const categories = await testDb.store.list<Category>(COLLECTIONS.categories);
+    expect(categories[0]?.name).toBe('Paycheck');
+    expect(cells).toHaveLength(1);
+    expect(cells[0]).toMatchObject({
+      categoryId: categories[0]!.id,
+      year: 2026,
+      month: 1,
+      amountCents: 100_000,
+    });
+  });
+
+  it('shows an error when rename persistence fails', async () => {
+    const fixture = await render('income');
+    await submitName(fixture, 'income', 'Salary');
+
+    testDb.store.update = async () => {
+      throw new Error('unavailable');
+    };
+    await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
+
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Could not save',
+    );
+    const saved = await testDb.store.list<Category>(COLLECTIONS.categories);
+    expect(saved[0]?.name).toBe('Salary');
   });
 
   (

@@ -56,6 +56,10 @@ li {
   border-bottom: 1px solid #e8e8e8;
 }
 
+li app-plan-category-name-input {
+  max-width: 16rem;
+}
+
 [role='alert'] {
   margin: 0 0 0.75rem;
   color: #b00000;
