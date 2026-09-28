@@ -1,0 +1,9 @@
+<input
+  type="text"
+  inputmode="decimal"
+  autocomplete="off"
+  [attr.aria-label]="label()"
+  [value]="draft()"
+  (input)="onDraft($event)"
+  (blur)="save()"
+/>

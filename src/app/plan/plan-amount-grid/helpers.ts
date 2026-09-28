@@ -1,30 +1,46 @@
-/**
- * Parse a dollar amount typed in the Plan grid into integer cents.
- * Empty / whitespace → `null` (caller soft-deletes the sparse cell).
- * Rejects negatives, more than two decimal places, and non-numeric input.
- */
-export function dollarsToCents(raw: string): number | null {
-  const trimmed = raw.trim();
-  if (trimmed === '') {
-    return null;
-  }
-  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
-    throw new Error('Enter a non-negative dollar amount.');
-  }
-  const [wholePart, fracPart = ''] = trimmed.split('.');
-  const cents = Number(wholePart) * 100 + Number(fracPart.padEnd(2, '0'));
-  if (!Number.isSafeInteger(cents)) {
-    throw new Error('Amount is too large.');
-  }
-  return cents;
+export const PLAN_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+
+export const PLAN_MONTH_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+] as const;
+
+export const PLAN_MONTH_LONG = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
+export function cellKey(categoryId: string, month: number): string {
+  return `${categoryId}:${month}`;
 }
 
-/** Format stored cents for an input value (e.g. `250000` → `"2500"` or `"2500.50"`). */
-export function centsToDollarInput(amountCents: number): string {
-  const whole = Math.trunc(amountCents / 100);
-  const frac = Math.abs(amountCents % 100);
-  if (frac === 0) {
-    return String(whole);
+/** Index stored cell amounts by `categoryId:month`. */
+export function amountsFromCells(
+  cells: readonly { categoryId: string; month: number; amountCents: number }[],
+): Record<string, number> {
+  const amounts: Record<string, number> = {};
+  for (const cell of cells) {
+    amounts[cellKey(cell.categoryId, cell.month)] = cell.amountCents;
   }
-  return `${whole}.${String(frac).padStart(2, '0')}`;
+  return amounts;
 }

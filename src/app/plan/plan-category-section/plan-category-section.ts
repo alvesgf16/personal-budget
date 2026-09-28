@@ -6,7 +6,7 @@ import {
 } from '../../../data/domains/category/category';
 import { CategoryService } from '../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../data/store/types';
-import { withPendingTask } from '../../shared/with-pending-task';
+import { runPending } from '../../shared/with-pending-task';
 import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';
 
 const SECTION_TITLES: Record<CategoryType, string> = {
@@ -60,26 +60,25 @@ export class PlanCategorySection {
       return;
     }
 
-    try {
-      await withPendingTask(this.pendingTasks, async () => {
-        this.error.set(null);
+    await runPending(
+      this.pendingTasks,
+      this.error,
+      'Could not save the category. Try again.',
+      async () => {
         await this.categories.add(this.type(), name);
         this.nameDraft.set('');
         await this.refresh();
-      });
-    } catch {
-      this.error.set('Could not save the category. Try again.');
-    }
+      },
+    );
   }
 
   private async load(): Promise<void> {
-    try {
-      await withPendingTask(this.pendingTasks, async () => {
-        await this.refresh();
-      });
-    } catch {
-      this.error.set('Could not load categories. Refresh and try again.');
-    }
+    await runPending(
+      this.pendingTasks,
+      this.error,
+      'Could not load categories. Refresh and try again.',
+      () => this.refresh(),
+    );
   }
 
   private async refresh(): Promise<void> {

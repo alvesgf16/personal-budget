@@ -30,13 +30,6 @@ tbody th {
   min-width: 8rem;
 }
 
-td input {
-  width: 5.5rem;
-  box-sizing: border-box;
-  font: inherit;
-  padding: 0.35rem 0.5rem;
-}
-
 [role='alert'] {
   margin: 0 0 0.75rem;
   color: #b00000;

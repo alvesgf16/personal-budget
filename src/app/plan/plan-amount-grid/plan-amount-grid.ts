@@ -1,45 +1,21 @@
 import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
-import { centsToDollarInput, dollarsToCents } from './helpers';
+import {
+  amountsFromCells,
+  cellKey,
+  PLAN_MONTH_LONG,
+  PLAN_MONTH_SHORT,
+  PLAN_MONTHS,
+} from './helpers';
 import { BudgetCellService } from '../../../data/domains/budget-cell/budget-cell.service';
 import type { Category } from '../../../data/domains/category/category';
 import type { StoreDocument } from '../../../data/store/types';
-import { withPendingTask } from '../../shared/with-pending-task';
-
-const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
-
-const MONTH_SHORT = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-] as const;
-
-const MONTH_LONG = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-] as const;
+import { runPending } from '../../shared/with-pending-task';
+import { PlanAmountCell } from './plan-amount-cell/plan-amount-cell';
 
 /** Sticky/scrollable category × Jan–Dec amount grid for one plan year. */
 @Component({
   selector: 'app-plan-amount-grid',
+  imports: [PlanAmountCell],
   styleUrl: './plan-amount-grid.css',
   templateUrl: './plan-amount-grid.html',
 })
@@ -50,93 +26,59 @@ export class PlanAmountGrid {
   readonly year = input.required<number>();
   readonly rows = input.required<StoreDocument<Category>[]>();
 
-  protected readonly months = MONTHS;
-  protected readonly monthShort = MONTH_SHORT;
-  protected readonly monthLong = MONTH_LONG;
+  protected readonly months = PLAN_MONTHS;
+  protected readonly monthShort = PLAN_MONTH_SHORT;
+  protected readonly monthLong = PLAN_MONTH_LONG;
 
   protected readonly error = signal<string | null>(null);
-  /** Draft display strings keyed by `categoryId:month`. */
-  private readonly cellDrafts = signal<Record<string, string>>({});
+  /** Loaded amount cents keyed by `categoryId:month`. */
+  private readonly amounts = signal<Record<string, number>>({});
 
   constructor() {
     effect(() => {
       const year = this.year();
-      // Drop stale drafts immediately so a blur cannot save the previous year into this one.
-      this.cellDrafts.set({});
+      // Clear immediately so cells do not keep showing the previous year's values.
+      this.amounts.set({});
       this.error.set(null);
       void this.loadCells(year);
     });
   }
 
-  protected draftFor(categoryId: string, month: number): string {
-    return this.cellDrafts()[cellKey(categoryId, month)] ?? '';
+  protected amountFor(categoryId: string, month: number): number | null {
+    return this.amounts()[cellKey(categoryId, month)] ?? null;
   }
 
-  protected onCellDraft(categoryId: string, month: number, event: Event): void {
-    const { value } = event.target as HTMLInputElement;
-    this.cellDrafts.update((drafts) => ({
-      ...drafts,
-      [cellKey(categoryId, month)]: value,
-    }));
+  protected onCellError(message: string): void {
+    this.error.set(message);
   }
 
-  protected async saveCell(categoryId: string, month: number): Promise<void> {
-    const year = this.year();
-    let amountCents: number | null;
-    try {
-      amountCents = dollarsToCents(this.draftFor(categoryId, month));
-    } catch {
-      this.error.set('Enter a non-negative dollar amount.');
-      return;
-    }
-
-    try {
-      await withPendingTask(this.pendingTasks, async () => {
-        this.error.set(null);
-        await this.budgetCells.save(categoryId, year, month, amountCents);
-        if (this.year() !== year) {
-          return;
-        }
-        this.cellDrafts.update((drafts) => {
-          const next = { ...drafts };
-          const key = cellKey(categoryId, month);
-          if (amountCents === null) {
-            delete next[key];
-          } else {
-            next[key] = centsToDollarInput(amountCents);
-          }
-          return next;
-        });
-      });
-    } catch {
-      if (this.year() === year) {
-        this.error.set('Could not save the amount. Try again.');
+  protected onCommitted(categoryId: string, month: number, amountCents: number | null): void {
+    this.error.set(null);
+    this.amounts.update((amounts) => {
+      const next = { ...amounts };
+      const key = cellKey(categoryId, month);
+      if (amountCents === null) {
+        delete next[key];
+      } else {
+        next[key] = amountCents;
       }
-    }
+      return next;
+    });
   }
 
   private async loadCells(year: number): Promise<void> {
-    try {
-      await withPendingTask(this.pendingTasks, async () => {
+    await runPending(
+      this.pendingTasks,
+      this.error,
+      'Could not load amounts. Refresh and try again.',
+      async () => {
         const cells = await this.budgetCells.listForYear(year);
         if (this.year() !== year) {
           return;
         }
-        const drafts: Record<string, string> = {};
-        for (const cell of cells) {
-          drafts[cellKey(cell.categoryId, cell.month)] = centsToDollarInput(cell.amountCents);
-        }
-        this.cellDrafts.set(drafts);
-        this.error.set(null);
-      });
-    } catch {
-      if (this.year() === year) {
-        this.error.set('Could not load amounts. Refresh and try again.');
-      }
-    }
+        this.amounts.set(amountsFromCells(cells));
+      },
+      () => this.year() === year,
+    );
   }
-}
-
-function cellKey(categoryId: string, month: number): string {
-  return `${categoryId}:${month}`;
 }
