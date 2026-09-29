@@ -1,0 +1,63 @@
+.status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0.75rem 0 1.25rem;
+  padding: 0;
+}
+
+.status-strip li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 4.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.25rem;
+  background: #fafafa;
+}
+
+.month {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.state {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-status='untouched'] .state {
+  color: #888;
+}
+
+[data-status='under'] .state {
+  color: #333;
+}
+
+[data-status='balanced'] {
+  border-color: var(--color-income);
+  background: color-mix(in srgb, var(--color-income) 12%, #fff);
+}
+
+[data-status='balanced'] .state {
+  color: var(--color-income);
+  font-weight: 600;
+}
+
+[data-status='over'] {
+  border-color: var(--color-expenses);
+  background: color-mix(in srgb, var(--color-expenses) 10%, #fff);
+}
+
+[data-status='over'] .state {
+  color: var(--color-expenses);
+  font-weight: 600;
+}
+
+[role='alert'] {
+  margin: 0 0 0.75rem;
+  color: #b00000;
+}

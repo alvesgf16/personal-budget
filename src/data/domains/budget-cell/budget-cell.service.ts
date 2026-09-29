@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { budgetCellSchema, type BudgetCell } from './budget-cell';
 import { COLLECTIONS, type StoreDocument } from '../../store/types';
 import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
@@ -13,6 +13,12 @@ import { PersistQueue } from '../../lib/persist-queue';
 export class BudgetCellService {
   private readonly store = inject(DOCUMENT_STORE);
   private readonly persist = new PersistQueue();
+
+  /**
+   * Bumps after every successful save so Plan surfaces (e.g. allocation status)
+   * can reload without sharing in-memory amount maps across section grids.
+   */
+  readonly revision = signal(0);
 
   async listForYear(year: number): Promise<StoreDocument<BudgetCell>[]> {
     const docs = await this.store.list<BudgetCell>(COLLECTIONS.budgetCells);
@@ -39,15 +45,17 @@ export class BudgetCellService {
       if (existing) {
         await this.store.softDelete(COLLECTIONS.budgetCells, existing.id);
       }
+      this.revision.update((n) => n + 1);
       return;
     }
 
     const payload = budgetCellSchema.parse({ categoryId, year, month, amountCents });
     if (existing) {
       await this.store.update(COLLECTIONS.budgetCells, existing.id, payload);
-      return;
+    } else {
+      await this.store.insert(COLLECTIONS.budgetCells, payload);
     }
-    await this.store.insert(COLLECTIONS.budgetCells, payload);
+    this.revision.update((n) => n + 1);
   }
 
   private async findCell(
