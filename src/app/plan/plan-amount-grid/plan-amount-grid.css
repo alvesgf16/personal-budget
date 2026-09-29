@@ -21,13 +21,25 @@ thead th {
   font-weight: 600;
 }
 
-tbody th {
+tbody th,
+tfoot th {
   position: sticky;
   left: 0;
   z-index: 1;
   background: #fff;
   font-weight: 600;
   min-width: 8rem;
+}
+
+output {
+  font-variant-numeric: tabular-nums;
+}
+
+tfoot th,
+tfoot td {
+  border-top: 1px solid #ccc;
+  border-bottom: none;
+  font-weight: 600;
 }
 
 [role='alert'] {

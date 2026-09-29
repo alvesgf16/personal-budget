@@ -9,6 +9,7 @@
         @for (month of months; track month) {
           <th scope="col">{{ monthShort[month - 1] }}</th>
         }
+        <th scope="col">Year</th>
       </tr>
     </thead>
     <tbody>
@@ -34,8 +35,26 @@
               />
             </td>
           }
+          <td>
+            <output [attr.aria-label]="row.name + ' year total'">{{ yearTotalFor(row.id) }}</output>
+          </td>
         </tr>
       }
     </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row">Total</th>
+        @for (month of months; track month) {
+          <td>
+            <output [attr.aria-label]="'Total ' + monthLong[month - 1]">{{
+              sectionTotalFor(month)
+            }}</output>
+          </td>
+        }
+        <td>
+          <output aria-label="Total year">{{ sectionYearTotal() }}</output>
+        </td>
+      </tr>
+    </tfoot>
   </table>
 </div>
