@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
 import { SettingsService } from '../../data/domains/settings/settings.service';
-import { withPendingTask } from '../shared/with-pending-task';
-import { PlanCategorySection } from './plan-category-section/plan-category-section';
+import { withPendingTask } from '../shared/helpers/with-pending-task';
+import { PlanCategorySection } from './components/plan-category-section/plan-category-section';
 
 /** Plan tab: year header and income / expense / savings category sections. */
 @Component({

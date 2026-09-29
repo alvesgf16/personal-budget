@@ -1,5 +1,5 @@
-import { COLLECTIONS } from '../../../data/store/types';
-import { provideTestDocumentStore } from '../../../data/store/document-store/document-store.testing';
+import { COLLECTIONS } from '../../../../data/store/types';
+import { provideTestDocumentStore } from '../../../../data/store/document-store/document-store.testing';
 import { PlanAmountGrid } from './plan-amount-grid';
 import { planAmountGridHarness } from './plan-amount-grid.testing';
 

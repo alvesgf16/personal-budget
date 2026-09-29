@@ -1,20 +1,16 @@
 import { Component, effect, inject, input, output, PendingTasks, signal } from '@angular/core';
-import {
-  amountsFromCells,
-  cellKey,
-  PLAN_MONTH_LONG,
-  PLAN_MONTH_SHORT,
-  PLAN_MONTHS,
-} from './helpers';
-import { centsToDollarInput } from './plan-amount-cell/helpers';
-import { sectionMonthTotalCents } from './section-month-total-cents';
-import { sectionYearTotalCents } from './section-year-total-cents';
-import { yearTotalCents } from './year-total-cents';
-import { BudgetCellService } from '../../../data/domains/budget-cell/budget-cell.service';
-import type { Category } from '../../../data/domains/category/category';
-import type { StoreDocument } from '../../../data/store/types';
-import { runPending } from '../../shared/with-pending-task';
-import { PlanAmountCell } from './plan-amount-cell/plan-amount-cell';
+import { PLAN_MONTH_LONG, PLAN_MONTH_SHORT, PLAN_MONTHS } from './constants';
+import { amountsFromCells } from './helpers/amounts-from-cells';
+import { cellKey } from './helpers/cell-key';
+import { sectionMonthTotalCents } from './helpers/section-month-total-cents';
+import { sectionYearTotalCents } from './helpers/section-year-total-cents';
+import { yearTotalCents } from './helpers/year-total-cents';
+import { centsToDollarInput } from '../plan-amount-cell/helpers/cents-to-dollar-input';
+import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
+import type { Category } from '../../../../data/domains/category/category';
+import type { StoreDocument } from '../../../../data/store/types';
+import { runPending } from '../../../shared/helpers/run-pending';
+import { PlanAmountCell } from '../plan-amount-cell/plan-amount-cell';
 import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
 
 /** Sticky/scrollable category × Jan–Dec amount grid for one plan year. */

@@ -1,6 +1,6 @@
-import { centsToDollarInput, dollarsToCents } from './helpers';
+import { dollarsToCents } from './dollars-to-cents';
 
-describe('dollarsToCents / centsToDollarInput', () => {
+describe('dollarsToCents', () => {
   it('parses whole dollars and two-decimal amounts', () => {
     expect(dollarsToCents('1234')).toBe(123_400);
     expect(dollarsToCents('1234.56')).toBe(123_456);
@@ -17,11 +17,5 @@ describe('dollarsToCents / centsToDollarInput', () => {
     expect(() => dollarsToCents('-1')).toThrow();
     expect(() => dollarsToCents('1.234')).toThrow();
     expect(() => dollarsToCents('abc')).toThrow();
-  });
-
-  it('formats cents back for inputs', () => {
-    expect(centsToDollarInput(123_400)).toBe('1234');
-    expect(centsToDollarInput(123_456)).toBe('1234.56');
-    expect(centsToDollarInput(50)).toBe('0.50');
   });
 });
