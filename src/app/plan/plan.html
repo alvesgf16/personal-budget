@@ -5,6 +5,9 @@
     {{ startingYear() }}
   }
 </h1>
+@if (startingYear(); as planYear) {
+  <app-plan-allocation-status [year]="planYear" />
+}
 <app-plan-category-section type="income" [year]="startingYear()" />
 <app-plan-category-section type="expense" [year]="startingYear()" />
 <app-plan-category-section type="savings" [year]="startingYear()" />

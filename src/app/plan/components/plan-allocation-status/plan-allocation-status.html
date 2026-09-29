@@ -1,0 +1,11 @@
+@if (error()) {
+  <p role="alert">{{ error() }}</p>
+}
+<ul class="status-strip" aria-label="Monthly allocation status">
+  @for (item of months(); track item.month) {
+    <li [attr.data-status]="item.status">
+      <span class="month">{{ item.shortLabel }}</span>
+      <span class="state" [attr.aria-label]="item.longLabel + ' allocation'">{{ item.label }}</span>
+    </li>
+  }
+</ul>

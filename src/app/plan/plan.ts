@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
 import { SettingsService } from '../../data/domains/settings/settings.service';
 import { withPendingTask } from '../shared/helpers/with-pending-task';
+import { PlanAllocationStatus } from './components/plan-allocation-status/plan-allocation-status';
 import { PlanCategorySection } from './components/plan-category-section/plan-category-section';
 
-/** Plan tab: year header and income / expense / savings category sections. */
+/** Plan tab: year header, allocation status strip, and income / expense / savings sections. */
 @Component({
   selector: 'app-plan',
-  imports: [PlanCategorySection],
+  imports: [PlanAllocationStatus, PlanCategorySection],
   styleUrl: './plan.css',
   templateUrl: './plan.html',
 })
