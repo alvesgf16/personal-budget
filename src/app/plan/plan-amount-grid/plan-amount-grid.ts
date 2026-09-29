@@ -6,6 +6,10 @@ import {
   PLAN_MONTH_SHORT,
   PLAN_MONTHS,
 } from './helpers';
+import { centsToDollarInput } from './plan-amount-cell/helpers';
+import { sectionMonthTotalCents } from './section-month-total-cents';
+import { sectionYearTotalCents } from './section-year-total-cents';
+import { yearTotalCents } from './year-total-cents';
 import { BudgetCellService } from '../../../data/domains/budget-cell/budget-cell.service';
 import type { Category } from '../../../data/domains/category/category';
 import type { StoreDocument } from '../../../data/store/types';
@@ -49,6 +53,18 @@ export class PlanAmountGrid {
 
   protected amountFor(categoryId: string, month: number): number | null {
     return this.amounts()[cellKey(categoryId, month)] ?? null;
+  }
+
+  protected yearTotalFor(categoryId: string): string {
+    return centsToDollarInput(yearTotalCents(this.amounts(), categoryId));
+  }
+
+  protected sectionTotalFor(month: number): string {
+    return centsToDollarInput(sectionMonthTotalCents(this.amounts(), this.rows(), month));
+  }
+
+  protected sectionYearTotal(): string {
+    return centsToDollarInput(sectionYearTotalCents(this.amounts(), this.rows()));
   }
 
   protected onCellError(message: string): void {

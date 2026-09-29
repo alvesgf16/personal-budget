@@ -1,20 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import { COLLECTIONS, type StoreDocument } from '../../../data/store/types';
-import type { Category } from '../../../data/domains/category/category';
+import { COLLECTIONS } from '../../../data/store/types';
 import { provideTestDocumentStore } from '../../../data/store/document-store/document-store.testing';
 import type { DocumentStore } from '../../../data/store/document-store/document-store';
 import { PlanAmountGrid } from './plan-amount-grid';
+import { planAmountGridHarness } from './plan-amount-grid.testing';
 
 describe('PlanAmountGrid', () => {
   const testDb = provideTestDocumentStore('pb-21-amount-grid', { imports: [PlanAmountGrid] });
+  const { insertCategory } = planAmountGridHarness(testDb);
 
   it('ignores a stale load when year changes mid-flight', async () => {
-    const salary = (await testDb.store.insert(COLLECTIONS.categories, {
-      type: 'income',
-      name: 'Salary',
-      sortOrder: 0,
-      active: true,
-    })) as StoreDocument<Category>;
+    const salary = await insertCategory('Salary');
     await testDb.store.insert(COLLECTIONS.budgetCells, {
       categoryId: salary.id,
       year: 2026,
