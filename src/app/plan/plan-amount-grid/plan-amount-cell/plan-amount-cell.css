@@ -1,0 +1,10 @@
+:host {
+  display: block;
+}
+
+input {
+  width: 5.5rem;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+}

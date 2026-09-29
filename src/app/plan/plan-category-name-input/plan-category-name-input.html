@@ -1,0 +1,8 @@
+<input
+  type="text"
+  autocomplete="off"
+  [attr.aria-label]="'Rename ' + name()"
+  [value]="draft()"
+  (input)="onDraft($event)"
+  (blur)="commit()"
+/>

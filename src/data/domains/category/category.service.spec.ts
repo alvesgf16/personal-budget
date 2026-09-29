@@ -102,4 +102,50 @@ describe('CategoryService', () => {
     expect([a.name, b.name]).toEqual(['Salary', 'Bonus']);
     expect(await testDb.store.list(COLLECTIONS.categories)).toHaveLength(2);
   });
+
+  it('renames without changing sortOrder, type, or active', async () => {
+    const created = await service.add('income', 'Salary');
+    const renamed = await service.rename(created.id, '  Paycheck  ');
+
+    expect(renamed).toMatchObject({
+      id: created.id,
+      name: 'Paycheck',
+      sortOrder: created.sortOrder,
+      type: 'income',
+      active: true,
+    });
+  });
+
+  it('leaves budgetCells for the category untouched after rename', async () => {
+    const created = await service.add('income', 'Salary');
+    await testDb.store.insert(COLLECTIONS.budgetCells, {
+      categoryId: created.id,
+      year: 2026,
+      month: 1,
+      amountCents: 100_000,
+    });
+
+    await service.rename(created.id, 'Paycheck');
+
+    const cells = await testDb.store.list(COLLECTIONS.budgetCells);
+    expect(cells).toHaveLength(1);
+    expect(cells[0]).toMatchObject({
+      categoryId: created.id,
+      year: 2026,
+      month: 1,
+      amountCents: 100_000,
+    });
+  });
+
+  it('rejects a blank rename and does not write', async () => {
+    const created = await service.add('income', 'Salary');
+    await expect(service.rename(created.id, '   ')).rejects.toThrow();
+
+    const listed = await service.listByType('income');
+    expect(listed.map((doc) => doc.name)).toEqual(['Salary']);
+  });
+
+  it('rejects rename when the category id is missing', async () => {
+    await expect(service.rename('missing-id', 'Paycheck')).rejects.toThrow(/not found/i);
+  });
 });

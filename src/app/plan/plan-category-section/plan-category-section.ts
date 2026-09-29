@@ -6,8 +6,9 @@ import {
 } from '../../../data/domains/category/category';
 import { CategoryService } from '../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../data/store/types';
-import { withPendingTask } from '../../shared/with-pending-task';
+import { runPending } from '../../shared/with-pending-task';
 import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';
+import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
 
 const SECTION_TITLES: Record<CategoryType, string> = {
   income: 'Income',
@@ -16,12 +17,12 @@ const SECTION_TITLES: Record<CategoryType, string> = {
 };
 
 /**
- * Add and list categories for one Plan section type (income / expense / savings).
+ * Add, list, and rename categories for one Plan section type.
  * When `year` is set, mounts the amount grid for that year.
  */
 @Component({
   selector: 'app-plan-category-section',
-  imports: [PlanAmountGrid],
+  imports: [PlanAmountGrid, PlanCategoryNameInput],
   styleUrl: './plan-category-section.css',
   templateUrl: './plan-category-section.html',
 })
@@ -60,26 +61,46 @@ export class PlanCategorySection {
       return;
     }
 
-    try {
-      await withPendingTask(this.pendingTasks, async () => {
-        this.error.set(null);
+    await runPending(
+      this.pendingTasks,
+      this.error,
+      'Could not save the category. Try again.',
+      async () => {
         await this.categories.add(this.type(), name);
         this.nameDraft.set('');
         await this.refresh();
-      });
-    } catch {
-      this.error.set('Could not save the category. Try again.');
+      },
+    );
+  }
+
+  protected async rename(id: string, raw: string): Promise<void> {
+    const name = parseCategoryName(raw);
+    if (!name) {
+      this.error.set('Enter a category name.');
+      return;
     }
+    if (this.rows().some((row) => row.id === id && row.name === name)) {
+      return;
+    }
+
+    await runPending(
+      this.pendingTasks,
+      this.error,
+      'Could not save the category. Try again.',
+      async () => {
+        await this.categories.rename(id, name);
+        await this.refresh();
+      },
+    );
   }
 
   private async load(): Promise<void> {
-    try {
-      await withPendingTask(this.pendingTasks, async () => {
-        await this.refresh();
-      });
-    } catch {
-      this.error.set('Could not load categories. Refresh and try again.');
-    }
+    await runPending(
+      this.pendingTasks,
+      this.error,
+      'Could not load categories. Refresh and try again.',
+      () => this.refresh(),
+    );
   }
 
   private async refresh(): Promise<void> {
