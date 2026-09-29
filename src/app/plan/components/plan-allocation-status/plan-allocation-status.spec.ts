@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { BudgetCell } from '../../../../data/domains/budget-cell/budget-cell';
 import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
 import type { Category } from '../../../../data/domains/category/category';
+import type { DocumentStore } from '../../../../data/store/document-store/document-store';
 import { COLLECTIONS } from '../../../../data/store/types';
 import { provideTestDocumentStore } from '../../../../data/store/document-store/document-store.testing';
 import { Plan } from '../../plan';
@@ -130,5 +131,43 @@ describe('PlanAllocationStatus', () => {
     const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(3);
     expect(TestBed.inject(BudgetCellService).revision()).toBeGreaterThan(0);
+  });
+
+  it('ignores a stale reload when revision advances mid-flight', async () => {
+    const salary = await insertCategory('income', 'Salary');
+    const rent = await insertCategory('expense', 'Rent');
+    await insertCell(salary.id, 1, 100_000);
+
+    let releaseFirst!: () => void;
+    const firstListGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const originalList = testDb.store.list.bind(testDb.store);
+    let budgetListCalls = 0;
+    testDb.store.list = async <T extends object>(
+      collection: Parameters<DocumentStore['list']>[0],
+    ) => {
+      const rows = await originalList<T>(collection);
+      if (collection === COLLECTIONS.budgetCells) {
+        budgetListCalls += 1;
+        if (budgetListCalls === 1) {
+          await firstListGate;
+        }
+      }
+      return rows;
+    };
+
+    const fixture = TestBed.createComponent(PlanAllocationStatus);
+    fixture.componentRef.setInput('year', 2026);
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    await TestBed.inject(BudgetCellService).save(rent.id, 2026, 1, 120_000);
+    fixture.detectChanges();
+    releaseFirst();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(statusFor(fixture, 'January')).toEqual({ text: '200 over', status: 'over' });
   });
 });

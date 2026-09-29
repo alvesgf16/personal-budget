@@ -43,14 +43,15 @@ export class PlanAllocationStatus {
     effect(() => {
       const year = this.year();
       // Depend on revision so a cell blur reloads this strip.
-      this.budgetCells.revision();
+      const revision = this.budgetCells.revision();
       this.months.set([]);
       this.error.set(null);
-      void this.load(year);
+      void this.load(year, revision);
     });
   }
 
-  private async load(year: number): Promise<void> {
+  private async load(year: number, revision: number): Promise<void> {
+    const isCurrent = () => this.year() === year && this.budgetCells.revision() === revision;
     await runPending(
       this.pendingTasks,
       this.error,
@@ -62,7 +63,8 @@ export class PlanAllocationStatus {
           this.categories.listByType('savings'),
           this.budgetCells.listForYear(year),
         ]);
-        if (this.year() !== year) {
+        // Drop stale reloads: a newer revision (or year) won the race.
+        if (!isCurrent()) {
           return;
         }
         const totals = periodTotalsByMonth(cells, [...income, ...expense, ...savings]);
@@ -72,7 +74,7 @@ export class PlanAllocationStatus {
           ),
         );
       },
-      () => this.year() === year,
+      isCurrent,
     );
   }
 }
