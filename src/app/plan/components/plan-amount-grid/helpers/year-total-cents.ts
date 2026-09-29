@@ -1,4 +1,5 @@
-import { cellKey, PLAN_MONTHS } from './helpers';
+import { cellKey } from './cell-key';
+import { PLAN_MONTHS } from '../constants';
 
 /** Sum of twelve months for one category. Missing months are 0. */
 export function yearTotalCents(amounts: Record<string, number>, categoryId: string): number {

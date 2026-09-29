@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { Category } from '../../../data/domains/category/category';
-import { COLLECTIONS, type StoreDocument } from '../../../data/store/types';
-import type { TestDocumentStore } from '../../../data/store/document-store/document-store.testing';
+import type { Category } from '../../../../data/domains/category/category';
+import { COLLECTIONS, type StoreDocument } from '../../../../data/store/types';
+import type { TestDocumentStore } from '../../../../data/store/document-store/document-store.testing';
 import { PlanAmountGrid } from './plan-amount-grid';
 
 /** Shared insert/render helpers for PlanAmountGrid specs. Call after provideTestDocumentStore. */

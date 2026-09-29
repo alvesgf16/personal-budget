@@ -1,5 +1,5 @@
-import { cellKey } from './helpers';
-import type { TotalableRow } from './types';
+import { cellKey } from './cell-key';
+import type { TotalableRow } from '../types';
 
 /** Sum of active categories for one month. Hidden rows are skipped. */
 export function sectionMonthTotalCents(

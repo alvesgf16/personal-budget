@@ -3,10 +3,10 @@ import {
   parseCategoryName,
   type Category,
   type CategoryType,
-} from '../../../data/domains/category/category';
-import { CategoryService } from '../../../data/domains/category/category.service';
-import type { StoreDocument } from '../../../data/store/types';
-import { runPending } from '../../shared/with-pending-task';
+} from '../../../../data/domains/category/category';
+import { CategoryService } from '../../../../data/domains/category/category.service';
+import type { StoreDocument } from '../../../../data/store/types';
+import { runPending } from '../../../shared/helpers/run-pending';
 import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';
 import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
 

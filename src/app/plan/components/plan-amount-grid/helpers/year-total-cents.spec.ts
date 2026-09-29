@@ -1,4 +1,4 @@
-import { cellKey } from './helpers';
+import { cellKey } from './cell-key';
 import { yearTotalCents } from './year-total-cents';
 
 describe('yearTotalCents', () => {

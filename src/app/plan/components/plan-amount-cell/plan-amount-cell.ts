@@ -1,7 +1,8 @@
 import { Component, effect, inject, input, output, PendingTasks, signal } from '@angular/core';
-import { centsToDollarInput, dollarsToCents } from './helpers';
+import { centsToDollarInput } from './helpers/cents-to-dollar-input';
+import { dollarsToCents } from './helpers/dollars-to-cents';
 import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
-import { withPendingTask } from '../../../shared/with-pending-task';
+import { withPendingTask } from '../../../shared/helpers/with-pending-task';
 
 /** One Plan amount cell: local draft, persist on blur. */
 @Component({

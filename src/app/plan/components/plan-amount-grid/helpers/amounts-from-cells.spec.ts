@@ -1,4 +1,4 @@
-import { amountsFromCells } from './helpers';
+import { amountsFromCells } from './amounts-from-cells';
 
 describe('amountsFromCells', () => {
   it('indexes cell amounts by categoryId:month', () => {

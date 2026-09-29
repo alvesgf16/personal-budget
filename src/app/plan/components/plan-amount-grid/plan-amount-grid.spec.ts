@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { COLLECTIONS } from '../../../data/store/types';
-import { provideTestDocumentStore } from '../../../data/store/document-store/document-store.testing';
-import type { DocumentStore } from '../../../data/store/document-store/document-store';
+import { COLLECTIONS } from '../../../../data/store/types';
+import { provideTestDocumentStore } from '../../../../data/store/document-store/document-store.testing';
+import type { DocumentStore } from '../../../../data/store/document-store/document-store';
 import { PlanAmountGrid } from './plan-amount-grid';
 import { planAmountGridHarness } from './plan-amount-grid.testing';
 

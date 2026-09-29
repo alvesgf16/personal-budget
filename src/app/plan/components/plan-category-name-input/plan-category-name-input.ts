@@ -1,5 +1,5 @@
 import { Component, effect, input, output, signal } from '@angular/core';
-import { parseCategoryName } from '../../../data/domains/category/category';
+import { parseCategoryName } from '../../../../data/domains/category/category';
 
 /** Inline category name field: local draft, emit on blur when the value changed. */
 @Component({
