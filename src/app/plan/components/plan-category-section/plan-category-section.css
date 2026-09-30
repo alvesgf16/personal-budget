@@ -58,6 +58,27 @@ li {
 
 li app-plan-category-name-input {
   max-width: 16rem;
+  flex: 1;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hidden-categories {
+  margin-top: 0.75rem;
+}
+
+.hidden-categories summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.hidden-categories ul {
+  margin-top: 0.35rem;
 }
 
 [role='alert'] {

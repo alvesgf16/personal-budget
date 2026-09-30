@@ -22,18 +22,37 @@
       [year]="planYear"
       [rows]="rows()"
       (nameChange)="rename($event.id, $event.name)"
+      (hide)="hide($event.id)"
     />
   } @else {
-    <ul>
+    <ul class="active-categories">
       @for (row of rows(); track row.id) {
-        <li>
+        <li class="row-actions">
           <app-plan-category-name-input
             [categoryId]="row.id"
             [name]="row.name"
             (nameChange)="rename($event.id, $event.name)"
           />
+          <button type="button" [attr.aria-label]="'Hide ' + row.name" (click)="hide(row.id)">
+            Hide
+          </button>
         </li>
       }
     </ul>
+  }
+  @if (hiddenRows().length) {
+    <details class="hidden-categories">
+      <summary>Hidden ({{ hiddenRows().length }})</summary>
+      <ul>
+        @for (row of hiddenRows(); track row.id) {
+          <li class="row-actions">
+            <span>{{ row.name }}</span>
+            <button type="button" [attr.aria-label]="'Unhide ' + row.name" (click)="unhide(row.id)">
+              Unhide
+            </button>
+          </li>
+        }
+      </ul>
+    </details>
   }
 </section>

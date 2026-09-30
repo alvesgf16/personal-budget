@@ -28,6 +28,8 @@ export class PlanAmountGrid {
   readonly rows = input.required<StoreDocument<Category>[]>();
   /** Parent owns rename persist; name input only drafts and notifies on blur. */
   readonly nameChange = output<{ id: string; name: string }>();
+  /** Parent owns hide persist; grid only notifies. */
+  readonly hide = output<{ id: string }>();
 
   protected readonly months = PLAN_MONTHS;
   protected readonly monthShort = PLAN_MONTH_SHORT;

@@ -15,12 +15,19 @@
     <tbody>
       @for (row of rows(); track row.id) {
         <tr>
-          <th scope="row">
+          <th scope="row" class="row-label">
             <app-plan-category-name-input
               [categoryId]="row.id"
               [name]="row.name"
               (nameChange)="nameChange.emit($event)"
             />
+            <button
+              type="button"
+              [attr.aria-label]="'Hide ' + row.name"
+              (click)="hide.emit({ id: row.id })"
+            >
+              Hide
+            </button>
           </th>
           @for (month of months; track month) {
             <td>
