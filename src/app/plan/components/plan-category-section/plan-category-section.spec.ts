@@ -66,10 +66,27 @@ describe('PlanCategorySection', () => {
     fixture.detectChanges();
   };
 
+  const clickNamedButton = async (
+    fixture: ComponentFixture<PlanCategorySection>,
+    ariaLabel: string,
+  ) => {
+    const button = fixture.nativeElement.querySelector(
+      `button[aria-label="${ariaLabel}"]`,
+    ) as HTMLButtonElement;
+    button.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+
   const listItems = (fixture: ComponentFixture<PlanCategorySection>) =>
-    [...fixture.nativeElement.querySelectorAll('li input')].map(
+    [...fixture.nativeElement.querySelectorAll('.active-categories li input')].map(
       (el: Element) => (el as HTMLInputElement).value,
     );
+
+  const outputText = (fixture: ComponentFixture<PlanCategorySection>, ariaLabel: string) =>
+    (
+      fixture.nativeElement.querySelector(`output[aria-label="${ariaLabel}"]`) as HTMLElement | null
+    )?.textContent?.trim() ?? '';
 
   (
     [
@@ -106,7 +123,7 @@ describe('PlanCategorySection', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
       'category name',
     );
-    expect(fixture.nativeElement.querySelectorAll('li')).toHaveLength(0);
+    expect(listItems(fixture)).toEqual([]);
     expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
   });
 
@@ -186,6 +203,85 @@ describe('PlanCategorySection', () => {
     );
     const saved = await testDb.store.list<Category>(COLLECTIONS.categories);
     expect(saved[0]?.name).toBe('Salary');
+  });
+
+  it('hides in the list, keeps budgetCells, and lists the category under Hidden', async () => {
+    const fixture = await render('income');
+    await submitName(fixture, 'income', 'Salary');
+    await clickNamedButton(fixture, 'Hide Salary');
+
+    expect(listItems(fixture)).toEqual([]);
+    expect(fixture.nativeElement.querySelector('.hidden-categories')?.textContent).toContain(
+      'Salary',
+    );
+    expect(
+      fixture.nativeElement.querySelector('button[aria-label="Unhide Salary"]'),
+    ).not.toBeNull();
+
+    const saved = await testDb.store.list<Category>(COLLECTIONS.categories);
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({ name: 'Salary', active: false, sortOrder: 0 });
+  });
+
+  it('hides in the grid, drops section totals, and leaves budgetCells intact', async () => {
+    const fixture = await render('income', 2026);
+    await submitName(fixture, 'income', 'Salary');
+    await setCell(fixture, 'Salary January', '1000');
+    expect(outputText(fixture, 'Total January')).toBe('1000');
+
+    await clickNamedButton(fixture, 'Hide Salary');
+
+    expect(fixture.nativeElement.querySelector('input[aria-label="Salary January"]')).toBeNull();
+    expect(outputText(fixture, 'Total January')).toBe('0');
+    expect(fixture.nativeElement.querySelector('.hidden-categories')?.textContent).toContain(
+      'Salary',
+    );
+
+    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const categories = await testDb.store.list<Category>(COLLECTIONS.categories);
+    expect(categories[0]?.active).toBe(false);
+    expect(cells).toHaveLength(1);
+    expect(cells[0]).toMatchObject({
+      categoryId: categories[0]!.id,
+      year: 2026,
+      month: 1,
+      amountCents: 100_000,
+    });
+  });
+
+  it('unhides a category and restores its January amount in the grid', async () => {
+    const fixture = await render('income', 2026);
+    await submitName(fixture, 'income', 'Salary');
+    await setCell(fixture, 'Salary January', '1000');
+    await clickNamedButton(fixture, 'Hide Salary');
+    await clickNamedButton(fixture, 'Unhide Salary');
+
+    expect(fixture.nativeElement.querySelector('.hidden-categories')).toBeNull();
+    const january = fixture.nativeElement.querySelector(
+      'input[aria-label="Salary January"]',
+    ) as HTMLInputElement;
+    expect(january.value).toBe('1000');
+    expect(outputText(fixture, 'Total January')).toBe('1000');
+
+    const saved = await testDb.store.list<Category>(COLLECTIONS.categories);
+    expect(saved[0]?.active).toBe(true);
+  });
+
+  it('shows an error when hide persistence fails and keeps the row', async () => {
+    const fixture = await render('income');
+    await submitName(fixture, 'income', 'Salary');
+
+    testDb.store.update = async () => {
+      throw new Error('unavailable');
+    };
+    await clickNamedButton(fixture, 'Hide Salary');
+
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Could not save',
+    );
+    expect(listItems(fixture)).toEqual(['Salary']);
+    const saved = await testDb.store.list<Category>(COLLECTIONS.categories);
+    expect(saved[0]?.active).toBe(true);
   });
 
   (

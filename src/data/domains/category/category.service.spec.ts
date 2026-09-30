@@ -148,4 +148,62 @@ describe('CategoryService', () => {
   it('rejects rename when the category id is missing', async () => {
     await expect(service.rename('missing-id', 'Paycheck')).rejects.toThrow(/not found/i);
   });
+
+  it('hides a category from listByType and lists it under listHiddenByType', async () => {
+    const created = await service.add('income', 'Salary');
+    const hidden = await service.hide(created.id);
+
+    expect(hidden.active).toBe(false);
+    expect((await service.listByType('income')).map((doc) => doc.name)).toEqual([]);
+    expect((await service.listHiddenByType('income')).map((doc) => doc.name)).toEqual(['Salary']);
+    expect(service.revision()).toBe(1);
+  });
+
+  it('leaves budgetCells untouched after hide', async () => {
+    const created = await service.add('income', 'Salary');
+    await testDb.store.insert(COLLECTIONS.budgetCells, {
+      categoryId: created.id,
+      year: 2026,
+      month: 1,
+      amountCents: 100_000,
+    });
+
+    await service.hide(created.id);
+
+    const cells = await testDb.store.list(COLLECTIONS.budgetCells);
+    expect(cells).toHaveLength(1);
+    expect(cells[0]).toMatchObject({
+      categoryId: created.id,
+      year: 2026,
+      month: 1,
+      amountCents: 100_000,
+    });
+  });
+
+  it('unhides without changing sortOrder, name, or type', async () => {
+    const created = await service.add('income', 'Salary');
+    await service.hide(created.id);
+    const restored = await service.unhide(created.id);
+
+    expect(restored).toMatchObject({
+      id: created.id,
+      name: 'Salary',
+      sortOrder: created.sortOrder,
+      type: 'income',
+      active: true,
+    });
+    expect((await service.listByType('income')).map((doc) => doc.name)).toEqual(['Salary']);
+    expect(await service.listHiddenByType('income')).toEqual([]);
+    expect(service.revision()).toBe(2);
+  });
+
+  it('rejects hide when the category id is missing', async () => {
+    await expect(service.hide('missing-id')).rejects.toThrow(/not found/i);
+    expect(service.revision()).toBe(0);
+  });
+
+  it('rejects unhide when the category id is missing', async () => {
+    await expect(service.unhide('missing-id')).rejects.toThrow(/not found/i);
+    expect(service.revision()).toBe(0);
+  });
 });

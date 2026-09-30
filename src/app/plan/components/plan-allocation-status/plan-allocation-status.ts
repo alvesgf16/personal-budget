@@ -42,16 +42,20 @@ export class PlanAllocationStatus {
   constructor() {
     effect(() => {
       const year = this.year();
-      // Depend on revision so a cell blur reloads this strip.
-      const revision = this.budgetCells.revision();
+      // Depend on both revisions: cell blur and category hide/unhide.
+      const cellRevision = this.budgetCells.revision();
+      const categoryRevision = this.categories.revision();
       this.months.set([]);
       this.error.set(null);
-      void this.load(year, revision);
+      void this.load(year, cellRevision, categoryRevision);
     });
   }
 
-  private async load(year: number, revision: number): Promise<void> {
-    const isCurrent = () => this.year() === year && this.budgetCells.revision() === revision;
+  private async load(year: number, cellRevision: number, categoryRevision: number): Promise<void> {
+    const isCurrent = () =>
+      this.year() === year &&
+      this.budgetCells.revision() === cellRevision &&
+      this.categories.revision() === categoryRevision;
     await runPending(
       this.pendingTasks,
       this.error,

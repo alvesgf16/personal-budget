@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { BudgetCell } from '../../../../data/domains/budget-cell/budget-cell';
 import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
 import type { Category } from '../../../../data/domains/category/category';
+import { CategoryService } from '../../../../data/domains/category/category.service';
 import type { DocumentStore } from '../../../../data/store/document-store/document-store';
 import { COLLECTIONS } from '../../../../data/store/types';
 import { provideTestDocumentStore } from '../../../../data/store/document-store/document-store.testing';
@@ -76,6 +77,26 @@ describe('PlanAllocationStatus', () => {
     const fixture = await renderStrip();
 
     expect(statusFor(fixture, 'January')).toEqual({ text: '200 over', status: 'over' });
+  });
+
+  it('reloads when a category is hidden so its amounts leave the strip', async () => {
+    const salary = await insertCategory('income', 'Salary');
+    const rent = await insertCategory('expense', 'Rent');
+    const emergency = await insertCategory('savings', 'Emergency');
+    await insertCell(salary.id, 1, 100_000);
+    await insertCell(rent.id, 1, 70_000);
+    await insertCell(emergency.id, 1, 30_000);
+
+    const fixture = await renderStrip();
+    expect(statusFor(fixture, 'January')).toEqual({ text: 'Complete', status: 'balanced' });
+
+    await TestBed.inject(CategoryService).hide(salary.id);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(statusFor(fixture, 'January')).toEqual({ text: '1000 over', status: 'over' });
+    expect(TestBed.inject(CategoryService).revision()).toBeGreaterThan(0);
   });
 
   it('updates to Complete after a cell blur without storing a total document', async () => {

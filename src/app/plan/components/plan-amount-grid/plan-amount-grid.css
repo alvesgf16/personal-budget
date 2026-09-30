@@ -31,6 +31,23 @@ tfoot th {
   min-width: 8rem;
 }
 
+.row-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.row-label app-plan-category-name-input {
+  flex: 1;
+  min-width: 6rem;
+}
+
+.row-label button {
+  font: inherit;
+  padding: 0.2rem 0.45rem;
+  flex-shrink: 0;
+}
+
 output {
   font-variant-numeric: tabular-nums;
 }

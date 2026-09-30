@@ -17,7 +17,7 @@ const SECTION_TITLES: Record<CategoryType, string> = {
 };
 
 /**
- * Add, list, and rename categories for one Plan section type.
+ * Add, list, rename, and hide/unhide categories for one Plan section type.
  * When `year` is set, mounts the amount grid for that year.
  */
 @Component({
@@ -37,6 +37,7 @@ export class PlanCategorySection {
   protected readonly nameDraft = signal('');
   protected readonly error = signal<string | null>(null);
   protected readonly rows = signal<StoreDocument<Category>[]>([]);
+  protected readonly hiddenRows = signal<StoreDocument<Category>[]>([]);
 
   protected get title(): string {
     return SECTION_TITLES[this.type()];
@@ -94,6 +95,30 @@ export class PlanCategorySection {
     );
   }
 
+  protected async hide(id: string): Promise<void> {
+    await runPending(
+      this.pendingTasks,
+      this.error,
+      'Could not save the category. Try again.',
+      async () => {
+        await this.categories.hide(id);
+        await this.refresh();
+      },
+    );
+  }
+
+  protected async unhide(id: string): Promise<void> {
+    await runPending(
+      this.pendingTasks,
+      this.error,
+      'Could not save the category. Try again.',
+      async () => {
+        await this.categories.unhide(id);
+        await this.refresh();
+      },
+    );
+  }
+
   private async load(): Promise<void> {
     await runPending(
       this.pendingTasks,
@@ -104,6 +129,12 @@ export class PlanCategorySection {
   }
 
   private async refresh(): Promise<void> {
-    this.rows.set(await this.categories.listByType(this.type()));
+    const type = this.type();
+    const [active, hidden] = await Promise.all([
+      this.categories.listByType(type),
+      this.categories.listHiddenByType(type),
+    ]);
+    this.rows.set(active);
+    this.hiddenRows.set(hidden);
   }
 }
