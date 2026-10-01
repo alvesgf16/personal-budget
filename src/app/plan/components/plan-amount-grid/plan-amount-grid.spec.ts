@@ -7,7 +7,7 @@ import { planAmountGridHarness } from './plan-amount-grid.testing';
 
 describe('PlanAmountGrid', () => {
   const testDb = provideTestDocumentStore('pb-21-amount-grid', { imports: [PlanAmountGrid] });
-  const { insertCategory } = planAmountGridHarness(testDb);
+  const { insertCategory, render, outputText } = planAmountGridHarness(testDb);
 
   it('ignores a stale load when year changes mid-flight', async () => {
     const salary = await insertCategory('Salary');
@@ -59,5 +59,51 @@ describe('PlanAmountGrid', () => {
       'input[aria-label="Salary January"]',
     ) as HTMLInputElement;
     expect(january.value).toBe('2000');
+  });
+
+  describe('totals', () => {
+    it('updates totals when a cell commits without storing a total document', async () => {
+      const salary = await insertCategory('Salary');
+      const fixture = await render([salary]);
+
+      const january = fixture.nativeElement.querySelector(
+        'input[aria-label="Salary January"]',
+      ) as HTMLInputElement;
+      january.value = '1000';
+      january.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(outputText(fixture, 'Salary year total')).toBe('0');
+      expect(await testDb.store.list(COLLECTIONS.budgetCells)).toEqual([]);
+
+      january.dispatchEvent(new Event('blur'));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(outputText(fixture, 'Salary year total')).toBe('1000');
+      expect(outputText(fixture, 'Total January')).toBe('1000');
+      const cells = await testDb.store.list(COLLECTIONS.budgetCells);
+      expect(cells).toHaveLength(1);
+      expect(cells[0]).toMatchObject({ month: 1, amountCents: 100_000 });
+    });
+
+    it('does not include other-section cells in this section total', async () => {
+      const salary = await insertCategory('Salary');
+      const rent = await insertCategory('Rent', { type: 'expense' });
+      await testDb.store.insert(COLLECTIONS.budgetCells, {
+        categoryId: salary.id,
+        year: 2026,
+        month: 1,
+        amountCents: 10_000,
+      });
+      await testDb.store.insert(COLLECTIONS.budgetCells, {
+        categoryId: rent.id,
+        year: 2026,
+        month: 1,
+        amountCents: 99_900,
+      });
+
+      const fixture = await render([salary]);
+      expect(outputText(fixture, 'Total January')).toBe('100');
+    });
   });
 });
