@@ -6,7 +6,7 @@ import { provideTestDocumentStore } from '../../../../data/store/document-store/
 import { PlanCategorySection } from './plan-category-section';
 
 describe('PlanCategorySection', () => {
-  const testDb = provideTestDocumentStore('pb-21-plan-section', {
+  const testStore = provideTestDocumentStore('pb-21-plan-section', {
     imports: [PlanCategorySection],
   });
 
@@ -102,7 +102,7 @@ describe('PlanCategorySection', () => {
       expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
       expect(listItems(fixture)).toEqual([first]);
 
-      const saved = await testDb.store.list(COLLECTIONS.categories);
+      const saved = await testStore.store.list(COLLECTIONS.categories);
       expect(saved).toHaveLength(1);
       expect(saved[0]).toMatchObject({ type, name: first, sortOrder: 0, active: true });
     });
@@ -124,11 +124,11 @@ describe('PlanCategorySection', () => {
       'category name',
     );
     expect(listItems(fixture)).toEqual([]);
-    expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
+    expect(await testStore.store.list(COLLECTIONS.categories)).toEqual([]);
   });
 
   it('shows an error when add persistence fails and keeps the draft', async () => {
-    testDb.store.insert = async () => {
+    testStore.store.insert = async () => {
       throw new Error('unavailable');
     };
 
@@ -141,7 +141,7 @@ describe('PlanCategorySection', () => {
     expect(
       (fixture.nativeElement.querySelector('#category-name-income') as HTMLInputElement).value,
     ).toBe('Salary');
-    expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
+    expect(await testStore.store.list(COLLECTIONS.categories)).toEqual([]);
   });
 
   it('renames in the list without changing sortOrder', async () => {
@@ -150,7 +150,7 @@ describe('PlanCategorySection', () => {
     await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
 
     expect(listItems(fixture)).toEqual(['Paycheck']);
-    const saved = await testDb.store.list(COLLECTIONS.categories);
+    const saved = await testStore.store.list(COLLECTIONS.categories);
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({
       name: 'Paycheck',
@@ -177,8 +177,8 @@ describe('PlanCategorySection', () => {
       fixture.nativeElement.querySelector('input[aria-label="Paycheck January"]'),
     ).not.toBeNull();
 
-    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
-    const categories = await testDb.store.list<Category>(COLLECTIONS.categories);
+    const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const categories = await testStore.store.list<Category>(COLLECTIONS.categories);
     expect(categories[0]?.name).toBe('Paycheck');
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
@@ -193,7 +193,7 @@ describe('PlanCategorySection', () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
 
-    testDb.store.update = async () => {
+    testStore.store.update = async () => {
       throw new Error('unavailable');
     };
     await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
@@ -201,7 +201,7 @@ describe('PlanCategorySection', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
       'Could not save',
     );
-    const saved = await testDb.store.list<Category>(COLLECTIONS.categories);
+    const saved = await testStore.store.list<Category>(COLLECTIONS.categories);
     expect(saved[0]?.name).toBe('Salary');
   });
 
@@ -218,7 +218,7 @@ describe('PlanCategorySection', () => {
       fixture.nativeElement.querySelector('button[aria-label="Unhide Salary"]'),
     ).not.toBeNull();
 
-    const saved = await testDb.store.list<Category>(COLLECTIONS.categories);
+    const saved = await testStore.store.list<Category>(COLLECTIONS.categories);
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({ name: 'Salary', active: false, sortOrder: 0 });
   });
@@ -237,8 +237,8 @@ describe('PlanCategorySection', () => {
       'Salary',
     );
 
-    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
-    const categories = await testDb.store.list<Category>(COLLECTIONS.categories);
+    const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const categories = await testStore.store.list<Category>(COLLECTIONS.categories);
     expect(categories[0]?.active).toBe(false);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
@@ -263,7 +263,7 @@ describe('PlanCategorySection', () => {
     expect(january.value).toBe('1000');
     expect(outputText(fixture, 'Total January')).toBe('1000');
 
-    const saved = await testDb.store.list<Category>(COLLECTIONS.categories);
+    const saved = await testStore.store.list<Category>(COLLECTIONS.categories);
     expect(saved[0]?.active).toBe(true);
   });
 
@@ -271,7 +271,7 @@ describe('PlanCategorySection', () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
 
-    testDb.store.update = async () => {
+    testStore.store.update = async () => {
       throw new Error('unavailable');
     };
     await clickNamedButton(fixture, 'Hide Salary');
@@ -280,7 +280,7 @@ describe('PlanCategorySection', () => {
       'Could not save',
     );
     expect(listItems(fixture)).toEqual(['Salary']);
-    const saved = await testDb.store.list<Category>(COLLECTIONS.categories);
+    const saved = await testStore.store.list<Category>(COLLECTIONS.categories);
     expect(saved[0]?.active).toBe(true);
   });
 
@@ -296,7 +296,7 @@ describe('PlanCategorySection', () => {
       await submitName(fixture, type, name);
       await setCell(fixture, `${name} January`, '1000');
 
-      const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+      const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
       expect(cells).toHaveLength(1);
       expect(cells[0]).toMatchObject({ year: 2026, month: 1, amountCents: 100_000 });
 

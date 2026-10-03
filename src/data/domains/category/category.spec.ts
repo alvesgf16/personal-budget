@@ -57,7 +57,7 @@ describe('parseCategoryName', () => {
 });
 
 describe('categories store round-trip', () => {
-  const testDb = useTestStore('pb-categories-test');
+  const testStore = useTestStore('pb-categories-test');
 
   it('inserts and reads a parsed category payload', async () => {
     const payload = categorySchema.parse({
@@ -66,8 +66,8 @@ describe('categories store round-trip', () => {
       sortOrder: 2,
       active: true,
     });
-    const created = await testDb.store.insert(COLLECTIONS.categories, payload);
-    const found = await testDb.store.getById<Category>(COLLECTIONS.categories, created.id);
+    const created = await testStore.store.insert(COLLECTIONS.categories, payload);
+    const found = await testStore.store.getById<Category>(COLLECTIONS.categories, created.id);
 
     expect(found).toEqual(created);
     expect(found).toMatchObject({

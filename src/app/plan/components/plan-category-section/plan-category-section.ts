@@ -27,7 +27,7 @@ const SECTION_TITLES: Record<CategoryType, string> = {
   templateUrl: './plan-category-section.html',
 })
 export class PlanCategorySection {
-  private readonly categories = inject(CategoryService);
+  private readonly categoryService = inject(CategoryService);
   private readonly pendingTasks = inject(PendingTasks);
 
   readonly type = input.required<CategoryType>();
@@ -36,8 +36,8 @@ export class PlanCategorySection {
 
   protected readonly nameDraft = signal('');
   protected readonly error = signal<string | null>(null);
-  protected readonly rows = signal<StoreDocument<Category>[]>([]);
-  protected readonly hiddenRows = signal<StoreDocument<Category>[]>([]);
+  protected readonly activeCategories = signal<StoreDocument<Category>[]>([]);
+  protected readonly hiddenCategories = signal<StoreDocument<Category>[]>([]);
 
   protected get title(): string {
     return SECTION_TITLES[this.type()];
@@ -67,7 +67,7 @@ export class PlanCategorySection {
       this.error,
       'Could not save the category. Try again.',
       async () => {
-        await this.categories.add(this.type(), name);
+        await this.categoryService.add(this.type(), name);
         this.nameDraft.set('');
         await this.refresh();
       },
@@ -80,7 +80,7 @@ export class PlanCategorySection {
       this.error.set('Enter a category name.');
       return;
     }
-    if (this.rows().some((row) => row.id === id && row.name === name)) {
+    if (this.activeCategories().some((category) => category.id === id && category.name === name)) {
       return;
     }
 
@@ -89,7 +89,7 @@ export class PlanCategorySection {
       this.error,
       'Could not save the category. Try again.',
       async () => {
-        await this.categories.rename(id, name);
+        await this.categoryService.rename(id, name);
         await this.refresh();
       },
     );
@@ -101,7 +101,7 @@ export class PlanCategorySection {
       this.error,
       'Could not save the category. Try again.',
       async () => {
-        await this.categories.hide(id);
+        await this.categoryService.hide(id);
         await this.refresh();
       },
     );
@@ -113,7 +113,7 @@ export class PlanCategorySection {
       this.error,
       'Could not save the category. Try again.',
       async () => {
-        await this.categories.unhide(id);
+        await this.categoryService.unhide(id);
         await this.refresh();
       },
     );
@@ -131,10 +131,10 @@ export class PlanCategorySection {
   private async refresh(): Promise<void> {
     const type = this.type();
     const [active, hidden] = await Promise.all([
-      this.categories.listByType(type),
-      this.categories.listHiddenByType(type),
+      this.categoryService.listByType(type),
+      this.categoryService.listHiddenByType(type),
     ]);
-    this.rows.set(active);
-    this.hiddenRows.set(hidden);
+    this.activeCategories.set(active);
+    this.hiddenCategories.set(hidden);
   }
 }

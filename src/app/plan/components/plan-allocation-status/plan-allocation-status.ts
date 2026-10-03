@@ -17,7 +17,7 @@ export interface MonthAllocationView {
   shortLabel: string;
   longLabel: string;
   status: PeriodBalanceStatus;
-  label: string;
+  statusLabel: string;
 }
 
 /**
@@ -91,7 +91,7 @@ function toMonthView(month: number, balance: PeriodBalance): MonthAllocationView
     shortLabel,
     longLabel,
     status: balance.status,
-    label: statusLabel(balance),
+    statusLabel: statusLabel(balance),
   };
 }
 

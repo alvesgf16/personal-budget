@@ -13,18 +13,18 @@
       </tr>
     </thead>
     <tbody>
-      @for (row of rows(); track row.id) {
+      @for (category of categories(); track category.id) {
         <tr>
           <th scope="row" class="row-label">
             <app-plan-category-name-input
-              [categoryId]="row.id"
-              [name]="row.name"
+              [categoryId]="category.id"
+              [name]="category.name"
               (nameChange)="nameChange.emit($event)"
             />
             <button
               type="button"
-              [attr.aria-label]="'Hide ' + row.name"
-              (click)="hide.emit({ id: row.id })"
+              [attr.aria-label]="'Hide ' + category.name"
+              (click)="hide.emit({ id: category.id })"
             >
               Hide
             </button>
@@ -32,18 +32,20 @@
           @for (month of months; track month) {
             <td>
               <app-plan-amount-cell
-                [categoryId]="row.id"
+                [categoryId]="category.id"
                 [month]="month"
                 [year]="year()"
-                [label]="row.name + ' ' + monthLong[month - 1]"
-                [amountCents]="amountFor(row.id, month)"
+                [label]="category.name + ' ' + monthLong[month - 1]"
+                [amountCents]="amountFor(category.id, month)"
                 (saveError)="onCellError($event)"
-                (committed)="onCommitted(row.id, month, $event)"
+                (committed)="onCommitted(category.id, month, $event)"
               />
             </td>
           }
           <td>
-            <output [attr.aria-label]="row.name + ' year total'">{{ yearTotalFor(row.id) }}</output>
+            <output [attr.aria-label]="category.name + ' year total'">{{
+              yearTotalFor(category.id)
+            }}</output>
           </td>
         </tr>
       }

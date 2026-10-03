@@ -21,12 +21,12 @@ export function openTestStore(prefix: string): { store: DocumentStore; dispose: 
 
 /** Unique IndexedDB for schema/store specs (no TestBed). */
 export function useTestStore(prefix: string): TestDocumentStore {
-  const testDb = {} as TestDocumentStore;
+  const testStore = {} as TestDocumentStore;
   let dispose!: () => void;
 
   beforeEach(() => {
     const opened = openTestStore(prefix);
-    testDb.store = opened.store;
+    testStore.store = opened.store;
     dispose = opened.dispose;
   });
 
@@ -34,7 +34,7 @@ export function useTestStore(prefix: string): TestDocumentStore {
     dispose();
   });
 
-  return testDb;
+  return testStore;
 }
 
 /** Unique IndexedDB plus DOCUMENT_STORE override for TestBed specs. */
@@ -42,16 +42,16 @@ export function provideTestDocumentStore(
   prefix: string,
   options: Pick<TestModuleMetadata, 'imports'> = {},
 ): TestDocumentStore {
-  const testDb = {} as TestDocumentStore;
+  const testStore = {} as TestDocumentStore;
   let dispose!: () => void;
 
   beforeEach(async () => {
     const opened = openTestStore(prefix);
-    testDb.store = opened.store;
+    testStore.store = opened.store;
     dispose = opened.dispose;
     await TestBed.configureTestingModule({
       imports: options.imports ?? [],
-      providers: [{ provide: DOCUMENT_STORE, useValue: testDb.store }],
+      providers: [{ provide: DOCUMENT_STORE, useValue: testStore.store }],
     }).compileComponents();
   });
 
@@ -59,5 +59,5 @@ export function provideTestDocumentStore(
     dispose();
   });
 
-  return testDb;
+  return testStore;
 }

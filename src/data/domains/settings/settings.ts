@@ -13,8 +13,8 @@ export const settingsSchema = z.object({
 /** Inferred TypeScript type — one source of truth with the Zod schema. */
 export type Settings = z.infer<typeof settingsSchema>;
 
-/** Parse a typed year string. Empty or out of range → `null`. */
-export function parseStartingYear(raw: string): Settings | null {
+/** Parse a typed year string into Settings. Empty or out of range → `null`. */
+export function parseSettings(raw: string): Settings | null {
   const trimmed = raw.trim();
   const parsed = settingsSchema.safeParse({
     startingYear: trimmed === '' ? Number.NaN : Number(trimmed),

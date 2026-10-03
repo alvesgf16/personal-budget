@@ -5,7 +5,7 @@ import { COLLECTIONS } from '../../store/types';
 import { provideTestDocumentStore } from '../../store/document-store/document-store.testing';
 
 describe('BudgetCellService', () => {
-  const testDb = provideTestDocumentStore('pb-21-budget-cell-service');
+  const testStore = provideTestDocumentStore('pb-21-budget-cell-service');
   let service: BudgetCellService;
 
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe('BudgetCellService', () => {
     await service.save('cat-salary', 2026, 3, 100_000);
     await service.save('cat-salary', 2026, 3, 250_000);
 
-    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
       categoryId: 'cat-salary',
@@ -40,7 +40,7 @@ describe('BudgetCellService', () => {
     await service.save('cat-salary', 2026, 1, null);
 
     expect(await service.listForYear(2026)).toEqual([]);
-    expect(await testDb.store.list(COLLECTIONS.budgetCells)).toEqual([]);
+    expect(await testStore.store.list(COLLECTIONS.budgetCells)).toEqual([]);
   });
 
   it('lists only cells for the requested year', async () => {

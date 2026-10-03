@@ -1,18 +1,18 @@
 import { cellKey } from './cell-key';
-import type { TotalableRow } from '../types';
+import type { TotalableCategory } from '../types';
 
-/** Sum of active categories for one month. Hidden rows are skipped. */
+/** Sum of active categories for one month. Hidden categories are skipped. */
 export function sectionMonthTotalCents(
   amounts: Record<string, number>,
-  rows: readonly TotalableRow[],
+  categories: readonly TotalableCategory[],
   month: number,
 ): number {
   let total = 0;
-  for (const row of rows) {
-    if (!row.active) {
+  for (const category of categories) {
+    if (!category.active) {
       continue;
     }
-    total += amounts[cellKey(row.id, month)] ?? 0;
+    total += amounts[cellKey(category.id, month)] ?? 0;
   }
   return total;
 }

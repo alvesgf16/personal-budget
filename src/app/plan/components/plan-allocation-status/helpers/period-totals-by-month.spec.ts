@@ -10,7 +10,12 @@ describe('periodTotalsByMonth', () => {
     const totals = periodTotalsByMonth([], [salary, rent, emergency]);
     expect(totals).toHaveLength(12);
     expect(
-      totals.every((t) => t.incomeCents === 0 && t.expenseCents === 0 && t.savingsCents === 0),
+      totals.every(
+        (monthTotals) =>
+          monthTotals.incomeCents === 0 &&
+          monthTotals.expenseCents === 0 &&
+          monthTotals.savingsCents === 0,
+      ),
     ).toBe(true);
   });
 

@@ -45,7 +45,7 @@ export class BudgetCellService {
       if (existing) {
         await this.store.softDelete(COLLECTIONS.budgetCells, existing.id);
       }
-      this.revision.update((n) => n + 1);
+      this.revision.update((revision) => revision + 1);
       return;
     }
 
@@ -55,7 +55,7 @@ export class BudgetCellService {
     } else {
       await this.store.insert(COLLECTIONS.budgetCells, payload);
     }
-    this.revision.update((n) => n + 1);
+    this.revision.update((revision) => revision + 1);
   }
 
   private async findCell(

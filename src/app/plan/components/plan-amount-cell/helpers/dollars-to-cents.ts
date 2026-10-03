@@ -12,9 +12,9 @@ export function dollarsToCents(raw: string): number | null {
     throw new Error('Enter a non-negative dollar amount.');
   }
   const [wholePart, fracPart = ''] = trimmed.split('.');
-  const cents = Number(wholePart) * 100 + Number(fracPart.padEnd(2, '0'));
-  if (!Number.isSafeInteger(cents)) {
+  const amountCents = Number(wholePart) * 100 + Number(fracPart.padEnd(2, '0'));
+  if (!Number.isSafeInteger(amountCents)) {
     throw new Error('Amount is too large.');
   }
-  return cents;
+  return amountCents;
 }

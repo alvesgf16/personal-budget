@@ -1,0 +1,62 @@
+---
+description: Clean Code judgment guidance (Meaningful Names and later chapters)
+alwaysApply: true
+---
+
+# Clean Code
+
+Source: Robert C. Martin, _Clean Code_. Inventory: `docs/clean-code-inventory.md`. Angular file/class/selector conventions stay under PB-87 — do not enforce them here.
+
+## Meaningful Names (Ch.2)
+
+### Use Intention-Revealing Names
+
+Prefer names that say why the thing exists and how it is used (`amountCents`, `deletedAt`, `sortOrder`) over opaque abbreviations or dumping-ground locals (`data`, `result` with no context).
+
+### Avoid Disinformation
+
+Do not name something like a type or structure it is not (`*List` that is not a list, `*Manager` that does not manage). Avoid false cues and near-homophones.
+
+### Make Meaningful Distinctions
+
+Distinctions must carry meaning — avoid noise suffixes (`Info`, `Data`, `Object`) and numbered series (`a1`, `a2`). One clear name per concept.
+
+### Use Pronounceable Names
+
+Prefer spoken words over packed encodings (`generationTimestamp`, not `genymdhms`-style names).
+
+### Use Searchable Names / Avoid Mental Mapping
+
+Avoid single-letter names except classic loop indices (`i`/`j`/`k`) or unused `_`. Readers should not translate `c`→category in their head. Prefer greppable names over magic numbers.
+
+### Avoid Encodings
+
+No Hungarian / type prefixes (`ICategory`, `strName`, `m_`). Member encodings discouraged. Casing is gated by ESLint (`naming-convention`, `id-length`, `id-denylist`).
+
+### Class Names / Method Names
+
+Classes: nouns or noun phrases (`CategoryService`, `BudgetCell`, `PeriodBalance`). Methods: verbs or verb phrases (`listByType`, `softDelete`, `updateAmount`). Clear accessors (`getById`).
+
+### Don't Be Cute
+
+No jokey or culture-bound names. Prefer clear over clever.
+
+### Pick One Word per Concept / Don't Pun
+
+Prefer one verb per idea. Store API: `list` / `getById` / `insert` / `update` (soft-delete via store semantics) — do not mix `fetch` / `retrieve` / `obtain` for the same operation. Do not reuse one word for two meanings (e.g. `add` for both insert and arithmetic).
+
+### Solution Domain vs Problem Domain
+
+CS/Angular vocabulary is fine where it fits (`Router`, `signal`, `inject`, `schema`, queue, map). In feature/domain code prefer PB vocabulary:
+
+- `Category`, `CategoryType` (`income` | `expense` | `savings`)
+- `BudgetCell`, `Settings`
+- Money amounts in **cents** (`amountCents`, `*Cents` totals)
+- Soft-delete / `deletedAt`
+- Plan year / month
+- `PeriodBalance`, `PeriodTotals`
+- `DOCUMENT_STORE`, `COLLECTIONS`
+
+### Meaningful Context / Don't Add Gratuitous Context
+
+Add enough context when bare names are ambiguous (`monthIncomeCents` vs bare `amount`). Prefer well-named classes/modules as context over long prefixes on every local. Avoid redundant stamps (`Category.categoryName` → `Category.name`; no `PB`/`App` on every identifier).

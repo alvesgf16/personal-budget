@@ -6,18 +6,18 @@ import { PlanAmountGrid } from './plan-amount-grid';
 import { planAmountGridHarness } from './plan-amount-grid.testing';
 
 describe('PlanAmountGrid', () => {
-  const testDb = provideTestDocumentStore('pb-21-amount-grid', { imports: [PlanAmountGrid] });
-  const { insertCategory, render, outputText } = planAmountGridHarness(testDb);
+  const testStore = provideTestDocumentStore('pb-21-amount-grid', { imports: [PlanAmountGrid] });
+  const { insertCategory, render, outputText } = planAmountGridHarness(testStore);
 
   it('ignores a stale load when year changes mid-flight', async () => {
     const salary = await insertCategory('Salary');
-    await testDb.store.insert(COLLECTIONS.budgetCells, {
+    await testStore.store.insert(COLLECTIONS.budgetCells, {
       categoryId: salary.id,
       year: 2026,
       month: 1,
       amountCents: 100_000,
     });
-    await testDb.store.insert(COLLECTIONS.budgetCells, {
+    await testStore.store.insert(COLLECTIONS.budgetCells, {
       categoryId: salary.id,
       year: 2027,
       month: 1,
@@ -28,9 +28,9 @@ describe('PlanAmountGrid', () => {
     const firstListGate = new Promise<void>((resolve) => {
       releaseFirst = resolve;
     });
-    const originalList = testDb.store.list.bind(testDb.store);
+    const originalList = testStore.store.list.bind(testStore.store);
     let listCalls = 0;
-    testDb.store.list = async <T extends object>(
+    testStore.store.list = async <T extends object>(
       collection: Parameters<DocumentStore['list']>[0],
     ) => {
       const rows = await originalList<T>(collection);
@@ -45,7 +45,7 @@ describe('PlanAmountGrid', () => {
 
     const fixture = TestBed.createComponent(PlanAmountGrid);
     fixture.componentRef.setInput('year', 2026);
-    fixture.componentRef.setInput('rows', [salary]);
+    fixture.componentRef.setInput('categories', [salary]);
     fixture.detectChanges();
     await Promise.resolve();
 
@@ -73,7 +73,7 @@ describe('PlanAmountGrid', () => {
       january.dispatchEvent(new Event('input'));
       fixture.detectChanges();
       expect(outputText(fixture, 'Salary year total')).toBe('0');
-      expect(await testDb.store.list(COLLECTIONS.budgetCells)).toEqual([]);
+      expect(await testStore.store.list(COLLECTIONS.budgetCells)).toEqual([]);
 
       january.dispatchEvent(new Event('blur'));
       await fixture.whenStable();
@@ -81,7 +81,7 @@ describe('PlanAmountGrid', () => {
 
       expect(outputText(fixture, 'Salary year total')).toBe('1000');
       expect(outputText(fixture, 'Total January')).toBe('1000');
-      const cells = await testDb.store.list(COLLECTIONS.budgetCells);
+      const cells = await testStore.store.list(COLLECTIONS.budgetCells);
       expect(cells).toHaveLength(1);
       expect(cells[0]).toMatchObject({ month: 1, amountCents: 100_000 });
     });
@@ -89,13 +89,13 @@ describe('PlanAmountGrid', () => {
     it('does not include other-section cells in this section total', async () => {
       const salary = await insertCategory('Salary');
       const rent = await insertCategory('Rent', { type: 'expense' });
-      await testDb.store.insert(COLLECTIONS.budgetCells, {
+      await testStore.store.insert(COLLECTIONS.budgetCells, {
         categoryId: salary.id,
         year: 2026,
         month: 1,
         amountCents: 10_000,
       });
-      await testDb.store.insert(COLLECTIONS.budgetCells, {
+      await testStore.store.insert(COLLECTIONS.budgetCells, {
         categoryId: rent.id,
         year: 2026,
         month: 1,

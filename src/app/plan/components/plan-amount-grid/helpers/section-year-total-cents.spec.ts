@@ -12,13 +12,13 @@ describe('sectionYearTotalCents', () => {
     [cellKey(bonus, 1)]: 500,
     [cellKey(hidden, 1)]: 100_000,
   };
-  const rows = [
+  const categories = [
     { id: salary, active: true },
     { id: bonus, active: true },
     { id: hidden, active: false },
   ];
 
   it('sums active year totals for the section', () => {
-    expect(sectionYearTotalCents(amounts, rows)).toBe(6_550);
+    expect(sectionYearTotalCents(amounts, categories)).toBe(6_550);
   });
 });

@@ -20,34 +20,42 @@
   @if (year(); as planYear) {
     <app-plan-amount-grid
       [year]="planYear"
-      [rows]="rows()"
+      [categories]="activeCategories()"
       (nameChange)="rename($event.id, $event.name)"
       (hide)="hide($event.id)"
     />
   } @else {
     <ul class="active-categories">
-      @for (row of rows(); track row.id) {
+      @for (category of activeCategories(); track category.id) {
         <li class="row-actions">
           <app-plan-category-name-input
-            [categoryId]="row.id"
-            [name]="row.name"
+            [categoryId]="category.id"
+            [name]="category.name"
             (nameChange)="rename($event.id, $event.name)"
           />
-          <button type="button" [attr.aria-label]="'Hide ' + row.name" (click)="hide(row.id)">
+          <button
+            type="button"
+            [attr.aria-label]="'Hide ' + category.name"
+            (click)="hide(category.id)"
+          >
             Hide
           </button>
         </li>
       }
     </ul>
   }
-  @if (hiddenRows().length) {
+  @if (hiddenCategories().length) {
     <details class="hidden-categories">
-      <summary>Hidden ({{ hiddenRows().length }})</summary>
+      <summary>Hidden ({{ hiddenCategories().length }})</summary>
       <ul>
-        @for (row of hiddenRows(); track row.id) {
+        @for (category of hiddenCategories(); track category.id) {
           <li class="row-actions">
-            <span>{{ row.name }}</span>
-            <button type="button" [attr.aria-label]="'Unhide ' + row.name" (click)="unhide(row.id)">
+            <span>{{ category.name }}</span>
+            <button
+              type="button"
+              [attr.aria-label]="'Unhide ' + category.name"
+              (click)="unhide(category.id)"
+            >
               Unhide
             </button>
           </li>
