@@ -22,3 +22,8 @@
 ## Branches
 
 - **Feature work:** one branch per story, open a PR — do not push feature commits to `main`
+
+## Clean Code
+
+- Inventory and enforcement pattern for [PB-89](https://alvesgf.atlassian.net/browse/PB-89): [docs/clean-code-inventory.md](docs/clean-code-inventory.md)
+- Judgment-based guidance grows in `.cursor/rules/clean-code.mdc` (created by later chapter Tasks); do not put principle matrices here
