@@ -4,11 +4,11 @@ import { BudgetDatabase } from '../database';
 const META_KEYS = new Set(['id', 'updatedAt', 'deletedAt', 'collection']);
 
 function stripMeta<T extends object>(payload: T): Omit<T, keyof StoreDocument> {
-  const clean = { ...payload } as Record<string, unknown>;
+  const fieldsWithoutMeta = { ...payload } as Record<string, unknown>;
   for (const key of META_KEYS) {
-    delete clean[key];
+    delete fieldsWithoutMeta[key];
   }
-  return clean as Omit<T, keyof StoreDocument>;
+  return fieldsWithoutMeta as Omit<T, keyof StoreDocument>;
 }
 
 function nowIso(): string {
@@ -20,7 +20,7 @@ function nowIso(): string {
  * Domain services inject DOCUMENT_STORE; this class stays free of Angular DI.
  */
 export class DocumentStore {
-  constructor(private readonly db: BudgetDatabase) {}
+  constructor(private readonly database: BudgetDatabase) {}
 
   async insert<T extends object>(
     collection: CollectionName,
@@ -33,7 +33,7 @@ export class DocumentStore {
       updatedAt: nowIso(),
       deletedAt: null,
     } as StoredRow<T>;
-    await this.db.documents.add(row as StoredRow);
+    await this.database.documents.add(row as StoredRow);
     return toDocument(row);
   }
 
@@ -41,7 +41,7 @@ export class DocumentStore {
     collection: CollectionName,
     id: string,
   ): Promise<StoreDocument<T> | undefined> {
-    const row = await this.db.documents.get(id);
+    const row = await this.database.documents.get(id);
     if (!row || row.collection !== collection) {
       return undefined;
     }
@@ -53,7 +53,7 @@ export class DocumentStore {
     id: string,
     patch: Partial<T>,
   ): Promise<StoreDocument<T> | undefined> {
-    const existing = await this.db.documents.get(id);
+    const existing = await this.database.documents.get(id);
     if (!existing || existing.collection !== collection) {
       return undefined;
     }
@@ -65,19 +65,19 @@ export class DocumentStore {
       updatedAt: nowIso(),
       deletedAt: existing.deletedAt,
     } as StoredRow<T>;
-    await this.db.documents.put(row as StoredRow);
+    await this.database.documents.put(row as StoredRow);
     return toDocument(row);
   }
 
   async softDelete(collection: CollectionName, id: string): Promise<boolean> {
-    const existing = await this.db.documents.get(id);
+    const existing = await this.database.documents.get(id);
     if (!existing || existing.collection !== collection) {
       return false;
     }
     if (existing.deletedAt !== null) {
       return true;
     }
-    await this.db.documents.put({
+    await this.database.documents.put({
       ...existing,
       deletedAt: nowIso(),
       updatedAt: nowIso(),
@@ -87,14 +87,14 @@ export class DocumentStore {
 
   async list<T extends object>(collection: CollectionName): Promise<StoreDocument<T>[]> {
     // Query by collection, then drop soft-deleted rows in memory (null is not indexed).
-    const rows = await this.db.documents.where('collection').equals(collection).toArray();
+    const rows = await this.database.documents.where('collection').equals(collection).toArray();
     return rows
       .filter((row) => row.deletedAt === null)
       .map((row) => toDocument(row as StoredRow<T>));
   }
 
   close(): void {
-    this.db.close();
+    this.database.close();
   }
 }
 

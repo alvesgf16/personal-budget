@@ -5,7 +5,7 @@ import { PersistQueue } from '../../lib/persist-queue';
 import type { Settings } from './settings';
 
 /**
- * Settings document access: load the singleton and serialize overlapping saves.
+ * Settings document access: get the singleton and serialize overlapping saves.
  * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
  */
 @Injectable({ providedIn: 'root' })
@@ -14,10 +14,10 @@ export class SettingsService {
   private readonly persist = new PersistQueue();
   private documentId: string | null = null;
 
-  async load(): Promise<Settings | null> {
-    const [doc] = await this.store.list<Settings>(COLLECTIONS.settings);
-    this.documentId = doc?.id ?? null;
-    return doc ? { startingYear: doc.startingYear } : null;
+  async get(): Promise<Settings | null> {
+    const [settingsDoc] = await this.store.list<Settings>(COLLECTIONS.settings);
+    this.documentId = settingsDoc?.id ?? null;
+    return settingsDoc ? { startingYear: settingsDoc.startingYear } : null;
   }
 
   save(payload: Settings): Promise<void> {

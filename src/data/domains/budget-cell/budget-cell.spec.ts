@@ -52,7 +52,7 @@ describe('budgetCellSchema', () => {
 });
 
 describe('budgetCells store round-trip', () => {
-  const testDb = useTestStore('pb-budget-cells-test');
+  const testStore = useTestStore('pb-budget-cells-test');
 
   it('inserts and reads a parsed budget cell payload', async () => {
     const payload = budgetCellSchema.parse({
@@ -61,8 +61,8 @@ describe('budgetCells store round-trip', () => {
       month: 1,
       amountCents: 120_000,
     });
-    const created = await testDb.store.insert(COLLECTIONS.budgetCells, payload);
-    const found = await testDb.store.getById<BudgetCell>(COLLECTIONS.budgetCells, created.id);
+    const created = await testStore.store.insert(COLLECTIONS.budgetCells, payload);
+    const found = await testStore.store.getById<BudgetCell>(COLLECTIONS.budgetCells, created.id);
 
     expect(found).toEqual(created);
     expect(found).toMatchObject({

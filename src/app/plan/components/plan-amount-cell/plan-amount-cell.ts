@@ -28,8 +28,8 @@ export class PlanAmountCell {
 
   constructor() {
     effect(() => {
-      const cents = this.amountCents();
-      this.draft.set(cents === null ? '' : centsToDollarInput(cents));
+      const amountCents = this.amountCents();
+      this.draft.set(amountCents === null ? '' : centsToDollarInput(amountCents));
     });
   }
 

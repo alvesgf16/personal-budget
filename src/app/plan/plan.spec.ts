@@ -6,7 +6,7 @@ import { provideTestDocumentStore } from '../../data/store/document-store/docume
 import { Plan } from './plan';
 
 describe('Plan year header', () => {
-  const testDb = provideTestDocumentStore('pb-19-plan', { imports: [Plan] });
+  const testStore = provideTestDocumentStore('pb-19-plan', { imports: [Plan] });
 
   it('does not invent a year when none is saved', async () => {
     const fixture = TestBed.createComponent(Plan);
@@ -19,7 +19,7 @@ describe('Plan year header', () => {
   });
 
   it('shows the stored starting year in the header', async () => {
-    await testDb.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
+    await testStore.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
 
     const fixture = TestBed.createComponent(Plan);
     fixture.detectChanges();
@@ -31,7 +31,7 @@ describe('Plan year header', () => {
 });
 
 describe('Plan category sections', () => {
-  const testDb = provideTestDocumentStore('pb-53-plan', { imports: [Plan] });
+  const testStore = provideTestDocumentStore('pb-53-plan', { imports: [Plan] });
 
   const render = async () => {
     const fixture = TestBed.createComponent(Plan);
@@ -98,7 +98,7 @@ describe('Plan category sections', () => {
   });
 
   it('persists expense and savings January amounts independently', async () => {
-    await testDb.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
+    await testStore.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
 
     const first = await render();
     await submitInSection(first, 'expense', 'Rent');
@@ -106,13 +106,17 @@ describe('Plan category sections', () => {
     await setCell(first, 'Rent January', '1200');
     await setCell(first, 'Emergency January', '300');
 
-    const categories = await testDb.store.list<Category>(COLLECTIONS.categories);
-    const rent = categories.find((c) => c.type === 'expense' && c.name === 'Rent');
-    const emergency = categories.find((c) => c.type === 'savings' && c.name === 'Emergency');
+    const categories = await testStore.store.list<Category>(COLLECTIONS.categories);
+    const rent = categories.find(
+      (category) => category.type === 'expense' && category.name === 'Rent',
+    );
+    const emergency = categories.find(
+      (category) => category.type === 'savings' && category.name === 'Emergency',
+    );
     expect(rent).toBeDefined();
     expect(emergency).toBeDefined();
 
-    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(2);
     expect(cells).toEqual(
       expect.arrayContaining([

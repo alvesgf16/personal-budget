@@ -4,7 +4,7 @@ import { CategoryService } from './category.service';
 import { provideTestDocumentStore } from '../../store/document-store/document-store.testing';
 
 describe('CategoryService', () => {
-  const testDb = provideTestDocumentStore('pb-20-category-service');
+  const testStore = provideTestDocumentStore('pb-20-category-service');
   let service: CategoryService;
 
   beforeEach(() => {
@@ -12,25 +12,25 @@ describe('CategoryService', () => {
   });
 
   it('lists only active income categories in sortOrder', async () => {
-    await testDb.store.insert(COLLECTIONS.categories, {
+    await testStore.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Bonus',
       sortOrder: 1,
       active: true,
     });
-    await testDb.store.insert(COLLECTIONS.categories, {
+    await testStore.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Salary',
       sortOrder: 0,
       active: true,
     });
-    await testDb.store.insert(COLLECTIONS.categories, {
+    await testStore.store.insert(COLLECTIONS.categories, {
       type: 'expense',
       name: 'Rent',
       sortOrder: 0,
       active: true,
     });
-    await testDb.store.insert(COLLECTIONS.categories, {
+    await testStore.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Hidden',
       sortOrder: 2,
@@ -61,11 +61,11 @@ describe('CategoryService', () => {
 
   it('rejects a blank name', async () => {
     await expect(service.add('income', '   ')).rejects.toThrow();
-    expect(await testDb.store.list(COLLECTIONS.categories)).toEqual([]);
+    expect(await testStore.store.list(COLLECTIONS.categories)).toEqual([]);
   });
 
   it('does not reuse sortOrder of inactive siblings', async () => {
-    await testDb.store.insert(COLLECTIONS.categories, {
+    await testStore.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Old',
       sortOrder: 0,
@@ -77,7 +77,7 @@ describe('CategoryService', () => {
   });
 
   it('keeps overlapping adds on distinct sortOrders', async () => {
-    const originalInsert = testDb.store.insert.bind(testDb.store);
+    const originalInsert = testStore.store.insert.bind(testStore.store);
     let releaseInsert: () => void = () => undefined;
     const insertHold = new Promise<void>((resolve) => {
       releaseInsert = resolve;
@@ -86,7 +86,7 @@ describe('CategoryService', () => {
     const insertStarted = new Promise<void>((resolve) => {
       enteredInsert = resolve;
     });
-    testDb.store.insert = async (collection, payload) => {
+    testStore.store.insert = async (collection, payload) => {
       enteredInsert();
       await insertHold;
       return originalInsert(collection, payload);
@@ -96,11 +96,11 @@ describe('CategoryService', () => {
     await insertStarted;
     const second = service.add('income', 'Bonus');
     releaseInsert();
-    const [a, b] = await Promise.all([first, second]);
+    const [salary, bonus] = await Promise.all([first, second]);
 
-    expect([a.sortOrder, b.sortOrder]).toEqual([0, 1]);
-    expect([a.name, b.name]).toEqual(['Salary', 'Bonus']);
-    expect(await testDb.store.list(COLLECTIONS.categories)).toHaveLength(2);
+    expect([salary.sortOrder, bonus.sortOrder]).toEqual([0, 1]);
+    expect([salary.name, bonus.name]).toEqual(['Salary', 'Bonus']);
+    expect(await testStore.store.list(COLLECTIONS.categories)).toHaveLength(2);
   });
 
   it('renames without changing sortOrder, type, or active', async () => {
@@ -118,7 +118,7 @@ describe('CategoryService', () => {
 
   it('leaves budgetCells for the category untouched after rename', async () => {
     const created = await service.add('income', 'Salary');
-    await testDb.store.insert(COLLECTIONS.budgetCells, {
+    await testStore.store.insert(COLLECTIONS.budgetCells, {
       categoryId: created.id,
       year: 2026,
       month: 1,
@@ -127,7 +127,7 @@ describe('CategoryService', () => {
 
     await service.rename(created.id, 'Paycheck');
 
-    const cells = await testDb.store.list(COLLECTIONS.budgetCells);
+    const cells = await testStore.store.list(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
       categoryId: created.id,
@@ -161,7 +161,7 @@ describe('CategoryService', () => {
 
   it('leaves budgetCells untouched after hide', async () => {
     const created = await service.add('income', 'Salary');
-    await testDb.store.insert(COLLECTIONS.budgetCells, {
+    await testStore.store.insert(COLLECTIONS.budgetCells, {
       categoryId: created.id,
       year: 2026,
       month: 1,
@@ -170,7 +170,7 @@ describe('CategoryService', () => {
 
     await service.hide(created.id);
 
-    const cells = await testDb.store.list(COLLECTIONS.budgetCells);
+    const cells = await testStore.store.list(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
       categoryId: created.id,

@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../data/store/types';
 import { provideTestDocumentStore } from '../../data/store/document-store/document-store.testing';
-import type { Settings as SettingsPayload } from '../../data/domains/settings/settings';
+import type { Settings as DomainSettings } from '../../data/domains/settings/settings';
 import { Plan } from '../plan/plan';
 import { Settings } from './settings';
 
 describe('Settings starting year', () => {
-  const testDb = provideTestDocumentStore('pb-19-settings', { imports: [Settings, Plan] });
+  const testStore = provideTestDocumentStore('pb-19-settings', { imports: [Settings, Plan] });
 
   const renderSettings = async () => {
     const fixture = TestBed.createComponent(Settings);
@@ -27,13 +27,13 @@ describe('Settings starting year', () => {
 
     await submitYear(fixture, '');
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('1900');
-    expect(await testDb.store.list(COLLECTIONS.settings)).toEqual([]);
+    expect(await testStore.store.list(COLLECTIONS.settings)).toEqual([]);
 
     await submitYear(fixture, '1899');
-    expect(await testDb.store.list(COLLECTIONS.settings)).toEqual([]);
+    expect(await testStore.store.list(COLLECTIONS.settings)).toEqual([]);
 
     await submitYear(fixture, '2026.5');
-    expect(await testDb.store.list(COLLECTIONS.settings)).toEqual([]);
+    expect(await testStore.store.list(COLLECTIONS.settings)).toEqual([]);
   });
 
   it('saves a starting year that Plan shows after a fresh load', async () => {
@@ -41,12 +41,12 @@ describe('Settings starting year', () => {
     await submitYear(settingsFixture, '2026');
     expect(settingsFixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
 
-    const saved = await testDb.store.list<SettingsPayload>(COLLECTIONS.settings);
+    const saved = await testStore.store.list<DomainSettings>(COLLECTIONS.settings);
     expect(saved).toHaveLength(1);
     expect(saved[0]?.startingYear).toBe(2026);
 
     await submitYear(settingsFixture, '2027');
-    const updated = await testDb.store.list<SettingsPayload>(COLLECTIONS.settings);
+    const updated = await testStore.store.list<DomainSettings>(COLLECTIONS.settings);
     expect(updated).toHaveLength(1);
     expect(updated[0]?.startingYear).toBe(2027);
     settingsFixture.destroy();
@@ -59,7 +59,7 @@ describe('Settings starting year', () => {
   });
 
   it('shows an error when save persistence fails', async () => {
-    testDb.store.insert = async () => {
+    testStore.store.insert = async () => {
       throw new Error('unavailable');
     };
 
@@ -69,11 +69,11 @@ describe('Settings starting year', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
       'Could not save',
     );
-    expect(await testDb.store.list(COLLECTIONS.settings)).toEqual([]);
+    expect(await testStore.store.list(COLLECTIONS.settings)).toEqual([]);
   });
 
   it('shows an error when settings cannot be loaded', async () => {
-    testDb.store.list = async () => {
+    testStore.store.list = async () => {
       throw new Error('unavailable');
     };
 

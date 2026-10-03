@@ -20,21 +20,29 @@ export class CategoryService {
   readonly revision = signal(0);
 
   async listByType(type: CategoryType): Promise<StoreDocument<Category>[]> {
-    const docs = await this.store.list<Category>(COLLECTIONS.categories);
-    return docs
-      .filter((doc) => doc.type === type && doc.active)
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
+    const categories = await this.store.list<Category>(COLLECTIONS.categories);
+    return categories
+      .filter((category) => category.type === type && category.active)
+      .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id));
   }
 
   async listHiddenByType(type: CategoryType): Promise<StoreDocument<Category>[]> {
-    const docs = await this.store.list<Category>(COLLECTIONS.categories);
-    return docs
-      .filter((doc) => doc.type === type && !doc.active)
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
+    const categories = await this.store.list<Category>(COLLECTIONS.categories);
+    return categories
+      .filter((category) => category.type === type && !category.active)
+      .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id));
   }
 
   add(type: CategoryType, name: string): Promise<StoreDocument<Category>> {
-    return this.persist.enqueue(() => this.create(type, name));
+    return this.persist.enqueue(async () => {
+      const siblings = (await this.store.list<Category>(COLLECTIONS.categories)).filter(
+        (category) => category.type === type,
+      );
+      const sortOrder =
+        siblings.length === 0 ? 0 : Math.max(...siblings.map((category) => category.sortOrder)) + 1;
+      const payload = categorySchema.parse({ type, name, sortOrder, active: true });
+      return this.store.insert(COLLECTIONS.categories, payload);
+    });
   }
 
   /** Patch display name only — sortOrder, type, active, and budgetCells stay put. */
@@ -50,16 +58,6 @@ export class CategoryService {
   /** Restore a hidden category to the active grid. */
   unhide(id: string): Promise<StoreDocument<Category>> {
     return this.persist.enqueue(() => this.setActive(id, true));
-  }
-
-  private async create(type: CategoryType, name: string): Promise<StoreDocument<Category>> {
-    const siblings = (await this.store.list<Category>(COLLECTIONS.categories)).filter(
-      (doc) => doc.type === type,
-    );
-    const sortOrder =
-      siblings.length === 0 ? 0 : Math.max(...siblings.map((doc) => doc.sortOrder)) + 1;
-    const payload = categorySchema.parse({ type, name, sortOrder, active: true });
-    return this.store.insert(COLLECTIONS.categories, payload);
   }
 
   private async applyRename(id: string, name: string): Promise<StoreDocument<Category>> {
@@ -86,7 +84,7 @@ export class CategoryService {
     if (!updated) {
       throw new Error(`Category not found: ${id}`);
     }
-    this.revision.update((n) => n + 1);
+    this.revision.update((revision) => revision + 1);
     return updated;
   }
 }

@@ -12,7 +12,7 @@ import { PlanCategorySection } from './components/plan-category-section/plan-cat
   templateUrl: './plan.html',
 })
 export class Plan implements OnInit {
-  private readonly settings = inject(SettingsService);
+  private readonly settingsService = inject(SettingsService);
   private readonly pendingTasks = inject(PendingTasks);
 
   protected readonly startingYear = signal<number | null>(null);
@@ -23,8 +23,8 @@ export class Plan implements OnInit {
 
   private async load(): Promise<void> {
     await withPendingTask(this.pendingTasks, async () => {
-      const doc = await this.settings.load();
-      this.startingYear.set(doc?.startingYear ?? null);
+      const settings = await this.settingsService.get();
+      this.startingYear.set(settings?.startingYear ?? null);
     });
   }
 }

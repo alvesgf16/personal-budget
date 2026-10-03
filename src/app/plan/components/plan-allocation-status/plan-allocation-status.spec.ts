@@ -10,7 +10,7 @@ import { Plan } from '../../plan';
 import { PlanAllocationStatus } from './plan-allocation-status';
 
 describe('PlanAllocationStatus', () => {
-  const testDb = provideTestDocumentStore('pb-22-allocation-status', {
+  const testStore = provideTestDocumentStore('pb-22-allocation-status', {
     imports: [PlanAllocationStatus, Plan],
   });
 
@@ -19,7 +19,7 @@ describe('PlanAllocationStatus', () => {
     name: string,
     extras: Partial<Pick<Category, 'active' | 'sortOrder'>> = {},
   ) =>
-    testDb.store.insert(COLLECTIONS.categories, {
+    testStore.store.insert(COLLECTIONS.categories, {
       type,
       name,
       sortOrder: extras.sortOrder ?? 0,
@@ -27,7 +27,7 @@ describe('PlanAllocationStatus', () => {
     });
 
   const insertCell = (categoryId: string, month: number, amountCents: number) =>
-    testDb.store.insert(COLLECTIONS.budgetCells, {
+    testStore.store.insert(COLLECTIONS.budgetCells, {
       categoryId,
       year: 2026,
       month,
@@ -100,7 +100,7 @@ describe('PlanAllocationStatus', () => {
   });
 
   it('updates to Complete after a cell blur without storing a total document', async () => {
-    await testDb.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
+    await testStore.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
     const salary = await insertCategory('income', 'Salary');
     const rent = await insertCategory('expense', 'Rent');
     await insertCell(salary.id, 1, 100_000);
@@ -149,7 +149,7 @@ describe('PlanAllocationStatus', () => {
     expect(januaryAfter.textContent?.trim()).toBe('Complete');
     expect(januaryAfter.closest('li')?.getAttribute('data-status')).toBe('balanced');
 
-    const cells = await testDb.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(3);
     expect(TestBed.inject(BudgetCellService).revision()).toBeGreaterThan(0);
   });
@@ -163,9 +163,9 @@ describe('PlanAllocationStatus', () => {
     const firstListGate = new Promise<void>((resolve) => {
       releaseFirst = resolve;
     });
-    const originalList = testDb.store.list.bind(testDb.store);
+    const originalList = testStore.store.list.bind(testStore.store);
     let budgetListCalls = 0;
-    testDb.store.list = async <T extends object>(
+    testStore.store.list = async <T extends object>(
       collection: Parameters<DocumentStore['list']>[0],
     ) => {
       const rows = await originalList<T>(collection);

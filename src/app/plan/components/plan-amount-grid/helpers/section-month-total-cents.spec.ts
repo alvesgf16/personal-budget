@@ -11,14 +11,14 @@ describe('sectionMonthTotalCents', () => {
     [cellKey(bonus, 1)]: 500,
     [cellKey(hidden, 1)]: 100_000,
   };
-  const rows = [
+  const categories = [
     { id: salary, active: true },
     { id: bonus, active: true },
     { id: hidden, active: false },
   ];
 
   it('sums only active categories for a month', () => {
-    expect(sectionMonthTotalCents(amounts, rows, 1)).toBe(1_500);
-    expect(sectionMonthTotalCents(amounts, rows, 2)).toBe(2_000);
+    expect(sectionMonthTotalCents(amounts, categories, 1)).toBe(1_500);
+    expect(sectionMonthTotalCents(amounts, categories, 2)).toBe(2_000);
   });
 });

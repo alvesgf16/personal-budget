@@ -5,11 +5,11 @@ export class PersistQueue {
   private chain: Promise<void> = Promise.resolve();
 
   enqueue<T>(work: () => Promise<T>): Promise<T> {
-    const result = this.chain.catch(() => undefined).then(work);
-    this.chain = result.then(
+    const queued = this.chain.catch(() => undefined).then(work);
+    this.chain = queued.then(
       () => undefined,
       () => undefined,
     );
-    return result;
+    return queued;
   }
 }

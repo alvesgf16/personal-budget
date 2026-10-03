@@ -25,7 +25,7 @@ export class PlanAmountGrid {
   private readonly pendingTasks = inject(PendingTasks);
 
   readonly year = input.required<number>();
-  readonly rows = input.required<StoreDocument<Category>[]>();
+  readonly categories = input.required<StoreDocument<Category>[]>();
   /** Parent owns rename persist; name input only drafts and notifies on blur. */
   readonly nameChange = output<{ id: string; name: string }>();
   /** Parent owns hide persist; grid only notifies. */
@@ -58,11 +58,11 @@ export class PlanAmountGrid {
   }
 
   protected sectionTotalFor(month: number): string {
-    return centsToDollarInput(sectionMonthTotalCents(this.amounts(), this.rows(), month));
+    return centsToDollarInput(sectionMonthTotalCents(this.amounts(), this.categories(), month));
   }
 
   protected sectionYearTotal(): string {
-    return centsToDollarInput(sectionYearTotalCents(this.amounts(), this.rows()));
+    return centsToDollarInput(sectionYearTotalCents(this.amounts(), this.categories()));
   }
 
   protected onCellError(message: string): void {

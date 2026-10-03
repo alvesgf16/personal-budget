@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
 import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../data/lib/plan-year';
-import { parseStartingYear } from '../../data/domains/settings/settings';
+import { parseSettings } from '../../data/domains/settings/settings';
 import { SettingsService } from '../../data/domains/settings/settings.service';
 import { runPending } from '../shared/helpers/run-pending';
 
@@ -11,7 +11,7 @@ import { runPending } from '../shared/helpers/run-pending';
   templateUrl: './settings.html',
 })
 export class Settings implements OnInit {
-  private readonly settings = inject(SettingsService);
+  private readonly settingsService = inject(SettingsService);
   private readonly pendingTasks = inject(PendingTasks);
 
   protected readonly yearDraft = signal('');
@@ -27,7 +27,7 @@ export class Settings implements OnInit {
 
   protected async save(event: Event): Promise<void> {
     event.preventDefault();
-    const parsed = parseStartingYear(this.yearDraft());
+    const parsed = parseSettings(this.yearDraft());
     if (!parsed) {
       this.error.set(`Enter a whole year between ${PLAN_YEAR_MIN} and ${PLAN_YEAR_MAX}.`);
       return;
@@ -37,7 +37,7 @@ export class Settings implements OnInit {
       this.pendingTasks,
       this.error,
       'Could not save the starting year. Try again.',
-      () => this.settings.save(parsed),
+      () => this.settingsService.save(parsed),
     );
   }
 
@@ -47,9 +47,9 @@ export class Settings implements OnInit {
       this.error,
       'Could not load the starting year. Refresh and try again.',
       async () => {
-        const doc = await this.settings.load();
-        if (doc) {
-          this.yearDraft.set(String(doc.startingYear));
+        const settings = await this.settingsService.get();
+        if (settings) {
+          this.yearDraft.set(String(settings.startingYear));
         }
       },
     );
