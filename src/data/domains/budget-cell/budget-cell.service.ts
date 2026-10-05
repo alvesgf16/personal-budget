@@ -42,12 +42,23 @@ export class BudgetCellService {
 
       return;
     }
+
     await this.writeAmount(existing, {
       categoryId: cell.categoryId,
       year: cell.year,
       month: cell.month,
       amountCents: cell.amountCents,
     });
+  }
+
+  private async findCell(
+    categoryId: string,
+    year: number,
+    month: number,
+  ): Promise<StoreDocument<BudgetCell> | undefined> {
+    const docs = await this.listForYear(year);
+
+    return docs.find((doc) => doc.categoryId === categoryId && doc.month === month);
   }
 
   private async clearExisting(existing: StoreDocument<BudgetCell> | undefined): Promise<void> {
@@ -75,15 +86,5 @@ export class BudgetCellService {
 
   private bumpRevision(): void {
     this.revision.update((revision) => revision + 1);
-  }
-
-  private async findCell(
-    categoryId: string,
-    year: number,
-    month: number,
-  ): Promise<StoreDocument<BudgetCell> | undefined> {
-    const docs = await this.listForYear(year);
-
-    return docs.find((doc) => doc.categoryId === categoryId && doc.month === month);
   }
 }

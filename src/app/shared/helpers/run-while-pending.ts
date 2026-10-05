@@ -9,6 +9,7 @@ export async function runWhilePending<T>(
   pendingTasks: PendingTasks,
 ): Promise<T> {
   const done = pendingTasks.add();
+
   try {
     return await work();
   } finally {

@@ -2,7 +2,7 @@
   type="text"
   autocomplete="off"
   [attr.aria-label]="'Rename ' + name()"
-  [value]="draft()"
-  (input)="onDraft($event)"
+  [value]="nameInput()"
+  (input)="onNameInput($event)"
   (blur)="commit()"
 />

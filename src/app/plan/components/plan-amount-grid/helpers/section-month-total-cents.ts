@@ -7,11 +7,14 @@ export function sectionMonthTotalCents(
   month: number,
 ): number {
   let total = 0;
+
   for (const category of categories) {
     if (!category.active) {
       continue;
     }
+
     total += amounts[cellKey(category.id, month)] ?? 0;
   }
+
   return total;
 }

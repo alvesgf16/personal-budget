@@ -6,11 +6,14 @@ export function sectionYearTotalCents(
   categories: readonly TotalableCategory[],
 ): number {
   let total = 0;
+
   for (const category of categories) {
     if (!category.active) {
       continue;
     }
+
     total += yearTotalCents(amounts, category.id);
   }
+
   return total;
 }

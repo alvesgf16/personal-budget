@@ -36,11 +36,13 @@ export function periodTotalsByMonth(
 
 function activeTypeById(categories: readonly TotalsCategoryRef[]): Map<string, CategoryType> {
   const typeById = new Map<string, CategoryType>();
+
   for (const category of categories) {
     if (category.active) {
       typeById.set(category.id, category.type);
     }
   }
+
   return typeById;
 }
 
