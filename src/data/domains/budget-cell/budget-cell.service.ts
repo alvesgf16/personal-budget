@@ -1,5 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { budgetCellSchema, type BudgetCell } from './budget-cell';
+import { budgetCellSchema, type BudgetCell, type EditableBudgetCell } from './budget-cell';
 import { COLLECTIONS, type StoreDocument } from '../../store/types';
 import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
 import { PersistQueue } from '../../lib/persist-queue';
@@ -22,6 +22,7 @@ export class BudgetCellService {
 
   async listForYear(year: number): Promise<StoreDocument<BudgetCell>[]> {
     const docs = await this.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+
     return docs.filter((doc) => doc.year === year);
   }
 
@@ -29,32 +30,50 @@ export class BudgetCellService {
    * Persist one cell. `amountCents === null` soft-deletes an existing document.
    * Saves are serialized so rapid tabbing cannot insert duplicate triples.
    */
-  save(categoryId: string, year: number, month: number, amountCents: number | null): Promise<void> {
-    return this.persist.enqueue(() => this.upsert(categoryId, year, month, amountCents));
+  save(cell: EditableBudgetCell): Promise<void> {
+    return this.persist.enqueue(() => this.upsert(cell));
   }
 
-  private async upsert(
-    categoryId: string,
-    year: number,
-    month: number,
-    amountCents: number | null,
-  ): Promise<void> {
-    const existing = await this.findCell(categoryId, year, month);
+  private async upsert(cell: EditableBudgetCell): Promise<void> {
+    const existing = await this.findCell(cell.categoryId, cell.year, cell.month);
 
-    if (amountCents === null) {
-      if (existing) {
-        await this.store.softDelete(COLLECTIONS.budgetCells, existing.id);
-      }
-      this.revision.update((revision) => revision + 1);
+    if (cell.amountCents === null) {
+      await this.clearExisting(existing);
+
       return;
     }
+    await this.writeAmount(existing, {
+      categoryId: cell.categoryId,
+      year: cell.year,
+      month: cell.month,
+      amountCents: cell.amountCents,
+    });
+  }
 
-    const payload = budgetCellSchema.parse({ categoryId, year, month, amountCents });
+  private async clearExisting(existing: StoreDocument<BudgetCell> | undefined): Promise<void> {
+    if (existing) {
+      await this.store.softDelete(COLLECTIONS.budgetCells, existing.id);
+    }
+
+    this.bumpRevision();
+  }
+
+  private async writeAmount(
+    existing: StoreDocument<BudgetCell> | undefined,
+    cell: BudgetCell,
+  ): Promise<void> {
+    const payload = budgetCellSchema.parse(cell);
+
     if (existing) {
       await this.store.update(COLLECTIONS.budgetCells, existing.id, payload);
     } else {
       await this.store.insert(COLLECTIONS.budgetCells, payload);
     }
+
+    this.bumpRevision();
+  }
+
+  private bumpRevision(): void {
     this.revision.update((revision) => revision + 1);
   }
 
@@ -64,6 +83,7 @@ export class BudgetCellService {
     month: number,
   ): Promise<StoreDocument<BudgetCell> | undefined> {
     const docs = await this.listForYear(year);
+
     return docs.find((doc) => doc.categoryId === categoryId && doc.month === month);
   }
 }

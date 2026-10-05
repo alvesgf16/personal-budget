@@ -9,7 +9,7 @@ import { centsToDollarInput } from '../plan-amount-cell/helpers/cents-to-dollar-
 import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
 import type { Category } from '../../../../data/domains/category/category';
 import type { StoreDocument } from '../../../../data/store/types';
-import { runPending } from '../../../shared/helpers/run-pending';
+import { attemptWhilePending } from '../../../shared/helpers/attempt-while-pending';
 import { PlanAmountCell } from '../plan-amount-cell/plan-amount-cell';
 import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
 
@@ -42,9 +42,11 @@ export class PlanAmountGrid {
   constructor() {
     effect(() => {
       const year = this.year();
+
       // Clear immediately so cells do not keep showing the previous year's values.
       this.amounts.set({});
       this.error.set(null);
+
       void this.loadCells(year);
     });
   }
@@ -74,28 +76,38 @@ export class PlanAmountGrid {
     this.amounts.update((amounts) => {
       const next = { ...amounts };
       const key = cellKey(categoryId, month);
+
       if (amountCents === null) {
         delete next[key];
       } else {
         next[key] = amountCents;
       }
+
       return next;
     });
   }
 
   private async loadCells(year: number): Promise<void> {
-    await runPending(
+    await attemptWhilePending(
+      () => this.loadAmountsForYear(year),
       this.pendingTasks,
-      this.error,
-      'Could not load amounts. Refresh and try again.',
-      async () => {
-        const cells = await this.budgetCells.listForYear(year);
-        if (this.year() !== year) {
-          return;
+      () => {
+        if (this.year() === year) {
+          this.error.set('Could not load amounts. Refresh and try again.');
         }
-        this.amounts.set(amountsFromCells(cells));
       },
-      () => this.year() === year,
     );
+  }
+
+  private async loadAmountsForYear(year: number): Promise<void> {
+    this.error.set(null);
+
+    const cells = await this.budgetCells.listForYear(year);
+
+    if (this.year() !== year) {
+      return;
+    }
+
+    this.amounts.set(amountsFromCells(cells));
   }
 }

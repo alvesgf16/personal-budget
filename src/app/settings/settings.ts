@@ -1,8 +1,11 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
 import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../data/lib/plan-year';
-import { parseSettings } from '../../data/domains/settings/settings';
+import {
+  parseSettings,
+  type Settings as DomainSettings,
+} from '../../data/domains/settings/settings';
 import { SettingsService } from '../../data/domains/settings/settings.service';
-import { runPending } from '../shared/helpers/run-pending';
+import { attemptWhilePending } from '../shared/helpers/attempt-while-pending';
 
 /** Settings tab: persist the Plan starting year (PB-19). */
 @Component({
@@ -27,31 +30,43 @@ export class Settings implements OnInit {
 
   protected async save(event: Event): Promise<void> {
     event.preventDefault();
+
     const parsed = parseSettings(this.yearDraft());
+
     if (!parsed) {
       this.error.set(`Enter a whole year between ${PLAN_YEAR_MIN} and ${PLAN_YEAR_MAX}.`);
+
       return;
     }
 
-    await runPending(
+    await attemptWhilePending(
+      () => this.saveSettings(parsed),
       this.pendingTasks,
-      this.error,
-      'Could not save the starting year. Try again.',
-      () => this.settingsService.save(parsed),
+      () => this.error.set('Could not save the starting year. Try again.'),
     );
   }
 
+  private async saveSettings(settings: DomainSettings): Promise<void> {
+    this.error.set(null);
+
+    await this.settingsService.save(settings);
+  }
+
   private async load(): Promise<void> {
-    await runPending(
+    await attemptWhilePending(
+      () => this.loadSettings(),
       this.pendingTasks,
-      this.error,
-      'Could not load the starting year. Refresh and try again.',
-      async () => {
-        const settings = await this.settingsService.get();
-        if (settings) {
-          this.yearDraft.set(String(settings.startingYear));
-        }
-      },
+      () => this.error.set('Could not load the starting year. Refresh and try again.'),
     );
+  }
+
+  private async loadSettings(): Promise<void> {
+    this.error.set(null);
+
+    const settings = await this.settingsService.get();
+
+    if (settings) {
+      this.yearDraft.set(String(settings.startingYear));
+    }
   }
 }

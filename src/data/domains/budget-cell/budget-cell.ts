@@ -21,3 +21,11 @@ export const budgetCellSchema = z.object({
 
 /** Inferred TypeScript type — one source of truth with the Zod schema. */
 export type BudgetCell = z.infer<typeof budgetCellSchema>;
+
+/**
+ * A cell the user is still editing in the Plan grid/form.
+ * `amountCents === null` means no amount yet (or clear on save).
+ */
+export type EditableBudgetCell = Omit<BudgetCell, 'amountCents'> & {
+  amountCents: number | null;
+};

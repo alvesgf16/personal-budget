@@ -1,28 +1,22 @@
 import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
 import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
 import { CategoryService } from '../../../../data/domains/category/category.service';
-import {
-  computePeriodBalance,
-  type PeriodBalance,
-  type PeriodBalanceStatus,
-} from '../../../../data/lib/period-balance';
-import { runPending } from '../../../shared/helpers/run-pending';
-import { centsToDollarInput } from '../plan-amount-cell/helpers/cents-to-dollar-input';
-import { PLAN_MONTH_LONG, PLAN_MONTH_SHORT, PLAN_MONTHS } from '../plan-amount-grid/constants';
+import { computePeriodBalance } from '../../../../data/lib/period-balance';
+import { attemptWhilePending } from '../../../shared/helpers/attempt-while-pending';
+import { PLAN_MONTHS } from '../plan-amount-grid/constants';
 import { periodTotalsByMonth } from './helpers/period-totals-by-month';
+import { type MonthAllocationView, toMonthView } from './helpers/to-month-view';
 
-/** One month chip for the allocation status strip. */
-export interface MonthAllocationView {
-  month: number;
-  shortLabel: string;
-  longLabel: string;
-  status: PeriodBalanceStatus;
-  statusLabel: string;
+/** Year + revisions captured when one allocation-status load starts. */
+interface AllocationStatusLoad {
+  year: number;
+  cellRevision: number;
+  categoryRevision: number;
 }
 
 /**
  * Compact Jan–Dec strip: remaining-to-allocate per month via shared computePeriodBalance.
- * Status rules live in the helper — this component only maps status → copy/CSS.
+ * Status rules and status → copy mapping live in helpers; this component loads and renders.
  */
 @Component({
   selector: 'app-plan-allocation-status',
@@ -41,70 +35,56 @@ export class PlanAllocationStatus {
 
   constructor() {
     effect(() => {
-      const year = this.year();
       // Depend on both revisions: cell blur and category hide/unhide.
-      const cellRevision = this.budgetCells.revision();
-      const categoryRevision = this.categories.revision();
+      const statusLoad: AllocationStatusLoad = {
+        year: this.year(),
+        cellRevision: this.budgetCells.revision(),
+        categoryRevision: this.categories.revision(),
+      };
+
       this.months.set([]);
       this.error.set(null);
-      void this.load(year, cellRevision, categoryRevision);
+
+      void this.load(statusLoad);
     });
   }
 
-  private async load(year: number, cellRevision: number, categoryRevision: number): Promise<void> {
-    const isCurrent = () =>
-      this.year() === year &&
-      this.budgetCells.revision() === cellRevision &&
-      this.categories.revision() === categoryRevision;
-    await runPending(
+  private async load(statusLoad: AllocationStatusLoad): Promise<void> {
+    await attemptWhilePending(
+      () => this.loadMonthsForYear(statusLoad),
       this.pendingTasks,
-      this.error,
-      'Could not load allocation status. Refresh and try again.',
-      async () => {
-        const [income, expense, savings, cells] = await Promise.all([
-          this.categories.listByType('income'),
-          this.categories.listByType('expense'),
-          this.categories.listByType('savings'),
-          this.budgetCells.listForYear(year),
-        ]);
-        // Drop stale reloads: a newer revision (or year) won the race.
-        if (!isCurrent()) {
-          return;
+      () => {
+        if (this.isLoadCurrent(statusLoad)) {
+          this.error.set('Could not load allocation status. Refresh and try again.');
         }
-        const totals = periodTotalsByMonth(cells, [...income, ...expense, ...savings]);
-        this.months.set(
-          PLAN_MONTHS.map((month, index) =>
-            toMonthView(month, computePeriodBalance(totals[index])),
-          ),
-        );
       },
-      isCurrent,
     );
   }
-}
 
-function toMonthView(month: number, balance: PeriodBalance): MonthAllocationView {
-  const shortLabel = PLAN_MONTH_SHORT[month - 1];
-  const longLabel = PLAN_MONTH_LONG[month - 1];
-  return {
-    month,
-    shortLabel,
-    longLabel,
-    status: balance.status,
-    statusLabel: statusLabel(balance),
-  };
-}
+  private async loadMonthsForYear(statusLoad: AllocationStatusLoad): Promise<void> {
+    const [income, expense, savings, cells] = await Promise.all([
+      this.categories.listByType('income'),
+      this.categories.listByType('expense'),
+      this.categories.listByType('savings'),
+      this.budgetCells.listForYear(statusLoad.year),
+    ]);
 
-/** Presentation only — never re-derive under/balanced/over from remaining here. */
-function statusLabel(balance: PeriodBalance): string {
-  switch (balance.status) {
-    case 'untouched':
-      return 'Not started';
-    case 'under':
-      return `${centsToDollarInput(balance.remainingCents)} left`;
-    case 'balanced':
-      return 'Complete';
-    case 'over':
-      return `${centsToDollarInput(Math.abs(balance.remainingCents))} over`;
+    if (!this.isLoadCurrent(statusLoad)) {
+      return;
+    }
+
+    const totals = periodTotalsByMonth(cells, [...income, ...expense, ...savings]);
+
+    this.months.set(
+      PLAN_MONTHS.map((month, index) => toMonthView(month, computePeriodBalance(totals[index]))),
+    );
+  }
+
+  private isLoadCurrent(statusLoad: AllocationStatusLoad): boolean {
+    return (
+      this.year() === statusLoad.year &&
+      this.budgetCells.revision() === statusLoad.cellRevision &&
+      this.categories.revision() === statusLoad.categoryRevision
+    );
   }
 }
