@@ -24,17 +24,24 @@ export interface PeriodBalance {
  * `balanced` is remaining 0 after real income (every dollar allocated).
  */
 export function computePeriodBalance(totals: PeriodTotals): PeriodBalance {
-  const { incomeCents, expenseCents, savingsCents } = totals;
-  const remainingCents = incomeCents - expenseCents - savingsCents;
+  const remainingCents = totals.incomeCents - totals.expenseCents - totals.savingsCents;
 
-  if (incomeCents === 0 && expenseCents === 0 && savingsCents === 0) {
-    return { remainingCents, status: 'untouched' };
-  }
+  return {
+    remainingCents,
+    status: isUntouched(totals) ? 'untouched' : statusFromRemaining(remainingCents),
+  };
+}
+
+function isUntouched(totals: PeriodTotals): boolean {
+  return totals.incomeCents === 0 && totals.expenseCents === 0 && totals.savingsCents === 0;
+}
+
+function statusFromRemaining(remainingCents: number): PeriodBalanceStatus {
   if (remainingCents > 0) {
-    return { remainingCents, status: 'under' };
+    return 'under';
   }
   if (remainingCents < 0) {
-    return { remainingCents, status: 'over' };
+    return 'over';
   }
-  return { remainingCents, status: 'balanced' };
+  return 'balanced';
 }

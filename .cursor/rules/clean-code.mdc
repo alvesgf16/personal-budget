@@ -1,5 +1,5 @@
 ---
-description: Clean Code judgment guidance (Meaningful Names and later chapters)
+description: Clean Code judgment guidance (Meaningful Names, Functions, and later chapters)
 alwaysApply: true
 ---
 
@@ -60,3 +60,64 @@ CS/Angular vocabulary is fine where it fits (`Router`, `signal`, `inject`, `sche
 ### Meaningful Context / Don't Add Gratuitous Context
 
 Add enough context when bare names are ambiguous (`monthIncomeCents` vs bare `amount`). Prefer well-named classes/modules as context over long prefixes on every local. Avoid redundant stamps (`Category.categoryName` → `Category.name`; no `PB`/`App` on every identifier).
+
+## Functions (Ch.3)
+
+ESLint (prod TS): `complexity` 5, `max-depth` 2, `max-params` 3, `max-lines-per-function` 20 (skip blank/comments); `no-restricted-syntax` bans inline object types on parameters. Specs exclude the size/`max-*`/`complexity` rules (PB-98).
+
+### Small!
+
+Keep functions short. Prefer extracting to `helpers/` or `src/data/lib/` over growing a method past the line gate.
+
+### Do One Thing
+
+If you can extract another meaningfully named function, the original was doing more than one thing. Each extract should be a single responsibility.
+
+### One Level of Abstraction per Function
+
+Keep one abstraction level per function. Orchestration in components/services; detail in helpers/`lib`. Nesting depth is gated by ESLint.
+
+### Reading Code from Top to Bottom — The Stepdown Rule
+
+Prefer a top-down narrative: public method → named helpers at the next level of detail.
+
+### Switch Statements
+
+Prefer polymorphism for large type switches; bury unavoidable small switches once. Broader smell gates are PB-104.
+
+### Use Descriptive Names
+
+Function names say what they do — enforced under Meaningful Names (Ch.2). Extracted helpers must get intention-revealing names.
+
+### Function Arguments
+
+- Prefer 0–2 args; at most 3 positional. More → one argument object with a **named** `type`/`interface` (never an inline `{ ... }` on the parameter).
+- Common monadic forms: keep single-arg transforms/events clear (`dollarsToCents`, `cellKey`); do not wrap one value in an unrelated options bag.
+- Flag arguments: avoid boolean params that mean two behaviors; split into two named functions or use an explicit union/enum field on a named options type.
+- Dyadic functions: when two values are one concept, prefer a named argument object; property names act as keywords.
+- Argument lists: rest/`...items` only for homogeneous lists of the same conceptual type — not mixed options.
+- Verbs and keywords: method names are verb phrases (`save`, `listByType`, `attemptWhilePending`); named argument properties supply the keywords (`categoryId`, `failMessage`).
+
+### Have No Side Effects
+
+Do not change state beyond what the name promises (no hidden setup, caching, or UI writes in a check/transform). Commands (`save`, `softDelete`, `attemptWhilePending`) may mutate when that is the named purpose. Queries and pure helpers stay free of side effects.
+
+### Output Arguments
+
+Prefer return values over mutating out-params.
+
+### Command Query Separation
+
+Do not mix mutation with answering questions when that muddies intent. Keep `list`/`getById` separate from `save`/`insert`/`update`.
+
+### Prefer Exceptions to Returning Error Codes
+
+Prefer exceptions over error codes; treat try/catch as its own “one thing.” Full empty-catch policy is PB-96. UI work should keep using `attemptWhilePending` for centralized failure handling.
+
+### Don't Repeat Yourself
+
+Prefer helpers/`lib` extracts over copy-paste. Automated duplication detection is PB-104.
+
+### Structured Programming
+
+Keep nesting and branchiness low — gated by `max-depth` and `complexity`.

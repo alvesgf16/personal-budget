@@ -100,6 +100,33 @@ module.exports = defineConfig([
           format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
         },
       ],
+      // Clean Code Ch.3 (PB-92): Functions — book metrics
+      complexity: ['error', 5],
+      'max-depth': ['error', 2],
+      'max-params': ['error', 3],
+      'max-lines-per-function': ['error', { max: 20, skipBlankLines: true, skipComments: true }],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: ':function > Identifier[typeAnnotation.typeAnnotation.type="TSTypeLiteral"]',
+          message:
+            'Extract this parameter object type to a named type or interface (Clean Code Ch.3 argument objects).',
+        },
+        {
+          selector: ':function > ObjectPattern[typeAnnotation.typeAnnotation.type="TSTypeLiteral"]',
+          message:
+            'Extract this parameter object type to a named type or interface (Clean Code Ch.3 argument objects).',
+        },
+      ],
+    },
+  },
+  {
+    files: ['**/*.{spec,testing}.ts'],
+    rules: {
+      complexity: 'off',
+      'max-depth': 'off',
+      'max-params': 'off',
+      'max-lines-per-function': 'off',
     },
   },
   {

@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
 import { SettingsService } from '../../data/domains/settings/settings.service';
-import { withPendingTask } from '../shared/helpers/with-pending-task';
+import { runWhilePending } from '../shared/helpers/run-while-pending';
 import { PlanAllocationStatus } from './components/plan-allocation-status/plan-allocation-status';
 import { PlanCategorySection } from './components/plan-category-section/plan-category-section';
 
@@ -22,9 +22,12 @@ export class Plan implements OnInit {
   }
 
   private async load(): Promise<void> {
-    await withPendingTask(this.pendingTasks, async () => {
-      const settings = await this.settingsService.get();
-      this.startingYear.set(settings?.startingYear ?? null);
-    });
+    await runWhilePending(() => this.loadStartingYear(), this.pendingTasks);
+  }
+
+  private async loadStartingYear(): Promise<void> {
+    const settings = await this.settingsService.get();
+
+    this.startingYear.set(settings?.startingYear ?? null);
   }
 }

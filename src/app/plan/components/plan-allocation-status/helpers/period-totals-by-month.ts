@@ -25,29 +25,44 @@ export function periodTotalsByMonth(
   cells: readonly Pick<BudgetCell, 'categoryId' | 'month' | 'amountCents'>[],
   categories: readonly TotalsCategoryRef[],
 ): PeriodTotals[] {
+  const typeById = activeTypeById(categories);
+  const totals = PLAN_MONTHS.map(EMPTY_TOTALS);
+
+  for (const cell of cells) {
+    addCellAmount(totals, typeById.get(cell.categoryId), cell);
+  }
+
+  return totals;
+}
+
+function activeTypeById(categories: readonly TotalsCategoryRef[]): Map<string, CategoryType> {
   const typeById = new Map<string, CategoryType>();
   for (const category of categories) {
     if (category.active) {
       typeById.set(category.id, category.type);
     }
   }
+  return typeById;
+}
 
-  const totals = PLAN_MONTHS.map(EMPTY_TOTALS);
-
-  for (const cell of cells) {
-    const type = typeById.get(cell.categoryId);
-    if (!type) {
-      continue;
-    }
-    const bucket = totals[cell.month - 1];
-    if (type === 'income') {
-      bucket.incomeCents += cell.amountCents;
-    } else if (type === 'expense') {
-      bucket.expenseCents += cell.amountCents;
-    } else {
-      bucket.savingsCents += cell.amountCents;
-    }
+function addCellAmount(
+  totals: PeriodTotals[],
+  type: CategoryType | undefined,
+  cell: Pick<BudgetCell, 'month' | 'amountCents'>,
+): void {
+  if (!type) {
+    return;
   }
 
-  return totals;
+  addToBucket(totals[cell.month - 1], type, cell.amountCents);
+}
+
+function addToBucket(bucket: PeriodTotals, type: CategoryType, amountCents: number): void {
+  if (type === 'income') {
+    bucket.incomeCents += amountCents;
+  } else if (type === 'expense') {
+    bucket.expenseCents += amountCents;
+  } else {
+    bucket.savingsCents += amountCents;
+  }
 }

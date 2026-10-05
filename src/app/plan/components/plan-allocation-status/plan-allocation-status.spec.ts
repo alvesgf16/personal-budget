@@ -183,7 +183,12 @@ describe('PlanAllocationStatus', () => {
     fixture.detectChanges();
     await Promise.resolve();
 
-    await TestBed.inject(BudgetCellService).save(rent.id, 2026, 1, 120_000);
+    await TestBed.inject(BudgetCellService).save({
+      categoryId: rent.id,
+      year: 2026,
+      month: 1,
+      amountCents: 120_000,
+    });
     fixture.detectChanges();
     releaseFirst();
     await fixture.whenStable();

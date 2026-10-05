@@ -13,8 +13,18 @@ describe('BudgetCellService', () => {
   });
 
   it('upserts the same March cell twice as one document', async () => {
-    await service.save('cat-salary', 2026, 3, 100_000);
-    await service.save('cat-salary', 2026, 3, 250_000);
+    await service.save({
+      categoryId: 'cat-salary',
+      year: 2026,
+      month: 3,
+      amountCents: 100_000,
+    });
+    await service.save({
+      categoryId: 'cat-salary',
+      year: 2026,
+      month: 3,
+      amountCents: 250_000,
+    });
 
     const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
@@ -27,7 +37,12 @@ describe('BudgetCellService', () => {
   });
 
   it('saves January without creating a February cell', async () => {
-    await service.save('cat-salary', 2026, 1, 500_000);
+    await service.save({
+      categoryId: 'cat-salary',
+      year: 2026,
+      month: 1,
+      amountCents: 500_000,
+    });
 
     const cells = await service.listForYear(2026);
     expect(cells).toHaveLength(1);
@@ -36,16 +51,36 @@ describe('BudgetCellService', () => {
   });
 
   it('soft-deletes when clearing a cell with null', async () => {
-    await service.save('cat-salary', 2026, 1, 100_000);
-    await service.save('cat-salary', 2026, 1, null);
+    await service.save({
+      categoryId: 'cat-salary',
+      year: 2026,
+      month: 1,
+      amountCents: 100_000,
+    });
+    await service.save({
+      categoryId: 'cat-salary',
+      year: 2026,
+      month: 1,
+      amountCents: null,
+    });
 
     expect(await service.listForYear(2026)).toEqual([]);
     expect(await testStore.store.list(COLLECTIONS.budgetCells)).toEqual([]);
   });
 
   it('lists only cells for the requested year', async () => {
-    await service.save('cat-salary', 2026, 1, 100_000);
-    await service.save('cat-salary', 2027, 1, 200_000);
+    await service.save({
+      categoryId: 'cat-salary',
+      year: 2026,
+      month: 1,
+      amountCents: 100_000,
+    });
+    await service.save({
+      categoryId: 'cat-salary',
+      year: 2027,
+      month: 1,
+      amountCents: 200_000,
+    });
 
     const listed = await service.listForYear(2026);
     expect(listed).toHaveLength(1);
