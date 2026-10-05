@@ -23,30 +23,30 @@ export class PlanAmountCell {
   /** Fired after a successful persist so the grid can refresh its amounts map. */
   readonly committed = output<number | null>();
 
-  protected readonly draft = signal('');
+  protected readonly dollarInput = signal('');
 
   constructor() {
     effect(() => {
       const amountCents = this.amountCents();
 
-      this.draft.set(amountCents === null ? '' : centsToDollarInput(amountCents));
+      this.dollarInput.set(amountCents === null ? '' : centsToDollarInput(amountCents));
     });
   }
 
-  protected onDraft(event: Event): void {
-    this.draft.set((event.target as HTMLInputElement).value);
+  protected onDollarInput(event: Event): void {
+    this.dollarInput.set((event.target as HTMLInputElement).value);
   }
 
   protected async save(): Promise<void> {
     const year = this.year();
-    const amountCents = this.parseDraftOrFail();
+    const amountCents = this.parseDollarInput();
 
     if (amountCents === undefined) {
       return;
     }
 
     if (amountCents === this.amountCents()) {
-      this.resetDraft(amountCents);
+      this.resetDollarInput(amountCents);
 
       return;
     }
@@ -54,9 +54,9 @@ export class PlanAmountCell {
     await this.persistAmount(year, amountCents);
   }
 
-  private parseDraftOrFail(): number | null | undefined {
+  private parseDollarInput(): number | null | undefined {
     try {
-      return dollarsToCents(this.draft());
+      return dollarsToCents(this.dollarInput());
     } catch {
       this.saveError.emit('Enter a non-negative dollar amount.');
 
@@ -64,8 +64,8 @@ export class PlanAmountCell {
     }
   }
 
-  private resetDraft(amountCents: number | null): void {
-    this.draft.set(amountCents === null ? '' : centsToDollarInput(amountCents));
+  private resetDollarInput(amountCents: number | null): void {
+    this.dollarInput.set(amountCents === null ? '' : centsToDollarInput(amountCents));
   }
 
   private async persistAmount(year: number, amountCents: number | null): Promise<void> {
@@ -92,7 +92,7 @@ export class PlanAmountCell {
       return;
     }
 
-    this.resetDraft(amountCents);
+    this.resetDollarInput(amountCents);
     this.committed.emit(amountCents);
   }
 }

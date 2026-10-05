@@ -12,10 +12,12 @@ export const settingsSchema = z.object({
 
 export type Settings = z.infer<typeof settingsSchema>;
 
-export function parseSettings(raw: string): Settings | null {
-  const trimmed = raw.trim();
+export function parseSettings(unparsedYear: string): Settings | null {
+  const startingYearString = unparsedYear.trim();
+
   const parsed = settingsSchema.safeParse({
-    startingYear: trimmed === '' ? Number.NaN : Number(trimmed),
+    startingYear: startingYearString === '' ? Number.NaN : Number(startingYearString),
   });
+
   return parsed.success ? parsed.data : null;
 }

@@ -1,6 +1,7 @@
 import { Component, effect, inject, input, output, PendingTasks, signal } from '@angular/core';
 import { PLAN_MONTH_LONG, PLAN_MONTH_SHORT, PLAN_MONTHS } from './constants';
 import { amountsFromCells } from './helpers/amounts-from-cells';
+import { amountsWithCommittedCell } from './helpers/amounts-with-committed-cell';
 import { cellKey } from './helpers/cell-key';
 import { sectionMonthTotalCents } from './helpers/section-month-total-cents';
 import { sectionYearTotalCents } from './helpers/section-year-total-cents';
@@ -40,44 +41,9 @@ export class PlanAmountGrid {
   constructor() {
     effect(() => {
       const year = this.year();
+
       this.clearStaleYearAmounts();
       void this.loadCells(year);
-    });
-  }
-
-  protected amountFor(categoryId: string, month: number): number | null {
-    return this.amounts()[cellKey(categoryId, month)] ?? null;
-  }
-
-  protected yearTotalFor(categoryId: string): string {
-    return centsToDollarInput(yearTotalCents(this.amounts(), categoryId));
-  }
-
-  protected sectionTotalFor(month: number): string {
-    return centsToDollarInput(sectionMonthTotalCents(this.amounts(), this.categories(), month));
-  }
-
-  protected sectionYearTotal(): string {
-    return centsToDollarInput(sectionYearTotalCents(this.amounts(), this.categories()));
-  }
-
-  protected onCellError(message: string): void {
-    this.error.set(message);
-  }
-
-  protected onCommitted(categoryId: string, month: number, amountCents: number | null): void {
-    this.error.set(null);
-    this.amounts.update((amounts) => {
-      const next = { ...amounts };
-      const key = cellKey(categoryId, month);
-
-      if (amountCents === null) {
-        delete next[key];
-      } else {
-        next[key] = amountCents;
-      }
-
-      return next;
     });
   }
 
@@ -109,5 +75,33 @@ export class PlanAmountGrid {
     }
 
     this.amounts.set(amountsFromCells(cells));
+  }
+
+  protected amountFor(categoryId: string, month: number): number | null {
+    return this.amounts()[cellKey(categoryId, month)] ?? null;
+  }
+
+  protected yearTotalFor(categoryId: string): string {
+    return centsToDollarInput(yearTotalCents(this.amounts(), categoryId));
+  }
+
+  protected sectionTotalFor(month: number): string {
+    return centsToDollarInput(sectionMonthTotalCents(this.amounts(), this.categories(), month));
+  }
+
+  protected sectionYearTotal(): string {
+    return centsToDollarInput(sectionYearTotalCents(this.amounts(), this.categories()));
+  }
+
+  protected onCellError(message: string): void {
+    this.error.set(message);
+  }
+
+  protected onCommitted(categoryId: string, month: number, amountCents: number | null): void {
+    this.error.set(null);
+
+    this.amounts.update((amounts) =>
+      amountsWithCommittedCell(amounts, { categoryId, month, amountCents }),
+    );
   }
 }

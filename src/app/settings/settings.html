@@ -6,8 +6,8 @@
     name="startingYear"
     inputmode="numeric"
     step="1"
-    [value]="yearDraft()"
-    (input)="onYearDraft($event)"
+    [value]="yearInput()"
+    (input)="onYearInput($event)"
     [attr.aria-invalid]="error() ? 'true' : null"
     [attr.aria-describedby]="
       error() ? 'starting-year-help starting-year-error' : 'starting-year-help'

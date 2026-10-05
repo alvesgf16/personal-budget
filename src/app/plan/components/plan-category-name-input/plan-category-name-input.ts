@@ -11,31 +11,33 @@ export class PlanCategoryNameInput {
   readonly name = input.required<string>();
   readonly nameChange = output<{ id: string; name: string }>();
 
-  protected readonly draft = signal('');
+  protected readonly nameInput = signal('');
 
   constructor() {
     effect(() => {
-      this.draft.set(this.name());
+      this.nameInput.set(this.name());
     });
   }
 
-  protected onDraft(event: Event): void {
-    this.draft.set((event.target as HTMLInputElement).value);
+  protected onNameInput(event: Event): void {
+    this.nameInput.set((event.target as HTMLInputElement).value);
   }
 
   protected commit(): void {
-    const raw = this.draft();
-    if (raw === this.name()) {
+    const typedName = this.nameInput();
+
+    if (typedName === this.name()) {
       return;
     }
-    this.revertBlankDraftLocally(raw);
+
+    this.revertBlankNameInputLocally(typedName);
     // Parent still receives the event for the blank-name alert.
-    this.nameChange.emit({ id: this.categoryId(), name: raw });
+    this.nameChange.emit({ id: this.categoryId(), name: typedName });
   }
 
-  private revertBlankDraftLocally(raw: string): void {
-    if (!parseCategoryName(raw)) {
-      this.draft.set(this.name());
+  private revertBlankNameInputLocally(typedName: string): void {
+    if (!parseCategoryName(typedName)) {
+      this.nameInput.set(this.name());
     }
   }
 }

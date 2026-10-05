@@ -18,7 +18,8 @@ export const categorySchema = z.object({
 
 export type Category = z.infer<typeof categorySchema>;
 
-export function parseCategoryName(raw: string): string | null {
-  const parsed = categorySchema.shape.name.safeParse(raw);
+export function parseCategoryName(unparsedName: string): string | null {
+  const parsed = categorySchema.shape.name.safeParse(unparsedName);
+
   return parsed.success ? parsed.data : null;
 }

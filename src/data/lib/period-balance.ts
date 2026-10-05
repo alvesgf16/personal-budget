@@ -39,8 +39,10 @@ function statusFromRemaining(remainingCents: number): PeriodBalanceStatus {
   if (remainingCents > 0) {
     return 'under';
   }
+
   if (remainingCents < 0) {
     return 'over';
   }
+
   return 'balanced';
 }

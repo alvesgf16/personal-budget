@@ -30,7 +30,7 @@ export class PlanCategorySection {
   /** Null hides amount columns (empty state owned elsewhere). */
   readonly year = input<number | null>(null);
 
-  protected readonly nameDraft = signal('');
+  protected readonly nameInput = signal('');
   protected readonly error = signal<string | null>(null);
   protected readonly activeCategories = signal<StoreDocument<Category>[]>([]);
   protected readonly hiddenCategories = signal<StoreDocument<Category>[]>([]);
@@ -47,55 +47,71 @@ export class PlanCategorySection {
     });
   }
 
-  protected onNameDraft(event: Event): void {
-    this.nameDraft.set((event.target as HTMLInputElement).value);
+  private async load(): Promise<void> {
+    await attemptWhilePending(
+      () => this.runThenRefresh(),
+      this.pendingTasks,
+      () => this.error.set('Could not load categories. Refresh and try again.'),
+    );
+  }
+
+  protected onNameInput(event: Event): void {
+    this.nameInput.set((event.target as HTMLInputElement).value);
   }
 
   protected async add(event: Event): Promise<void> {
     event.preventDefault();
 
-    const categoryName = parseCategoryName(this.nameDraft());
+    const categoryName = this.parseCategoryName(this.nameInput());
 
     if (!categoryName) {
-      this.error.set('Enter a category name.');
-
       return;
     }
 
-    await attemptWhilePending(
-      () => this.runThenRefresh(() => this.addCategory(categoryName)),
-      this.pendingTasks,
-      () => this.error.set('Could not save the category. Try again.'),
-    );
+    await this.attemptMutation(() => this.addCategory(categoryName));
   }
 
   private async addCategory(categoryName: string): Promise<void> {
     await this.categoryService.add(this.type(), categoryName);
 
-    this.nameDraft.set('');
+    this.nameInput.set('');
   }
 
-  protected async rename(categoryId: string, raw: string): Promise<void> {
-    const categoryName = parseCategoryName(raw);
+  protected async rename(categoryId: string, typedName: string): Promise<void> {
+    const categoryName = this.parseNameForRename(categoryId, typedName);
+
+    if (!categoryName) {
+      return;
+    }
+
+    await this.attemptMutation(() => this.renameCategory(categoryId, categoryName));
+  }
+
+  private parseNameForRename(categoryId: string, typedName: string): string | undefined {
+    const categoryName = this.parseCategoryName(typedName);
+
+    if (!categoryName || this.isNameUnchanged(categoryId, categoryName)) {
+      return undefined;
+    }
+
+    return categoryName;
+  }
+
+  private parseCategoryName(typedName: string): string | undefined {
+    const categoryName = parseCategoryName(typedName);
 
     if (!categoryName) {
       this.error.set('Enter a category name.');
 
-      return;
+      return undefined;
     }
 
-    if (
-      this.activeCategories().some(
-        (category) => category.id === categoryId && category.name === categoryName,
-      )
-    ) {
-      return;
-    }
+    return categoryName;
+  }
 
-    await attemptWhilePending(
-      () => this.runThenRefresh(() => this.renameCategory(categoryId, categoryName)),
-      this.pendingTasks,
-      () => this.error.set('Could not save the category. Try again.'),
+  private isNameUnchanged(categoryId: string, categoryName: string): boolean {
+    return this.activeCategories().some(
+      (category) => category.id === categoryId && category.name === categoryName,
     );
   }
 
@@ -104,11 +120,7 @@ export class PlanCategorySection {
   }
 
   protected async hide(categoryId: string): Promise<void> {
-    await attemptWhilePending(
-      () => this.runThenRefresh(() => this.hideCategory(categoryId)),
-      this.pendingTasks,
-      () => this.error.set('Could not save the category. Try again.'),
-    );
+    await this.attemptMutation(() => this.hideCategory(categoryId));
   }
 
   private async hideCategory(categoryId: string): Promise<void> {
@@ -116,22 +128,18 @@ export class PlanCategorySection {
   }
 
   protected async unhide(categoryId: string): Promise<void> {
-    await attemptWhilePending(
-      () => this.runThenRefresh(() => this.unhideCategory(categoryId)),
-      this.pendingTasks,
-      () => this.error.set('Could not save the category. Try again.'),
-    );
+    await this.attemptMutation(() => this.unhideCategory(categoryId));
   }
 
   private async unhideCategory(categoryId: string): Promise<void> {
     await this.categoryService.unhide(categoryId);
   }
 
-  private async load(): Promise<void> {
+  private async attemptMutation(mutation: () => Promise<void>): Promise<void> {
     await attemptWhilePending(
-      () => this.runThenRefresh(),
+      () => this.runThenRefresh(mutation),
       this.pendingTasks,
-      () => this.error.set('Could not load categories. Refresh and try again.'),
+      () => this.error.set('Could not save the category. Try again.'),
     );
   }
 

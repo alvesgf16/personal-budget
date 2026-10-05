@@ -3,18 +3,6 @@ import { BudgetDatabase } from '../database';
 
 const META_KEYS = new Set(['id', 'updatedAt', 'deletedAt', 'collection']);
 
-function stripMeta<T extends object>(payload: T): Omit<T, keyof StoreDocument> {
-  const fieldsWithoutMeta = { ...payload } as Record<string, unknown>;
-  for (const key of META_KEYS) {
-    delete fieldsWithoutMeta[key];
-  }
-  return fieldsWithoutMeta as Omit<T, keyof StoreDocument>;
-}
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
 /**
  * Generic collection API over IndexedDB.
  * Domain services inject DOCUMENT_STORE; this class stays free of Angular DI.
@@ -95,6 +83,20 @@ export class DocumentStore {
   }
 }
 
+function stripMeta<T extends object>(payload: T): Omit<T, keyof StoreDocument> {
+  const fieldsWithoutMeta = { ...payload } as Record<string, unknown>;
+
+  for (const key of META_KEYS) {
+    delete fieldsWithoutMeta[key];
+  }
+
+  return fieldsWithoutMeta as Omit<T, keyof StoreDocument>;
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
 /** Soft-deleted rows filtered in memory — IndexedDB skips null deletedAt keys. */
 function activeDocuments<T extends object>(rows: StoredRow<T>[]): StoreDocument<T>[] {
   return rows.filter((row) => row.deletedAt === null).map((row) => toDocument(row));
@@ -102,7 +104,9 @@ function activeDocuments<T extends object>(rows: StoredRow<T>[]): StoreDocument<
 
 function toDocument<T extends object>(row: StoredRow<T>): StoreDocument<T> {
   const doc = { ...row } as StoreDocument<T> & { collection?: CollectionName };
+
   delete doc.collection;
+
   return doc;
 }
 

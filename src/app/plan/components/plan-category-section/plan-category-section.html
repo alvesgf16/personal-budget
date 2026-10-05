@@ -7,8 +7,8 @@
       type="text"
       name="categoryName"
       autocomplete="off"
-      [value]="nameDraft()"
-      (input)="onNameDraft($event)"
+      [value]="nameInput()"
+      (input)="onNameInput($event)"
       [attr.aria-invalid]="error() ? 'true' : null"
       [attr.aria-describedby]="error() ? 'category-error-' + type() : null"
     />

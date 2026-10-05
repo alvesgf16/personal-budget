@@ -1,5 +1,5 @@
 ---
-description: Clean Code judgment guidance (Meaningful Names, Functions, Comments, and later chapters)
+description: Clean Code judgment guidance (Meaningful Names, Functions, Comments, Formatting, and later chapters)
 alwaysApply: true
 ---
 
@@ -168,3 +168,55 @@ Avoid or delete:
 ### Don't Use a Comment When You Can Use a Function or a Variable
 
 If a comment exists to explain what a block or expression means, the fix is a better name or a small extract (`helpers/` / `src/data/lib/`) — not a better comment. Well-named helpers need no restating JSDoc; the function *is* the documentation. Keep true why / clarification / warning comments that naming cannot replace.
+
+## Formatting (Ch.5)
+
+Prettier is the horizontal and team formatting source of truth (`.prettierrc`, `npm run format`, `prettier --check` in `npm run lint`, lint-staged). Do not fight it with ESLint style rules — `eslint-config-prettier` stays last. Vertical narrative (newspaper, distance, ordering) is judgment under this chapter; Prettier preserves a single blank line and collapses doubles.
+
+### The Purpose of Formatting
+
+Formatting is communication. Prefer the team’s shared style over personal taste. Machine format comes from Prettier; readable vertical story comes from how we order and open the file.
+
+### The Newspaper Metaphor
+
+A source file reads like a newspaper article: headline and high-level story first, details afterward. Put the public or exported API and orchestration near the top; push helpers and lower-level detail down the file. Aligns with the Functions stepdown rule (Ch.3) at method level.
+
+### Vertical Openness Between Concepts
+
+Separate distinct concepts with a single blank line (imports from code; class members; guard vs work vs persist; fetch vs map vs set). Never use two consecutive blank lines — Prettier collapses them.
+
+### Vertical Density
+
+Keep tightly related lines packed with no blank between them (one short expression chain, one thought). Openness without density turns the file into sparse noise.
+
+### Vertical Distance
+
+Keep closely related concepts near each other. Prefer declaring a local near its first use. Avoid large gaps between a caller and the helper it depends on when affinity allows clustering them.
+
+### Variable Declarations
+
+Declare variables as close as practical to their first use. Do not hoist locals to the top of a long function when they belong with a later concept.
+
+### Dependent Functions
+
+Callees sit below their callers (stepdown) so dependencies point down. A helper with one caller sits directly under that caller. A helper shared by peer callers sits below the last of those callers (not under the first). File-level **functions** used by a class belong below the class, not above it, unless a language constraint requires otherwise. Module-level **constants and types** stay above the class.
+
+### Conceptual Affinity
+
+Group by concept: a public or protected operation next to its private helper pair is better than dumping every private at the bottom when that increases distance (e.g. `constructor` then `load`, `add` then `addCategory`). Similar concepts stay together; unrelated concepts do not interleave without reason. Shared helpers still follow Dependent Functions — keep the shared pair together below the last peer caller rather than inserting them under the first use.
+
+### Vertical Ordering
+
+Prefer a stable top-down story: module constants/types → fields and high-level API → concept clusters (caller then callee) → shared lower-level helpers. Visibility is not a hard sort key — do not pull a private helper away from its only caller just to keep every protected method above every private one. Within a concept cluster, caller above callee.
+
+### Horizontal Openness and Density / Indentation / Dummy Scopes
+
+Spaces around operators and after commas come from Prettier. Indentation is 2 spaces (`.editorconfig` + Prettier). Empty blocks still use braces and normal indentation — no cute one-liners that hide structure.
+
+### Horizontal Alignment
+
+Do not column-align declarations or assignments. Alignment creates noisy diffs when names change; Prettier does not align columns — leave it that way.
+
+### Team Rules
+
+One style for the whole team: shared `.prettierrc`, format on commit via lint-staged, check in CI through `npm run lint`. Angular template/component conventions beyond Prettier’s `parser: "angular"` stay under PB-87.
