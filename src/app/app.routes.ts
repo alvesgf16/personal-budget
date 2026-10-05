@@ -5,7 +5,6 @@ import { Plan } from './plan/plan';
 import { Settings } from './settings/settings';
 import { Tracking } from './tracking/tracking';
 
-/** Tab paths, labels, and empty page components — single source for the router and nav. */
 export const APP_TABS = [
   { path: 'dashboard', label: 'Dashboard', component: Dashboard },
   { path: 'plan', label: 'Plan', component: Plan },

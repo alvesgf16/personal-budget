@@ -4,7 +4,6 @@ import { dollarsToCents } from './helpers/dollars-to-cents';
 import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
 import { attemptWhilePending } from '../../../shared/helpers/attempt-while-pending';
 
-/** One Plan amount cell: local draft, persist on blur. */
 @Component({
   selector: 'app-plan-amount-cell',
   styleUrl: './plan-amount-cell.css',

@@ -9,17 +9,12 @@ import { planYearSchema } from '../../lib/plan-year';
  * Amounts are integer cents so later UI never does float math.
  */
 export const budgetCellSchema = z.object({
-  /** Category document id this cell belongs to. */
   categoryId: z.string().min(1),
-  /** Plan year (same bounds as settings.startingYear). */
   year: planYearSchema,
-  /** Calendar month 1–12. */
   month: z.number().int().min(1).max(12),
-  /** Planned amount in integer cents (non-negative, within Number.MAX_SAFE_INTEGER). */
   amountCents: z.number().int().nonnegative().safe(),
 });
 
-/** Inferred TypeScript type — one source of truth with the Zod schema. */
 export type BudgetCell = z.infer<typeof budgetCellSchema>;
 
 /**

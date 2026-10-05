@@ -2,7 +2,6 @@ import type { PeriodBalance, PeriodBalanceStatus } from '../../../../../data/lib
 import { centsToDollarInput } from '../../plan-amount-cell/helpers/cents-to-dollar-input';
 import { PLAN_MONTH_LONG, PLAN_MONTH_SHORT } from '../../plan-amount-grid/constants';
 
-/** One month chip for the allocation status strip. */
 export interface MonthAllocationView {
   month: number;
   shortLabel: string;

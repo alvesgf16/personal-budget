@@ -13,7 +13,6 @@ import { attemptWhilePending } from '../../../shared/helpers/attempt-while-pendi
 import { PlanAmountCell } from '../plan-amount-cell/plan-amount-cell';
 import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
 
-/** Sticky/scrollable category × Jan–Dec amount grid for one plan year. */
 @Component({
   selector: 'app-plan-amount-grid',
   imports: [PlanAmountCell, PlanCategoryNameInput],
@@ -36,17 +35,12 @@ export class PlanAmountGrid {
   protected readonly monthLong = PLAN_MONTH_LONG;
 
   protected readonly error = signal<string | null>(null);
-  /** Loaded amount cents keyed by `categoryId:month`. */
   private readonly amounts = signal<Record<string, number>>({});
 
   constructor() {
     effect(() => {
       const year = this.year();
-
-      // Clear immediately so cells do not keep showing the previous year's values.
-      this.amounts.set({});
-      this.error.set(null);
-
+      this.clearStaleYearAmounts();
       void this.loadCells(year);
     });
   }
@@ -85,6 +79,12 @@ export class PlanAmountGrid {
 
       return next;
     });
+  }
+
+  /** Clear before reload so cells never show the previous year's values. */
+  private clearStaleYearAmounts(): void {
+    this.amounts.set({});
+    this.error.set(null);
   }
 
   private async loadCells(year: number): Promise<void> {

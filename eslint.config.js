@@ -118,6 +118,8 @@ module.exports = defineConfig([
             'Extract this parameter object type to a named type or interface (Clean Code Ch.3 argument objects).',
         },
       ],
+      // Clean Code Ch.4 (PB-93): Comments — allow TODO; ban stale/urgent markers
+      'no-warning-comments': ['error', { terms: ['fixme', 'xxx', 'hack'], location: 'start' }],
     },
   },
   {

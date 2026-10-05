@@ -1,7 +1,6 @@
 import type { TotalableCategory } from '../types';
 import { yearTotalCents } from './year-total-cents';
 
-/** Sum of active category year totals (equals the twelve section month totals). */
 export function sectionYearTotalCents(
   amounts: Record<string, number>,
   categories: readonly TotalableCategory[],

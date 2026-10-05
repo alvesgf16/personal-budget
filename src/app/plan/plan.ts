@@ -4,7 +4,6 @@ import { runWhilePending } from '../shared/helpers/run-while-pending';
 import { PlanAllocationStatus } from './components/plan-allocation-status/plan-allocation-status';
 import { PlanCategorySection } from './components/plan-category-section/plan-category-section';
 
-/** Plan tab: year header, allocation status strip, and income / expense / savings sections. */
 @Component({
   selector: 'app-plan',
   imports: [PlanAllocationStatus, PlanCategorySection],

@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 
-/** Catch-all when the URL is not a tab. Leave via the existing nav. */
 @Component({
   selector: 'app-not-found',
   styles: `

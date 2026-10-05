@@ -8,7 +8,6 @@ export const COLLECTIONS = {
   budgetCells: 'budgetCells',
 } as const;
 
-/** Union of known collection names — derived from COLLECTIONS. */
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
 
 /**
@@ -22,7 +21,6 @@ export interface DocumentMeta {
   deletedAt: string | null;
 }
 
-/** A store document: caller payload T plus sync metadata. */
 export type StoreDocument<T extends object = Record<string, unknown>> = T & DocumentMeta;
 
 /**

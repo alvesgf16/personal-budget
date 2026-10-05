@@ -3,7 +3,6 @@ export function periodKey(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, '0')}`;
 }
 
-/** Zero-based allocation status for one plan month. */
 export type PeriodBalanceStatus = 'untouched' | 'under' | 'balanced' | 'over';
 
 export interface PeriodTotals {

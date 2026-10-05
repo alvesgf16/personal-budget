@@ -86,16 +86,18 @@ export class DocumentStore {
   }
 
   async list<T extends object>(collection: CollectionName): Promise<StoreDocument<T>[]> {
-    // Query by collection, then drop soft-deleted rows in memory (null is not indexed).
     const rows = await this.database.documents.where('collection').equals(collection).toArray();
-    return rows
-      .filter((row) => row.deletedAt === null)
-      .map((row) => toDocument(row as StoredRow<T>));
+    return activeDocuments(rows as StoredRow<T>[]);
   }
 
   close(): void {
     this.database.close();
   }
+}
+
+/** Soft-deleted rows filtered in memory — IndexedDB skips null deletedAt keys. */
+function activeDocuments<T extends object>(rows: StoredRow<T>[]): StoreDocument<T>[] {
+  return rows.filter((row) => row.deletedAt === null).map((row) => toDocument(row));
 }
 
 function toDocument<T extends object>(row: StoredRow<T>): StoreDocument<T> {
@@ -104,7 +106,6 @@ function toDocument<T extends object>(row: StoredRow<T>): StoreDocument<T> {
   return doc;
 }
 
-/** Factory for tests (unique DB name) and the DOCUMENT_STORE token. */
 export function createDocumentStore(dbName?: string): DocumentStore {
   return new DocumentStore(new BudgetDatabase(dbName));
 }

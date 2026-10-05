@@ -1,7 +1,6 @@
 import { cellKey } from './cell-key';
 import type { TotalableCategory } from '../types';
 
-/** Sum of active categories for one month. Hidden categories are skipped. */
 export function sectionMonthTotalCents(
   amounts: Record<string, number>,
   categories: readonly TotalableCategory[],

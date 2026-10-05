@@ -1,4 +1,3 @@
-/** Calendar months 1–12 for the Plan amount grid. */
 export const PLAN_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
 export const PLAN_MONTH_SHORT = [

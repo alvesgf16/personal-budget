@@ -3,7 +3,6 @@ import type { CategoryType } from '../../../../../data/domains/category/category
 import type { PeriodTotals } from '../../../../../data/lib/period-balance';
 import { PLAN_MONTHS } from '../../plan-amount-grid/constants';
 
-/** Minimal category shape needed to bucket cells by type and skip hidden categories. */
 interface TotalsCategoryRef {
   id: string;
   type: CategoryType;

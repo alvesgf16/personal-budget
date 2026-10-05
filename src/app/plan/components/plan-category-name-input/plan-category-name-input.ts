@@ -1,7 +1,6 @@
 import { Component, effect, input, output, signal } from '@angular/core';
 import { parseCategoryName } from '../../../../data/domains/category/category';
 
-/** Inline category name field: local draft, emit on blur when the value changed. */
 @Component({
   selector: 'app-plan-category-name-input',
   styleUrl: './plan-category-name-input.css',
@@ -29,10 +28,14 @@ export class PlanCategoryNameInput {
     if (raw === this.name()) {
       return;
     }
-    // Revert blank drafts locally; parent still receives the event for the alert.
+    this.revertBlankDraftLocally(raw);
+    // Parent still receives the event for the blank-name alert.
+    this.nameChange.emit({ id: this.categoryId(), name: raw });
+  }
+
+  private revertBlankDraftLocally(raw: string): void {
     if (!parseCategoryName(raw)) {
       this.draft.set(this.name());
     }
-    this.nameChange.emit({ id: this.categoryId(), name: raw });
   }
 }
