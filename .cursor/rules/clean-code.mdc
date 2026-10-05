@@ -1,5 +1,5 @@
 ---
-description: Clean Code judgment guidance (Meaningful Names, Functions, and later chapters)
+description: Clean Code judgment guidance (Meaningful Names, Functions, Comments, and later chapters)
 alwaysApply: true
 ---
 
@@ -121,3 +121,50 @@ Prefer helpers/`lib` extracts over copy-paste. Automated duplication detection i
 ### Structured Programming
 
 Keep nesting and branchiness low — gated by `max-depth` and `complexity`.
+
+## Comments (Ch.4)
+
+ESLint: `no-warning-comments` bans `FIXME` / `XXX` / `HACK` (location start). Temporary `TODO` comments are allowed when they state why (and a Jira key when one exists). Do not require JSDoc.
+
+**Primary emphasis:** Don't Use a Comment When You Can Use a Function or a Variable — rename or extract until a narrative comment is unnecessary.
+
+**Comment style:** No Jira keys (`PB-…`) in comments. Prefer complete sentences with full stops.
+
+### Comments Do Not Make Up for Bad Code
+
+Prefer fixing names, structure, or extracts over explaining a mess.
+
+### Explain Yourself in Code
+
+Intent lives in identifiers and small functions first. Drop “what” comments once the code already says it.
+
+### Good Comments
+
+Keep comments that naming cannot carry:
+
+- **Legal** — copyright/license headers when needed
+- **Informative** — rare non-obvious units, formats, or conventions
+- **Explanation of Intent** — why this approach (e.g. parent owns persist; sparse cell ≠ zero)
+- **Clarification** — awkward but necessary constructs (e.g. IndexedDB skips null keys, so soft-delete is filtered in memory)
+- **Warning of Consequences** — surprising behavior (e.g. clear amounts on year change so stale cells do not show)
+- **TODO** — temporary only; state why; prefer a Jira key. Do not use `FIXME` / `XXX` / `HACK`
+- **Amplification** — emphasize something that looks insignificant but matters
+
+Do not mandate JSDoc on public or private APIs (local Angular app, not a published library).
+
+### Bad Comments
+
+Avoid or delete:
+
+- **Mumbling** — vague or unfinished; rewrite or remove
+- **Redundant / Noise** — restates the identifier or next line (Zod “inferred type” boilerplate, empty-tab banners that repeat the class name, field docs that only echo the property name)
+- **Misleading** — lies after refactors; update or delete with the code
+- **Mandated / Function Headers / Nonpublic JSDoc** — no required comment on every function or private member
+- **Journal / Attributions** — use git history, not change-log or “written by” lines in source (legal headers stay under Legal)
+- **Position Markers / Closing Brace Comments** — no section dividers or `} // end if`
+- **Commented-Out Code** — delete; recover from git
+- **Nonlocal / Too Much Information / Inobvious Connection** — keep comments short, local, and clearly tied to the construct they describe
+
+### Don't Use a Comment When You Can Use a Function or a Variable
+
+If a comment exists to explain what a block or expression means, the fix is a better name or a small extract (`helpers/` / `src/data/lib/`) — not a better comment. Well-named helpers need no restating JSDoc; the function *is* the documentation. Keep true why / clarification / warning comments that naming cannot replace.

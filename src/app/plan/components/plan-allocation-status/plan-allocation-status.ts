@@ -7,17 +7,12 @@ import { PLAN_MONTHS } from '../plan-amount-grid/constants';
 import { periodTotalsByMonth } from './helpers/period-totals-by-month';
 import { type MonthAllocationView, toMonthView } from './helpers/to-month-view';
 
-/** Year + revisions captured when one allocation-status load starts. */
-interface AllocationStatusLoad {
+interface AllocationStatusSnapshot {
   year: number;
   cellRevision: number;
   categoryRevision: number;
 }
 
-/**
- * Compact Jan–Dec strip: remaining-to-allocate per month via shared computePeriodBalance.
- * Status rules and status → copy mapping live in helpers; this component loads and renders.
- */
 @Component({
   selector: 'app-plan-allocation-status',
   styleUrl: './plan-allocation-status.css',
@@ -35,41 +30,44 @@ export class PlanAllocationStatus {
 
   constructor() {
     effect(() => {
-      // Depend on both revisions: cell blur and category hide/unhide.
-      const statusLoad: AllocationStatusLoad = {
-        year: this.year(),
-        cellRevision: this.budgetCells.revision(),
-        categoryRevision: this.categories.revision(),
-      };
+      const statusSnapshot = this.captureStatusSnapshot();
 
       this.months.set([]);
       this.error.set(null);
 
-      void this.load(statusLoad);
+      void this.load(statusSnapshot);
     });
   }
 
-  private async load(statusLoad: AllocationStatusLoad): Promise<void> {
+  private captureStatusSnapshot(): AllocationStatusSnapshot {
+    return {
+      year: this.year(),
+      cellRevision: this.budgetCells.revision(),
+      categoryRevision: this.categories.revision(),
+    };
+  }
+
+  private async load(statusSnapshot: AllocationStatusSnapshot): Promise<void> {
     await attemptWhilePending(
-      () => this.loadMonthsForYear(statusLoad),
+      () => this.loadMonthsForYear(statusSnapshot),
       this.pendingTasks,
       () => {
-        if (this.isLoadCurrent(statusLoad)) {
+        if (this.isSnapshotCurrent(statusSnapshot)) {
           this.error.set('Could not load allocation status. Refresh and try again.');
         }
       },
     );
   }
 
-  private async loadMonthsForYear(statusLoad: AllocationStatusLoad): Promise<void> {
+  private async loadMonthsForYear(statusSnapshot: AllocationStatusSnapshot): Promise<void> {
     const [income, expense, savings, cells] = await Promise.all([
       this.categories.listByType('income'),
       this.categories.listByType('expense'),
       this.categories.listByType('savings'),
-      this.budgetCells.listForYear(statusLoad.year),
+      this.budgetCells.listForYear(statusSnapshot.year),
     ]);
 
-    if (!this.isLoadCurrent(statusLoad)) {
+    if (!this.isSnapshotCurrent(statusSnapshot)) {
       return;
     }
 
@@ -80,11 +78,11 @@ export class PlanAllocationStatus {
     );
   }
 
-  private isLoadCurrent(statusLoad: AllocationStatusLoad): boolean {
+  private isSnapshotCurrent(statusSnapshot: AllocationStatusSnapshot): boolean {
     return (
-      this.year() === statusLoad.year &&
-      this.budgetCells.revision() === statusLoad.cellRevision &&
-      this.categories.revision() === statusLoad.categoryRevision
+      this.year() === statusSnapshot.year &&
+      this.budgetCells.revision() === statusSnapshot.cellRevision &&
+      this.categories.revision() === statusSnapshot.categoryRevision
     );
   }
 }

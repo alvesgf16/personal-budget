@@ -16,10 +16,6 @@ const SECTION_TITLES: Record<CategoryType, string> = {
   savings: 'Savings',
 };
 
-/**
- * Add, list, rename, and hide/unhide categories for one Plan section type.
- * When `year` is set, mounts the amount grid for that year.
- */
 @Component({
   selector: 'app-plan-category-section',
   imports: [PlanAmountGrid, PlanCategoryNameInput],
@@ -31,7 +27,7 @@ export class PlanCategorySection {
   private readonly pendingTasks = inject(PendingTasks);
 
   readonly type = input.required<CategoryType>();
-  /** Plan year from Settings; null hides the amount columns (PB-49 owns empty state). */
+  /** Null hides amount columns (empty state owned elsewhere). */
   readonly year = input<number | null>(null);
 
   protected readonly nameDraft = signal('');

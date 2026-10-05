@@ -7,7 +7,6 @@ import {
 import { SettingsService } from '../../data/domains/settings/settings.service';
 import { attemptWhilePending } from '../shared/helpers/attempt-while-pending';
 
-/** Settings tab: persist the Plan starting year (PB-19). */
 @Component({
   selector: 'app-settings',
   styleUrl: './settings.css',

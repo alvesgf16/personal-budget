@@ -6,14 +6,12 @@ import { planYearSchema } from '../../lib/plan-year';
  * The document store adds id / updatedAt / deletedAt when saving.
  */
 export const settingsSchema = z.object({
-  /** Calendar year that drives the Plan year header (PB-19). */
+  /** Calendar year that drives the Plan year header. */
   startingYear: planYearSchema,
 });
 
-/** Inferred TypeScript type — one source of truth with the Zod schema. */
 export type Settings = z.infer<typeof settingsSchema>;
 
-/** Parse a typed year string into Settings. Empty or out of range → `null`. */
 export function parseSettings(raw: string): Settings | null {
   const trimmed = raw.trim();
   const parsed = settingsSchema.safeParse({
