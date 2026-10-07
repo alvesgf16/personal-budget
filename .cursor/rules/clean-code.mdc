@@ -1,5 +1,5 @@
 ---
-description: Clean Code judgment guidance (Meaningful Names, Functions, Comments, Formatting, and later chapters)
+description: Clean Code judgment guidance (Meaningful Names, Functions, Comments, Formatting, Objects and Data Structures, and later chapters)
 alwaysApply: true
 ---
 
@@ -220,3 +220,49 @@ Do not column-align declarations or assignments. Alignment creates noisy diffs w
 ### Team Rules
 
 One style for the whole team: shared `.prettierrc`, format on commit via lint-staged, check in CI through `npm run lint`. Angular template/component conventions beyond Prettier’s `parser: "angular"` stay under PB-87.
+
+## Objects and Data Structures (Ch.6)
+
+No new ESLint rules for this chapter. Member-chain / LoD gates false-positive on DTO field reads, Angular signals, and Dexie fluent APIs. Feature → Dexie / `createDocumentStore` import walls stay under Boundaries (PB-97) and `.cursor/rules/document-store.mdc`. Class SRP/size stays under PB-99. Spec DOM query style stays under PB-98.
+
+### Data Abstraction
+
+Objects hide implementation behind verbs. Domain services (`CategoryService`, `BudgetCellService`, `SettingsService`), `DocumentStore`, and `PersistQueue` keep collaborators private (`store`, `database`, `chain`) and expose named operations (`list`, `getById`, `insert`, `update`, `softDelete`). Callers must not depend on how those objects persist or query.
+
+Dexie fluent chains (`database.documents.where(...).equals(...).toArray()`) belong **inside** `DocumentStore` only — that is the hidden implementation. Do not reach Dexie from features; that gate is PB-97.
+
+### Data/Object Anti-Symmetry
+
+Objects hide data and expose functions. Data structures expose data and have no meaningful functions. Pick one shape per type.
+
+PB choice: domain payloads are **data structures** (Zod schemas + `z.infer`, or plain `interface`s such as `PeriodBalance` / `PeriodTotals`). Behavior lives on injectables and pure helpers in `helpers/` and `src/data/lib/` — not methods on `Category` or `BudgetCell`. Do not push Active Record or rich entity APIs onto Zod DTOs.
+
+### The Law of Demeter
+
+A method should talk only to itself, its parameters, objects it creates, or its direct component fields — not to strangers reached through returned objects.
+
+Prefer one hop to owned collaborators (`this.store.list`, `this.categories.revision()`). Avoid chaining across module boundaries into another type’s internals.
+
+Reading fields on a returned DTO (`category.name`, `settings?.startingYear`, `cell.amountCents`) is **not** a LoD violation — that is using a data structure. Spec DOM trains (`fixture.nativeElement.querySelector...`) are test harness concern (PB-98), not production LoD.
+
+### Train Wrecks
+
+Long chains that dig through foreign objects are a smell. Do not train-wreck through service or store façades from features. Fluent query APIs inside `DocumentStore` are accepted: the store owns `database`.
+
+Accepted pragmatic dig (domain module only, not feature UI): Zod’s public `schema.shape.field` for single-field parse/reuse (e.g. `categorySchema.shape.name.safeParse`). Do not spread schema-shape digging into components. Angular `event.target` / `currentTarget` is a platform hop on a parameter you do not own — allowed.
+
+### Hybrids
+
+Half object / half data structure (public fields **and** significant behavior) is worse than either pure form. Do not grow business methods onto Zod DTOs or turn services into public field bags. Keep transforms in `helpers/` / `src/data/lib/`.
+
+### Hiding Structure
+
+When you have a data structure, do not wrap every field behind getters just to look object-oriented — that forces train wrecks without buying abstraction. Templates and features may read open DTO fields. Do not invent getter wrappers on `Category` / `BudgetCell` “for encapsulation.”
+
+### Data Transfer Objects
+
+DTOs are bags of public data with little or no behavior — the right shape for crossing boundaries. Treat Zod-inferred types and `StoreDocument<T>` / `PeriodTotals` / `PeriodBalance` as DTOs. Parse before persist at the service/store edge; map for the UI with pure helpers. Import and Dexie wrapping rules stay under document-store / PB-97.
+
+### Active Record
+
+Do not put navigation or persistence on the record type. `Category` / `BudgetCell` / `Settings` must not gain `save` / `delete` / relation walks. Persistence stays on `*Service` and `DOCUMENT_STORE`.
