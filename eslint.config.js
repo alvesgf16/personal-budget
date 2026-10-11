@@ -120,6 +120,10 @@ module.exports = defineConfig([
       ],
       // Clean Code Ch.4 (PB-93): Comments — allow TODO; ban stale/urgent markers
       'no-warning-comments': ['error', { terms: ['fixme', 'xxx', 'hack'], location: 'start' }],
+      // Clean Code Ch.7 (PB-96): Error Handling — only-throw-error needs type-aware lint (PB-76)
+      'no-empty': 'error',
+      'no-throw-literal': 'error',
+      'prefer-promise-reject-errors': 'error',
     },
   },
   {

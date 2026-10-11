@@ -112,7 +112,7 @@ Do not mix mutation with answering questions when that muddies intent. Keep `lis
 
 ### Prefer Exceptions to Returning Error Codes
 
-Prefer exceptions over error codes; treat try/catch as its own “one thing.” Full empty-catch policy is PB-96. UI work should keep using `attemptWhilePending` for centralized failure handling.
+See Error Handling (Ch.7).
 
 ### Don't Repeat Yourself
 
@@ -266,3 +266,39 @@ DTOs are bags of public data with little or no behavior — the right shape for 
 ### Active Record
 
 Do not put navigation or persistence on the record type. `Category` / `BudgetCell` / `Settings` must not gain `save` / `delete` / relation walks. Persistence stays on `*Service` and `DOCUMENT_STORE`.
+
+## Error Handling (Ch.7)
+
+ESLint: `no-empty` (no empty `catch`); `no-throw-literal`; `prefer-promise-reject-errors`. Recommended also supplies `no-ex-assign`, `no-unsafe-finally`, `no-useless-catch`. Type-aware `@typescript-eslint/only-throw-error` and async/promise footguns stay under PB-76.
+
+### Use Exceptions Rather Than Return Codes
+
+Prefer `throw new Error(...)` for unexpected or invariant failures (e.g. category not found in a domain service). Do not invent error-code APIs (`{ ok: false }`, numeric codes, stringly failure statuses) that force every caller to check. UI work translates failures at the boundary with `attemptWhilePending` and a user-facing string — do not bubble Result types through components.
+
+### Write Your Try-Catch-Finally Statement First
+
+A function that catches should treat try/catch/finally as its one thing and leave state consistent. `runWhilePending` clears `PendingTasks` in `finally`. Approved UI pattern: `attemptWhilePending` catches, calls `onFailure()`, and does not rethrow. Approved store pattern: `PersistQueue` swallows a prior rejection so later writes still run — intentional chain recovery, not an empty catch.
+
+### Use Unchecked Exceptions
+
+TypeScript has no checked exceptions. Do not invent Result/Either wrappers that force every layer to unwrap like Java checked throws. Domain services throw; the UI catches once at `attemptWhilePending`.
+
+### Provide Context with Exceptions
+
+Exception messages name what failed and include identifying context when useful (`Category not found: ${id}`). Do not throw a bare `Error()` with no message, or throw literals (gated by `no-throw-literal`).
+
+### Define Exception Classes in Terms of a Caller's Needs
+
+v1 needs no custom exception class hierarchy. Callers at the UI boundary need one behavior — show a failure string — so plain `Error` plus catch in `attemptWhilePending` is enough. Do not catch in domain services just to rewrap unless a real boundary requires it (store wrapping stays under Boundaries / PB-97).
+
+### Define the Normal Flow
+
+Do not use throw/catch for expected user validation — that obscures the happy path. Parse helpers return a named outcome (empty / ok / invalid) so the caller branches without a try. Leave real exceptions for unexpected domain failures.
+
+### Don't Return Null
+
+Prefer throw or an explicit outcome over null-as-error. PB exceptions: `amountCents: null` means a sparse or cleared cell; store `getById` may return `undefined` for a miss; parse helpers may use `null` or an `empty` status for absent input when that is domain meaning. Invalid user input must not be a silent null that callers misread as delete.
+
+### Don't Pass Null
+
+Prefer omitting optionals or using `undefined` for “not provided” in new APIs. Accepted: pass `amountCents: null` into save paths where null is the sparse-cell signal — problem-domain null, not error null.
