@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { COLLECTIONS } from '../../../../data/store/types';
+import { COLLECTIONS, type CollectionName } from '../../../../data/store/types';
 import { provideTestDocumentStore } from '../../../../data/store/document-store/document-store.testing';
-import type { DocumentStore } from '../../../../data/store/document-store/document-store';
 import { PlanAmountGrid } from './plan-amount-grid';
 import { planAmountGridHarness } from './plan-amount-grid.testing';
 
@@ -30,9 +29,7 @@ describe('PlanAmountGrid', () => {
     });
     const originalList = testStore.store.list.bind(testStore.store);
     let listCalls = 0;
-    testStore.store.list = async <T extends object>(
-      collection: Parameters<DocumentStore['list']>[0],
-    ) => {
+    testStore.store.list = async <T extends object>(collection: CollectionName) => {
       const rows = await originalList<T>(collection);
       if (collection === COLLECTIONS.budgetCells) {
         listCalls += 1;

@@ -1,6 +1,6 @@
 ---
 description: Document store API — inject domain services; no Dexie/SQL from feature code
-globs: src/data/**
+globs: src/app/**,src/data/**
 alwaysApply: false
 ---
 
@@ -14,11 +14,12 @@ alwaysApply: false
 
 ## Rules
 
-- Feature screens inject a domain service (`SettingsService`, `CategoryService`, …) — do not import Dexie, `BudgetDatabase`, or `createDocumentStore` from UI code.
-- Domain services inject the `DOCUMENT_STORE` token (not nested behind another Angular store facade).
+- Feature screens inject a domain service (`SettingsService`, `CategoryService`, …) — do not import Dexie, `BudgetDatabase`, `createDocumentStore`, `DocumentStore`, `DOCUMENT_STORE`, or the testing seam from production UI code (ESLint `no-restricted-imports`, Clean Code Ch.8 / PB-97).
+- Domain services inject the `DOCUMENT_STORE` token (not nested behind another Angular store facade). Domains and `lib` must not import Dexie, `BudgetDatabase`, `createDocumentStore`, or `DocumentStore`.
+- Features may import public DTOs from `store/types` (`StoreDocument`, `COLLECTIONS`, `CollectionName`). Broader “domains only” layering is Systems (PB-100).
 - Collection names live in `COLLECTIONS` (`settings`, `categories`, …). Store/service methods take `CollectionName` (derived from that object) — add new piles there first.
 - Domain payloads: parse with Zod schemas (`settingsSchema`, `categorySchema`) **before** `insert` / `update`. Store metadata (`id`, `updatedAt`, `deletedAt`) is added by the store, not by the schema.
 - Every document has sync metadata: `id`, `updatedAt`, `deletedAt` (`null` while active).
 - Soft-delete sets `deletedAt`; `list` hides tombstones; `getById` still returns them.
 - Persistence is IndexedDB via Dexie — never query SQL from app code.
-- Tests use `useTestStore` / `provideTestDocumentStore` (unique DB name, token override, close + deleteDatabase).
+- Tests use `useTestStore` / `provideTestDocumentStore` (unique DB name, token override, close + deleteDatabase). Feature specs and `*.testing.ts` helpers may import the testing seam and `store/types` — not the store implementation or token.

@@ -109,13 +109,11 @@ module.exports = defineConfig([
         'error',
         {
           selector: ':function > Identifier[typeAnnotation.typeAnnotation.type="TSTypeLiteral"]',
-          message:
-            'Extract this parameter object type to a named type or interface (Clean Code Ch.3 argument objects).',
+          message: 'Extract this parameter object type to a named type or interface.',
         },
         {
           selector: ':function > ObjectPattern[typeAnnotation.typeAnnotation.type="TSTypeLiteral"]',
-          message:
-            'Extract this parameter object type to a named type or interface (Clean Code Ch.3 argument objects).',
+          message: 'Extract this parameter object type to a named type or interface.',
         },
       ],
       // Clean Code Ch.4 (PB-93): Comments — allow TODO; ban stale/urgent markers
@@ -133,6 +131,130 @@ module.exports = defineConfig([
       'max-depth': 'off',
       'max-params': 'off',
       'max-lines-per-function': 'off',
+    },
+  },
+  // Clean Code Ch.8 (PB-97): Boundaries — Dexie / concrete store only inside store
+  {
+    files: ['src/data/domains/**/*.ts', 'src/data/lib/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'dexie',
+              message:
+                'Dexie stays inside the document store. Inject DOCUMENT_STORE from domain services.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/store/database', '**/store/database.*'],
+              message: 'BudgetDatabase stays inside the document store. Inject DOCUMENT_STORE.',
+            },
+            {
+              group: [
+                '**/document-store/document-store',
+                '**/document-store/document-store.ts',
+                '**/document-store/document-store.js',
+              ],
+              message:
+                'Do not import DocumentStore or createDocumentStore from domains or lib. Inject DOCUMENT_STORE.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Clean Code Ch.8 (PB-97): Feature specs may use the testing seam; not the store impl/token
+  {
+    files: ['src/app/**/*.{spec,testing}.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'dexie',
+              message: 'Dexie stays inside the document store. Use domain services from features.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/store/database', '**/store/database.*'],
+              message: 'BudgetDatabase stays inside the document store. Use domain services.',
+            },
+            {
+              group: [
+                '**/document-store/document-store',
+                '**/document-store/document-store.ts',
+                '**/document-store/document-store.js',
+              ],
+              message:
+                'Do not import DocumentStore or createDocumentStore from features. Specs use provideTestDocumentStore.',
+            },
+            {
+              group: [
+                '**/document-store/document-store.token',
+                '**/document-store/document-store.token.ts',
+                '**/document-store/document-store.token.js',
+              ],
+              message:
+                'Do not inject DOCUMENT_STORE from features. Specs use provideTestDocumentStore.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Clean Code Ch.8 (PB-97): Production features must not reach store or testing seam
+  {
+    files: ['src/app/**/*.ts'],
+    ignores: ['src/app/**/*.{spec,testing}.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'dexie',
+              message: 'Dexie stays inside the document store. Use domain services from features.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/store/database', '**/store/database.*'],
+              message: 'BudgetDatabase stays inside the document store. Use domain services.',
+            },
+            {
+              group: [
+                '**/document-store/document-store',
+                '**/document-store/document-store.ts',
+                '**/document-store/document-store.js',
+              ],
+              message:
+                'Do not import DocumentStore or createDocumentStore from features. Inject domain services.',
+            },
+            {
+              group: [
+                '**/document-store/document-store.token',
+                '**/document-store/document-store.token.ts',
+                '**/document-store/document-store.token.js',
+              ],
+              message: 'Do not inject DOCUMENT_STORE from features. Inject domain services.',
+            },
+            {
+              group: [
+                '**/document-store/document-store.testing',
+                '**/document-store/document-store.testing.ts',
+                '**/document-store/document-store.testing.js',
+              ],
+              message:
+                'Do not import the document-store testing seam from production features. Specs use provideTestDocumentStore.',
+            },
+          ],
+        },
+      ],
     },
   },
   {
