@@ -302,3 +302,27 @@ Prefer throw or an explicit outcome over null-as-error. PB exceptions: `amountCe
 ### Don't Pass Null
 
 Prefer omitting optionals or using `undefined` for “not provided” in new APIs. Accepted: pass `amountCents: null` into save paths where null is the sparse-cell signal — problem-domain null, not error null.
+
+## Boundaries (Ch.8)
+
+ESLint: `no-restricted-imports` — Dexie / `BudgetDatabase` banned from `src/app`, `src/data/domains`, and `src/data/lib`; `DocumentStore` / `createDocumentStore` / `DOCUMENT_STORE` banned from `src/app`. Folder map and testing seam: `.cursor/rules/document-store.mdc`. Full `features → domains → store` direction is Systems (PB-100).
+
+### Using Third-Party Code
+
+Dexie is broad; PB owns a narrow façade. Only `src/data/store` imports Dexie or `BudgetDatabase`. Features inject domain services (`SettingsService`, `CategoryService`, `BudgetCellService`) — never third-party persistence types. Domains inject `DOCUMENT_STORE`, not Dexie.
+
+### Exploring and Learning Boundaries
+
+Learn Dexie at the store edge. Store specs (`document-store.spec.ts` and related) exercise `insert` / `list` / soft-delete the way production does. Do not scatter raw Dexie calls through features to explore the API.
+
+### Learning Tests Are Better Than Free
+
+Store-level specs are the Dexie upgrade safety net. Feature specs seed data with `provideTestDocumentStore` (and may use `COLLECTIONS` / `StoreDocument` from `store/types`) — not by constructing `BudgetDatabase` or calling `createDocumentStore` directly.
+
+### Using Code That Does Not Yet Exist
+
+`DOCUMENT_STORE` and `DocumentStore` methods are the owned seam. Domains depend on that token; a future persistence swap adapts behind the same API. Features must not inject the token or import the store implementation.
+
+### Clean Boundaries
+
+Depend on what we control. Features → domain services (+ allowed `store/types` DTOs and `src/data/lib`); domains → `DOCUMENT_STORE`; Dexie only in `src/data/store`. Keep third-party references few so upgrades stay cheap.

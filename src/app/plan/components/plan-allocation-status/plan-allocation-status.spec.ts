@@ -3,8 +3,7 @@ import type { BudgetCell } from '../../../../data/domains/budget-cell/budget-cel
 import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
 import type { Category } from '../../../../data/domains/category/category';
 import { CategoryService } from '../../../../data/domains/category/category.service';
-import type { DocumentStore } from '../../../../data/store/document-store/document-store';
-import { COLLECTIONS } from '../../../../data/store/types';
+import { COLLECTIONS, type CollectionName } from '../../../../data/store/types';
 import { provideTestDocumentStore } from '../../../../data/store/document-store/document-store.testing';
 import { Plan } from '../../plan';
 import { PlanAllocationStatus } from './plan-allocation-status';
@@ -165,9 +164,7 @@ describe('PlanAllocationStatus', () => {
     });
     const originalList = testStore.store.list.bind(testStore.store);
     let budgetListCalls = 0;
-    testStore.store.list = async <T extends object>(
-      collection: Parameters<DocumentStore['list']>[0],
-    ) => {
+    testStore.store.list = async <T extends object>(collection: CollectionName) => {
       const rows = await originalList<T>(collection);
       if (collection === COLLECTIONS.budgetCells) {
         budgetListCalls += 1;
