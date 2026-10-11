@@ -133,7 +133,7 @@ module.exports = defineConfig([
       'max-lines-per-function': 'off',
     },
   },
-  // Clean Code Ch.8 (PB-97): Boundaries — Dexie / BudgetDatabase only inside store
+  // Clean Code Ch.8 (PB-97): Boundaries — Dexie / concrete store only inside store
   {
     files: ['src/data/domains/**/*.ts', 'src/data/lib/**/*.ts'],
     rules: {
@@ -152,14 +152,23 @@ module.exports = defineConfig([
               group: ['**/store/database', '**/store/database.*'],
               message: 'BudgetDatabase stays inside the document store. Inject DOCUMENT_STORE.',
             },
+            {
+              group: [
+                '**/document-store/document-store',
+                '**/document-store/document-store.ts',
+                '**/document-store/document-store.js',
+              ],
+              message:
+                'Do not import DocumentStore or createDocumentStore from domains or lib. Inject DOCUMENT_STORE.',
+            },
           ],
         },
       ],
     },
   },
-  // Clean Code Ch.8 (PB-97): Features must not reach Dexie or store internals
+  // Clean Code Ch.8 (PB-97): Feature specs may use the testing seam; not the store impl/token
   {
-    files: ['src/app/**/*.ts'],
+    files: ['src/app/**/*.{spec,testing}.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -176,17 +185,72 @@ module.exports = defineConfig([
               message: 'BudgetDatabase stays inside the document store. Use domain services.',
             },
             {
-              group: ['**/document-store/document-store', '**/document-store/document-store.ts'],
+              group: [
+                '**/document-store/document-store',
+                '**/document-store/document-store.ts',
+                '**/document-store/document-store.js',
+              ],
               message:
-                'Do not import DocumentStore or createDocumentStore from features. Inject domain services; specs use provideTestDocumentStore.',
+                'Do not import DocumentStore or createDocumentStore from features. Specs use provideTestDocumentStore.',
             },
             {
               group: [
                 '**/document-store/document-store.token',
                 '**/document-store/document-store.token.ts',
+                '**/document-store/document-store.token.js',
               ],
               message:
-                'Do not inject DOCUMENT_STORE from features. Inject domain services; specs use provideTestDocumentStore.',
+                'Do not inject DOCUMENT_STORE from features. Specs use provideTestDocumentStore.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Clean Code Ch.8 (PB-97): Production features must not reach store or testing seam
+  {
+    files: ['src/app/**/*.ts'],
+    ignores: ['src/app/**/*.{spec,testing}.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'dexie',
+              message: 'Dexie stays inside the document store. Use domain services from features.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/store/database', '**/store/database.*'],
+              message: 'BudgetDatabase stays inside the document store. Use domain services.',
+            },
+            {
+              group: [
+                '**/document-store/document-store',
+                '**/document-store/document-store.ts',
+                '**/document-store/document-store.js',
+              ],
+              message:
+                'Do not import DocumentStore or createDocumentStore from features. Inject domain services.',
+            },
+            {
+              group: [
+                '**/document-store/document-store.token',
+                '**/document-store/document-store.token.ts',
+                '**/document-store/document-store.token.js',
+              ],
+              message: 'Do not inject DOCUMENT_STORE from features. Inject domain services.',
+            },
+            {
+              group: [
+                '**/document-store/document-store.testing',
+                '**/document-store/document-store.testing.ts',
+                '**/document-store/document-store.testing.js',
+              ],
+              message:
+                'Do not import the document-store testing seam from production features. Specs use provideTestDocumentStore.',
             },
           ],
         },
