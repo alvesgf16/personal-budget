@@ -1,6 +1,6 @@
 import { Component, effect, inject, input, output, PendingTasks, signal } from '@angular/core';
 import { centsToDollarInput } from './helpers/cents-to-dollar-input';
-import { dollarsToCents } from './helpers/dollars-to-cents';
+import { parseDollarAmount } from './helpers/parse-dollar-amount';
 import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
 import { attemptWhilePending } from '../../../shared/helpers/attempt-while-pending';
 
@@ -55,13 +55,15 @@ export class PlanAmountCell {
   }
 
   private parseDollarInput(): number | null | undefined {
-    try {
-      return dollarsToCents(this.dollarInput());
-    } catch {
-      this.saveError.emit('Enter a non-negative dollar amount.');
+    const parsed = parseDollarAmount(this.dollarInput());
+
+    if (parsed.status === 'invalid') {
+      this.saveError.emit(parsed.message);
 
       return undefined;
     }
+
+    return parsed.status === 'empty' ? null : parsed.amountCents;
   }
 
   private resetDollarInput(amountCents: number | null): void {
