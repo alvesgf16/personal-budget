@@ -29,6 +29,7 @@ describe('Settings starting year', () => {
     await submitYear(fixture, '1899');
     const saved = await storeHarness.store.list(COLLECTIONS.settings);
 
+    expect(alertText(fixture)).toContain('1900');
     expect(saved).toEqual([]);
   });
 
@@ -38,6 +39,7 @@ describe('Settings starting year', () => {
     await submitYear(fixture, '2026.5');
     const saved = await storeHarness.store.list(COLLECTIONS.settings);
 
+    expect(alertText(fixture)).toContain('1900');
     expect(saved).toEqual([]);
   });
 
