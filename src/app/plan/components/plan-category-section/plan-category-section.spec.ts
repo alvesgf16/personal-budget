@@ -1,92 +1,28 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { BudgetCell } from '../../../../data/domains/budget-cell/budget-cell';
-import type { Category, CategoryType } from '../../../../data/domains/category/category';
+import type { Category } from '../../../../data/domains/category/category';
 import { COLLECTIONS } from '../../../../data/store/types';
-import { provideTestDocumentStore } from '../../../../data/store/document-store/document-store.testing';
+import { provideDocumentStoreHarness } from '../../../../data/store/document-store/document-store.harness';
 import { PlanCategorySection } from './plan-category-section';
+import { planCategorySectionHarness } from './plan-category-section.harness';
 
 describe('PlanCategorySection', () => {
-  const testStore = provideTestDocumentStore('pb-21-plan-section', {
+  const storeHarness = provideDocumentStoreHarness('pb-21-plan-section', {
     imports: [PlanCategorySection],
   });
-
-  const render = async (type: CategoryType = 'income', year: number | null = null) => {
-    const fixture = TestBed.createComponent(PlanCategorySection);
-    fixture.componentRef.setInput('type', type);
-    fixture.componentRef.setInput('year', year);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    return fixture;
-  };
-
-  const submitName = async (
-    fixture: ComponentFixture<PlanCategorySection>,
-    type: CategoryType,
-    name: string,
-  ) => {
-    const input = fixture.nativeElement.querySelector(`#category-name-${type}`) as HTMLInputElement;
-    input.value = name;
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
-
-  const setCell = async (
-    fixture: ComponentFixture<PlanCategorySection>,
-    ariaLabel: string,
-    value: string,
-  ) => {
-    const input = fixture.nativeElement.querySelector(
-      `input[aria-label="${ariaLabel}"]`,
-    ) as HTMLInputElement;
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    input.dispatchEvent(new Event('blur'));
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
-
-  const renameByAriaLabel = async (
-    fixture: ComponentFixture<PlanCategorySection>,
-    currentName: string,
-    nextName: string,
-  ) => {
-    const input = fixture.nativeElement.querySelector(
-      `input[aria-label="Rename ${currentName}"]`,
-    ) as HTMLInputElement;
-    input.value = nextName;
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    input.dispatchEvent(new Event('blur'));
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
-
-  const clickNamedButton = async (
-    fixture: ComponentFixture<PlanCategorySection>,
-    ariaLabel: string,
-  ) => {
-    const button = fixture.nativeElement.querySelector(
-      `button[aria-label="${ariaLabel}"]`,
-    ) as HTMLButtonElement;
-    button.click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
-
-  const listItems = (fixture: ComponentFixture<PlanCategorySection>) =>
-    [...fixture.nativeElement.querySelectorAll('.active-categories li input')].map(
-      (el: Element) => (el as HTMLInputElement).value,
-    );
-
-  const outputText = (fixture: ComponentFixture<PlanCategorySection>, ariaLabel: string) =>
-    (
-      fixture.nativeElement.querySelector(`output[aria-label="${ariaLabel}"]`) as HTMLElement | null
-    )?.textContent?.trim() ?? '';
+  const {
+    render,
+    submitName,
+    setCell,
+    renameByAriaLabel,
+    clickNamedButton,
+    listItems,
+    outputText,
+    alertText,
+    inputByAriaLabel,
+    buttonByAriaLabel,
+    draftNameValue,
+    hiddenCategoriesText,
+  } = planCategorySectionHarness();
 
   (
     [
@@ -97,18 +33,19 @@ describe('PlanCategorySection', () => {
   ).forEach(([type, first, second]) => {
     it(`adds a ${type} category as a list row`, async () => {
       const fixture = await render(type);
+
       await submitName(fixture, type, first);
+      const saved = await storeHarness.store.list(COLLECTIONS.categories);
 
-      expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+      expect(alertText(fixture)).toBeNull();
       expect(listItems(fixture)).toEqual([first]);
-
-      const saved = await testStore.store.list(COLLECTIONS.categories);
       expect(saved).toHaveLength(1);
       expect(saved[0]).toMatchObject({ type, name: first, sortOrder: 0, active: true });
     });
 
     it(`keeps add order across two ${type} categories`, async () => {
       const fixture = await render(type);
+
       await submitName(fixture, type, first);
       await submitName(fixture, type, second);
 
@@ -118,39 +55,37 @@ describe('PlanCategorySection', () => {
 
   it('does not persist a blank name and shows an alert', async () => {
     const fixture = await render();
-    await submitName(fixture, 'income', '   ');
 
-    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
-      'category name',
-    );
+    await submitName(fixture, 'income', '   ');
+    const saved = await storeHarness.store.list(COLLECTIONS.categories);
+
+    expect(alertText(fixture)).toContain('category name');
     expect(listItems(fixture)).toEqual([]);
-    expect(await testStore.store.list(COLLECTIONS.categories)).toEqual([]);
+    expect(saved).toEqual([]);
   });
 
   it('shows an error when add persistence fails and keeps the draft', async () => {
-    testStore.store.insert = async () => {
+    storeHarness.store.insert = async () => {
       throw new Error('unavailable');
     };
-
     const fixture = await render();
-    await submitName(fixture, 'income', 'Salary');
 
-    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
-      'Could not save',
-    );
-    expect(
-      (fixture.nativeElement.querySelector('#category-name-income') as HTMLInputElement).value,
-    ).toBe('Salary');
-    expect(await testStore.store.list(COLLECTIONS.categories)).toEqual([]);
+    await submitName(fixture, 'income', 'Salary');
+    const saved = await storeHarness.store.list(COLLECTIONS.categories);
+
+    expect(alertText(fixture)).toContain('Could not save');
+    expect(draftNameValue(fixture, 'income')).toBe('Salary');
+    expect(saved).toEqual([]);
   });
 
   it('renames in the list without changing sortOrder', async () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
+
     await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
+    const saved = await storeHarness.store.list(COLLECTIONS.categories);
 
     expect(listItems(fixture)).toEqual(['Paycheck']);
-    const saved = await testStore.store.list(COLLECTIONS.categories);
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({
       name: 'Paycheck',
@@ -160,25 +95,26 @@ describe('PlanCategorySection', () => {
     });
   });
 
-  it('renames in the grid, updates aria-labels, and leaves budgetCells intact', async () => {
+  it('renames in the grid and updates rename and cell aria-labels', async () => {
     const fixture = await render('income', 2026);
     await submitName(fixture, 'income', 'Salary');
     await setCell(fixture, 'Salary January', '1000');
+
     await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
 
-    expect(
-      (
-        fixture.nativeElement.querySelector(
-          'input[aria-label="Rename Paycheck"]',
-        ) as HTMLInputElement
-      ).value,
-    ).toBe('Paycheck');
-    expect(
-      fixture.nativeElement.querySelector('input[aria-label="Paycheck January"]'),
-    ).not.toBeNull();
+    expect(inputByAriaLabel(fixture, 'Rename Paycheck')?.value).toBe('Paycheck');
+    expect(inputByAriaLabel(fixture, 'Paycheck January')).not.toBeNull();
+  });
 
-    const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
-    const categories = await testStore.store.list<Category>(COLLECTIONS.categories);
+  it('keeps budgetCells intact when renaming in the grid', async () => {
+    const fixture = await render('income', 2026);
+    await submitName(fixture, 'income', 'Salary');
+    await setCell(fixture, 'Salary January', '1000');
+
+    await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
+    const cells = await storeHarness.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const categories = await storeHarness.store.list<Category>(COLLECTIONS.categories);
+
     expect(categories[0]?.name).toBe('Paycheck');
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
@@ -192,53 +128,60 @@ describe('PlanCategorySection', () => {
   it('shows an error when rename persistence fails', async () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
-
-    testStore.store.update = async () => {
+    storeHarness.store.update = async () => {
       throw new Error('unavailable');
     };
-    await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
 
-    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
-      'Could not save',
-    );
-    const saved = await testStore.store.list<Category>(COLLECTIONS.categories);
+    await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
+    const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);
+
+    expect(alertText(fixture)).toContain('Could not save');
     expect(saved[0]?.name).toBe('Salary');
   });
 
-  it('hides in the list, keeps budgetCells, and lists the category under Hidden', async () => {
+  it('hides in the list and lists the category under Hidden', async () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
+
     await clickNamedButton(fixture, 'Hide Salary');
 
     expect(listItems(fixture)).toEqual([]);
-    expect(fixture.nativeElement.querySelector('.hidden-categories')?.textContent).toContain(
-      'Salary',
-    );
-    expect(
-      fixture.nativeElement.querySelector('button[aria-label="Unhide Salary"]'),
-    ).not.toBeNull();
+    expect(hiddenCategoriesText(fixture)).toContain('Salary');
+    expect(buttonByAriaLabel(fixture, 'Unhide Salary')).not.toBeNull();
+  });
 
-    const saved = await testStore.store.list<Category>(COLLECTIONS.categories);
+  it('marks a hidden list category inactive without removing the row', async () => {
+    const fixture = await render('income');
+    await submitName(fixture, 'income', 'Salary');
+
+    await clickNamedButton(fixture, 'Hide Salary');
+    const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);
+
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({ name: 'Salary', active: false, sortOrder: 0 });
   });
 
-  it('hides in the grid, drops section totals, and leaves budgetCells intact', async () => {
+  it('hides in the grid, drops section totals, and shows Hidden', async () => {
     const fixture = await render('income', 2026);
     await submitName(fixture, 'income', 'Salary');
     await setCell(fixture, 'Salary January', '1000');
-    expect(outputText(fixture, 'Total January')).toBe('1000');
 
     await clickNamedButton(fixture, 'Hide Salary');
 
-    expect(fixture.nativeElement.querySelector('input[aria-label="Salary January"]')).toBeNull();
+    expect(inputByAriaLabel(fixture, 'Salary January')).toBeNull();
     expect(outputText(fixture, 'Total January')).toBe('0');
-    expect(fixture.nativeElement.querySelector('.hidden-categories')?.textContent).toContain(
-      'Salary',
-    );
+    expect(hiddenCategoriesText(fixture)).toContain('Salary');
+  });
 
-    const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
-    const categories = await testStore.store.list<Category>(COLLECTIONS.categories);
+  it('leaves budgetCells intact when hiding in the grid', async () => {
+    const fixture = await render('income', 2026);
+    await submitName(fixture, 'income', 'Salary');
+    await setCell(fixture, 'Salary January', '1000');
+
+    await clickNamedButton(fixture, 'Hide Salary');
+    const cells = await storeHarness.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const categories = await storeHarness.store.list<Category>(COLLECTIONS.categories);
+
     expect(categories[0]?.active).toBe(false);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
@@ -254,33 +197,28 @@ describe('PlanCategorySection', () => {
     await submitName(fixture, 'income', 'Salary');
     await setCell(fixture, 'Salary January', '1000');
     await clickNamedButton(fixture, 'Hide Salary');
+
     await clickNamedButton(fixture, 'Unhide Salary');
+    const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);
 
-    expect(fixture.nativeElement.querySelector('.hidden-categories')).toBeNull();
-    const january = fixture.nativeElement.querySelector(
-      'input[aria-label="Salary January"]',
-    ) as HTMLInputElement;
-    expect(january.value).toBe('1000');
+    expect(hiddenCategoriesText(fixture)).toBeNull();
+    expect(inputByAriaLabel(fixture, 'Salary January')?.value).toBe('1000');
     expect(outputText(fixture, 'Total January')).toBe('1000');
-
-    const saved = await testStore.store.list<Category>(COLLECTIONS.categories);
     expect(saved[0]?.active).toBe(true);
   });
 
   it('shows an error when hide persistence fails and keeps the row', async () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
-
-    testStore.store.update = async () => {
+    storeHarness.store.update = async () => {
       throw new Error('unavailable');
     };
-    await clickNamedButton(fixture, 'Hide Salary');
 
-    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
-      'Could not save',
-    );
+    await clickNamedButton(fixture, 'Hide Salary');
+    const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);
+
+    expect(alertText(fixture)).toContain('Could not save');
     expect(listItems(fixture)).toEqual(['Salary']);
-    const saved = await testStore.store.list<Category>(COLLECTIONS.categories);
     expect(saved[0]?.active).toBe(true);
   });
 
@@ -294,16 +232,13 @@ describe('PlanCategorySection', () => {
     it(`saves ${type} January without changing February`, async () => {
       const fixture = await render(type, 2026);
       await submitName(fixture, type, name);
-      await setCell(fixture, `${name} January`, '1000');
 
-      const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+      await setCell(fixture, `${name} January`, '1000');
+      const cells = await storeHarness.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+
       expect(cells).toHaveLength(1);
       expect(cells[0]).toMatchObject({ year: 2026, month: 1, amountCents: 100_000 });
-
-      const february = fixture.nativeElement.querySelector(
-        `input[aria-label="${name} February"]`,
-      ) as HTMLInputElement;
-      expect(february.value).toBe('');
+      expect(inputByAriaLabel(fixture, `${name} February`)?.value).toBe('');
     });
 
     it(`reloads saved ${type} January amount after recreating the section`, async () => {
@@ -316,10 +251,7 @@ describe('PlanCategorySection', () => {
       await second.whenStable();
       second.detectChanges();
 
-      const january = second.nativeElement.querySelector(
-        `input[aria-label="${name} January"]`,
-      ) as HTMLInputElement;
-      expect(january.value).toBe('2500.50');
+      expect(inputByAriaLabel(second, `${name} January`)?.value).toBe('2500.50');
     });
   });
 });

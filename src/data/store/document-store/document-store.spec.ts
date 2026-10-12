@@ -1,33 +1,33 @@
 import { COLLECTIONS } from '../types';
-import { useTestStore } from './document-store.testing';
+import { useDocumentStoreHarness } from './document-store.harness';
 
 describe('DocumentStore', () => {
-  const testStore = useTestStore('pb-test');
+  const storeHarness = useDocumentStoreHarness('pb-test');
 
   it('inserts a document with id, updatedAt, and deletedAt null', async () => {
-    const doc = await testStore.store.insert(COLLECTIONS.settings, { title: 'Rent' });
+    const doc = await storeHarness.store.insert(COLLECTIONS.settings, { title: 'Rent' });
 
+    expect(doc).toMatchObject({ title: 'Rent', deletedAt: null });
     expect(doc.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     expect(doc.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(doc.deletedAt).toBeNull();
-    expect(doc.title).toBe('Rent');
     expect(doc).not.toHaveProperty('collection');
   });
 
   it('reads an inserted document by id within its collection', async () => {
-    const created = await testStore.store.insert(COLLECTIONS.settings, { title: 'Groceries' });
-    const found = await testStore.store.getById<{ title: string }>(
+    const created = await storeHarness.store.insert(COLLECTIONS.settings, { title: 'Groceries' });
+    const found = await storeHarness.store.getById<{ title: string }>(
       COLLECTIONS.settings,
       created.id,
     );
+    const crossCollection = await storeHarness.store.getById(COLLECTIONS.categories, created.id);
 
     expect(found).toEqual(created);
-    expect(await testStore.store.getById(COLLECTIONS.categories, created.id)).toBeUndefined();
+    expect(crossCollection).toBeUndefined();
   });
 
   it('updates payload fields and bumps updatedAt without clearing deletedAt', async () => {
-    const created = await testStore.store.insert(COLLECTIONS.settings, { title: 'Old' });
-    const updated = await testStore.store.update<{ title: string }>(
+    const created = await storeHarness.store.insert(COLLECTIONS.settings, { title: 'Old' });
+    const updated = await storeHarness.store.update<{ title: string }>(
       COLLECTIONS.settings,
       created.id,
       {
@@ -45,25 +45,24 @@ describe('DocumentStore', () => {
   });
 
   it('soft-deletes so list hides the row but getById still returns the tombstone', async () => {
-    const kept = await testStore.store.insert(COLLECTIONS.settings, { title: 'Keep' });
-    const dropped = await testStore.store.insert(COLLECTIONS.settings, { title: 'Drop' });
+    const kept = await storeHarness.store.insert(COLLECTIONS.settings, { title: 'Keep' });
+    const dropped = await storeHarness.store.insert(COLLECTIONS.settings, { title: 'Drop' });
 
-    const ok = await testStore.store.softDelete(COLLECTIONS.settings, dropped.id);
-    expect(ok).toBe(true);
-
-    const listed = await testStore.store.list<{ title: string }>(COLLECTIONS.settings);
-    expect(listed.map((doc) => doc.id)).toEqual([kept.id]);
-
-    const tombstone = await testStore.store.getById<{ title: string }>(
+    const didSoftDelete = await storeHarness.store.softDelete(COLLECTIONS.settings, dropped.id);
+    const listed = await storeHarness.store.list<{ title: string }>(COLLECTIONS.settings);
+    const tombstone = await storeHarness.store.getById<{ title: string }>(
       COLLECTIONS.settings,
       dropped.id,
     );
+
+    expect(didSoftDelete).toBe(true);
+    expect(listed.map((doc) => doc.id)).toEqual([kept.id]);
     expect(tombstone?.deletedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(tombstone?.title).toBe('Drop');
   });
 
   it('ignores caller meta on insert', async () => {
-    const doc = await testStore.store.insert(COLLECTIONS.settings, {
+    const doc = await storeHarness.store.insert(COLLECTIONS.settings, {
       title: 'X',
       id: 'caller-id',
       updatedAt: '2000-01-01T00:00:00.000Z',
@@ -74,7 +73,17 @@ describe('DocumentStore', () => {
     expect(doc.id).not.toBe('caller-id');
     expect(doc.updatedAt).not.toBe('2000-01-01T00:00:00.000Z');
     expect(doc.deletedAt).toBeNull();
-    expect(await testStore.store.getById(COLLECTIONS.categories, doc.id)).toBeUndefined();
-    expect(await testStore.store.getById(COLLECTIONS.settings, doc.id)).toBeDefined();
+  });
+
+  it('keeps an insert in the requested collection only', async () => {
+    const doc = await storeHarness.store.insert(COLLECTIONS.settings, {
+      title: 'X',
+      collection: 'hijack',
+    } as { title: string });
+    const inCategories = await storeHarness.store.getById(COLLECTIONS.categories, doc.id);
+    const inSettings = await storeHarness.store.getById(COLLECTIONS.settings, doc.id);
+
+    expect(inCategories).toBeUndefined();
+    expect(inSettings).toBeDefined();
   });
 });

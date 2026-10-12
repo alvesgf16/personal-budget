@@ -4,6 +4,7 @@ const { defineConfig } = require('eslint/config');
 const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 const eslintConfigPrettier = require('eslint-config-prettier');
+const vitest = require('@vitest/eslint-plugin');
 
 module.exports = defineConfig([
   {
@@ -124,9 +125,16 @@ module.exports = defineConfig([
       'prefer-promise-reject-errors': 'error',
     },
   },
+  // Clean Code Ch.9 (PB-98): Unit Tests — Vitest gates + dual-standard Ch.3 size offs
   {
-    files: ['**/*.{spec,testing}.ts'],
+    files: ['**/*.{spec,harness}.ts'],
+    plugins: {
+      vitest,
+    },
     rules: {
+      ...vitest.configs.recommended.rules,
+      'vitest/consistent-test-it': ['error', { fn: 'it' }],
+      'vitest/max-expects': ['error', { max: 4 }],
       complexity: 'off',
       'max-depth': 'off',
       'max-params': 'off',
@@ -166,9 +174,9 @@ module.exports = defineConfig([
       ],
     },
   },
-  // Clean Code Ch.8 (PB-97): Feature specs may use the testing seam; not the store impl/token
+  // Clean Code Ch.8 (PB-97): Feature specs may use the harness seam; not the store impl/token
   {
-    files: ['src/app/**/*.{spec,testing}.ts'],
+    files: ['src/app/**/*.{spec,harness}.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -191,7 +199,7 @@ module.exports = defineConfig([
                 '**/document-store/document-store.js',
               ],
               message:
-                'Do not import DocumentStore or createDocumentStore from features. Specs use provideTestDocumentStore.',
+                'Do not import DocumentStore or createDocumentStore from features. Specs use provideDocumentStoreHarness.',
             },
             {
               group: [
@@ -200,17 +208,17 @@ module.exports = defineConfig([
                 '**/document-store/document-store.token.js',
               ],
               message:
-                'Do not inject DOCUMENT_STORE from features. Specs use provideTestDocumentStore.',
+                'Do not inject DOCUMENT_STORE from features. Specs use provideDocumentStoreHarness.',
             },
           ],
         },
       ],
     },
   },
-  // Clean Code Ch.8 (PB-97): Production features must not reach store or testing seam
+  // Clean Code Ch.8 (PB-97): Production features must not reach store or harness seam
   {
     files: ['src/app/**/*.ts'],
-    ignores: ['src/app/**/*.{spec,testing}.ts'],
+    ignores: ['src/app/**/*.{spec,harness}.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -245,12 +253,12 @@ module.exports = defineConfig([
             },
             {
               group: [
-                '**/document-store/document-store.testing',
-                '**/document-store/document-store.testing.ts',
-                '**/document-store/document-store.testing.js',
+                '**/document-store/document-store.harness',
+                '**/document-store/document-store.harness.ts',
+                '**/document-store/document-store.harness.js',
               ],
               message:
-                'Do not import the document-store testing seam from production features. Specs use provideTestDocumentStore.',
+                'Do not import the document-store harness seam from production features. Specs use provideDocumentStoreHarness.',
             },
           ],
         },
