@@ -1,9 +1,9 @@
 import { budgetCellSchema, type BudgetCell } from './budget-cell';
 import { COLLECTIONS } from '../../store/types';
-import { useTestStore } from '../../store/document-store/document-store.testing';
+import { useDocumentStoreHarness } from '../../store/document-store/document-store.harness';
 
 describe('budgetCellSchema', () => {
-  const valid = {
+  const marchSalaryCell = {
     categoryId: 'cat-salary',
     year: 2026,
     month: 3,
@@ -11,11 +11,11 @@ describe('budgetCellSchema', () => {
   };
 
   it('accepts a valid budget cell', () => {
-    expect(budgetCellSchema.parse(valid)).toEqual(valid);
+    expect(budgetCellSchema.parse(marchSalaryCell)).toEqual(marchSalaryCell);
   });
 
   it('accepts zero amountCents', () => {
-    expect(budgetCellSchema.parse({ ...valid, amountCents: 0 }).amountCents).toBe(0);
+    expect(budgetCellSchema.parse({ ...marchSalaryCell, amountCents: 0 }).amountCents).toBe(0);
   });
 
   it('rejects a missing required field', () => {
@@ -23,36 +23,36 @@ describe('budgetCellSchema', () => {
   });
 
   it('rejects an empty categoryId', () => {
-    expect(() => budgetCellSchema.parse({ ...valid, categoryId: '' })).toThrow();
+    expect(() => budgetCellSchema.parse({ ...marchSalaryCell, categoryId: '' })).toThrow();
   });
 
   it('rejects month 0 and 13', () => {
-    expect(() => budgetCellSchema.parse({ ...valid, month: 0 })).toThrow();
-    expect(() => budgetCellSchema.parse({ ...valid, month: 13 })).toThrow();
+    expect(() => budgetCellSchema.parse({ ...marchSalaryCell, month: 0 })).toThrow();
+    expect(() => budgetCellSchema.parse({ ...marchSalaryCell, month: 13 })).toThrow();
   });
 
   it('rejects a non-integer amountCents', () => {
-    expect(() => budgetCellSchema.parse({ ...valid, amountCents: 1.5 })).toThrow();
+    expect(() => budgetCellSchema.parse({ ...marchSalaryCell, amountCents: 1.5 })).toThrow();
   });
 
   it('rejects a negative amountCents', () => {
-    expect(() => budgetCellSchema.parse({ ...valid, amountCents: -1 })).toThrow();
+    expect(() => budgetCellSchema.parse({ ...marchSalaryCell, amountCents: -1 })).toThrow();
   });
 
   it('rejects amountCents outside the safe-integer range', () => {
     expect(() =>
-      budgetCellSchema.parse({ ...valid, amountCents: Number.MAX_SAFE_INTEGER + 1 }),
+      budgetCellSchema.parse({ ...marchSalaryCell, amountCents: Number.MAX_SAFE_INTEGER + 1 }),
     ).toThrow();
   });
 
   it('rejects a year outside the allowed range', () => {
-    expect(() => budgetCellSchema.parse({ ...valid, year: 1899 })).toThrow();
-    expect(() => budgetCellSchema.parse({ ...valid, year: 2101 })).toThrow();
+    expect(() => budgetCellSchema.parse({ ...marchSalaryCell, year: 1899 })).toThrow();
+    expect(() => budgetCellSchema.parse({ ...marchSalaryCell, year: 2101 })).toThrow();
   });
 });
 
 describe('budgetCells store round-trip', () => {
-  const testStore = useTestStore('pb-budget-cells-test');
+  const storeHarness = useDocumentStoreHarness('pb-budget-cells-test');
 
   it('inserts and reads a parsed budget cell payload', async () => {
     const payload = budgetCellSchema.parse({
@@ -61,8 +61,8 @@ describe('budgetCells store round-trip', () => {
       month: 1,
       amountCents: 120_000,
     });
-    const created = await testStore.store.insert(COLLECTIONS.budgetCells, payload);
-    const found = await testStore.store.getById<BudgetCell>(COLLECTIONS.budgetCells, created.id);
+    const created = await storeHarness.store.insert(COLLECTIONS.budgetCells, payload);
+    const found = await storeHarness.store.getById<BudgetCell>(COLLECTIONS.budgetCells, created.id);
 
     expect(found).toEqual(created);
     expect(found).toMatchObject({

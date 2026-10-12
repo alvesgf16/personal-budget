@@ -10,11 +10,11 @@ alwaysApply: false
 
 - `domains/` — persisted domain folders (`settings/`, `category/`, `budget-cell/`): Zod model + service + specs
 - `lib/` — pure helpers (`plan-year`, `period-balance`, `persist-queue`)
-- `store/` — `types.ts` (collections + document shapes), `database.ts` (Dexie), `document-store/` (DocumentStore, token, testing, specs)
+- `store/` — `types.ts` (collections + document shapes), `database.ts` (Dexie), `document-store/` (DocumentStore, token, harness, specs)
 
 ## Rules
 
-- Feature screens inject a domain service (`SettingsService`, `CategoryService`, …) — do not import Dexie, `BudgetDatabase`, `createDocumentStore`, `DocumentStore`, `DOCUMENT_STORE`, or the testing seam from production UI code (ESLint `no-restricted-imports`, Clean Code Ch.8 / PB-97).
+- Feature screens inject a domain service (`SettingsService`, `CategoryService`, …) — do not import Dexie, `BudgetDatabase`, `createDocumentStore`, `DocumentStore`, `DOCUMENT_STORE`, or the harness seam from production UI code (ESLint `no-restricted-imports`, Clean Code Ch.8 / PB-97).
 - Domain services inject the `DOCUMENT_STORE` token (not nested behind another Angular store facade). Domains and `lib` must not import Dexie, `BudgetDatabase`, `createDocumentStore`, or `DocumentStore`.
 - Features may import public DTOs from `store/types` (`StoreDocument`, `COLLECTIONS`, `CollectionName`). Broader “domains only” layering is Systems (PB-100).
 - Collection names live in `COLLECTIONS` (`settings`, `categories`, …). Store/service methods take `CollectionName` (derived from that object) — add new piles there first.
@@ -22,4 +22,4 @@ alwaysApply: false
 - Every document has sync metadata: `id`, `updatedAt`, `deletedAt` (`null` while active).
 - Soft-delete sets `deletedAt`; `list` hides tombstones; `getById` still returns them.
 - Persistence is IndexedDB via Dexie — never query SQL from app code.
-- Tests use `useTestStore` / `provideTestDocumentStore` (unique DB name, token override, close + deleteDatabase). Feature specs and `*.testing.ts` helpers may import the testing seam and `store/types` — not the store implementation or token.
+- Tests use `useDocumentStoreHarness` / `provideDocumentStoreHarness` (unique DB name, token override, close + deleteDatabase). Feature specs and `*.harness.ts` helpers may import the harness seam and `store/types` — not the store implementation or token.

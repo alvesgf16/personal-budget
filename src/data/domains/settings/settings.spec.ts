@@ -1,5 +1,5 @@
 import { COLLECTIONS } from '../../store/types';
-import { useTestStore } from '../../store/document-store/document-store.testing';
+import { useDocumentStoreHarness } from '../../store/document-store/document-store.harness';
 import { parseSettings, settingsSchema, type Settings } from './settings';
 
 describe('settingsSchema', () => {
@@ -38,12 +38,12 @@ describe('parseSettings', () => {
 });
 
 describe('settings store round-trip', () => {
-  const testStore = useTestStore('pb-settings-test');
+  const storeHarness = useDocumentStoreHarness('pb-settings-test');
 
   it('inserts and reads a parsed settings payload', async () => {
     const payload = settingsSchema.parse({ startingYear: 2026 });
-    const created = await testStore.store.insert(COLLECTIONS.settings, payload);
-    const found = await testStore.store.getById<Settings>(COLLECTIONS.settings, created.id);
+    const created = await storeHarness.store.insert(COLLECTIONS.settings, payload);
+    const found = await storeHarness.store.getById<Settings>(COLLECTIONS.settings, created.id);
 
     expect(found).toEqual(created);
     expect(found?.startingYear).toBe(2026);

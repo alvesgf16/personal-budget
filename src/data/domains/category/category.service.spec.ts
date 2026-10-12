@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../store/types';
 import { CategoryService } from './category.service';
-import { provideTestDocumentStore } from '../../store/document-store/document-store.testing';
+import { provideDocumentStoreHarness } from '../../store/document-store/document-store.harness';
 
 describe('CategoryService', () => {
-  const testStore = provideTestDocumentStore('pb-20-category-service');
+  const storeHarness = provideDocumentStoreHarness('pb-20-category-service');
   let service: CategoryService;
 
   beforeEach(() => {
@@ -12,25 +12,25 @@ describe('CategoryService', () => {
   });
 
   it('lists only active income categories in sortOrder', async () => {
-    await testStore.store.insert(COLLECTIONS.categories, {
+    await storeHarness.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Bonus',
       sortOrder: 1,
       active: true,
     });
-    await testStore.store.insert(COLLECTIONS.categories, {
+    await storeHarness.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Salary',
       sortOrder: 0,
       active: true,
     });
-    await testStore.store.insert(COLLECTIONS.categories, {
+    await storeHarness.store.insert(COLLECTIONS.categories, {
       type: 'expense',
       name: 'Rent',
       sortOrder: 0,
       active: true,
     });
-    await testStore.store.insert(COLLECTIONS.categories, {
+    await storeHarness.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Hidden',
       sortOrder: 2,
@@ -38,34 +38,51 @@ describe('CategoryService', () => {
     });
 
     const listed = await service.listByType('income');
+
     expect(listed.map((doc) => doc.name)).toEqual(['Salary', 'Bonus']);
   });
 
-  it('assigns sortOrder 0 then 1 and trims the name', async () => {
+  it('assigns sortOrder 0 and trims the first name', async () => {
     const first = await service.add('income', '  Salary  ');
+
     expect(first.name).toBe('Salary');
     expect(first.sortOrder).toBe(0);
     expect(first.type).toBe('income');
     expect(first.active).toBe(true);
+  });
+
+  it('assigns the next sortOrder after an existing sibling', async () => {
+    await service.add('income', 'Salary');
 
     const second = await service.add('income', 'Bonus');
+
     expect(second.sortOrder).toBe(1);
   });
 
   it('lists an added expense only under expense', async () => {
     await service.add('expense', 'Rent');
+    const expenses = await service.listByType('expense');
+    const incomes = await service.listByType('income');
 
-    expect((await service.listByType('expense')).map((doc) => doc.name)).toEqual(['Rent']);
-    expect(await service.listByType('income')).toEqual([]);
+    expect(expenses.map((doc) => doc.name)).toEqual(['Rent']);
+    expect(incomes).toEqual([]);
   });
 
   it('rejects a blank name', async () => {
-    await expect(service.add('income', '   ')).rejects.toThrow();
-    expect(await testStore.store.list(COLLECTIONS.categories)).toEqual([]);
+    let addError: unknown;
+    try {
+      await service.add('income', '   ');
+    } catch (error) {
+      addError = error;
+    }
+    const listed = await storeHarness.store.list(COLLECTIONS.categories);
+
+    expect(addError).toBeInstanceOf(Error);
+    expect(listed).toEqual([]);
   });
 
   it('does not reuse sortOrder of inactive siblings', async () => {
-    await testStore.store.insert(COLLECTIONS.categories, {
+    await storeHarness.store.insert(COLLECTIONS.categories, {
       type: 'income',
       name: 'Old',
       sortOrder: 0,
@@ -73,11 +90,12 @@ describe('CategoryService', () => {
     });
 
     const next = await service.add('income', 'New');
+
     expect(next.sortOrder).toBe(1);
   });
 
   it('keeps overlapping adds on distinct sortOrders', async () => {
-    const originalInsert = testStore.store.insert.bind(testStore.store);
+    const originalInsert = storeHarness.store.insert.bind(storeHarness.store);
     let releaseInsert: () => void = () => undefined;
     const insertHold = new Promise<void>((resolve) => {
       releaseInsert = resolve;
@@ -86,7 +104,7 @@ describe('CategoryService', () => {
     const insertStarted = new Promise<void>((resolve) => {
       enteredInsert = resolve;
     });
-    testStore.store.insert = async (collection, payload) => {
+    storeHarness.store.insert = async (collection, payload) => {
       enteredInsert();
       await insertHold;
       return originalInsert(collection, payload);
@@ -97,14 +115,16 @@ describe('CategoryService', () => {
     const second = service.add('income', 'Bonus');
     releaseInsert();
     const [salary, bonus] = await Promise.all([first, second]);
+    const listed = await storeHarness.store.list(COLLECTIONS.categories);
 
     expect([salary.sortOrder, bonus.sortOrder]).toEqual([0, 1]);
     expect([salary.name, bonus.name]).toEqual(['Salary', 'Bonus']);
-    expect(await testStore.store.list(COLLECTIONS.categories)).toHaveLength(2);
+    expect(listed).toHaveLength(2);
   });
 
   it('renames without changing sortOrder, type, or active', async () => {
     const created = await service.add('income', 'Salary');
+
     const renamed = await service.rename(created.id, '  Paycheck  ');
 
     expect(renamed).toMatchObject({
@@ -118,7 +138,7 @@ describe('CategoryService', () => {
 
   it('leaves budgetCells for the category untouched after rename', async () => {
     const created = await service.add('income', 'Salary');
-    await testStore.store.insert(COLLECTIONS.budgetCells, {
+    await storeHarness.store.insert(COLLECTIONS.budgetCells, {
       categoryId: created.id,
       year: 2026,
       month: 1,
@@ -126,8 +146,8 @@ describe('CategoryService', () => {
     });
 
     await service.rename(created.id, 'Paycheck');
+    const cells = await storeHarness.store.list(COLLECTIONS.budgetCells);
 
-    const cells = await testStore.store.list(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
       categoryId: created.id,
@@ -139,9 +159,16 @@ describe('CategoryService', () => {
 
   it('rejects a blank rename and does not write', async () => {
     const created = await service.add('income', 'Salary');
-    await expect(service.rename(created.id, '   ')).rejects.toThrow();
 
+    let renameError: unknown;
+    try {
+      await service.rename(created.id, '   ');
+    } catch (error) {
+      renameError = error;
+    }
     const listed = await service.listByType('income');
+
+    expect(renameError).toBeInstanceOf(Error);
     expect(listed.map((doc) => doc.name)).toEqual(['Salary']);
   });
 
@@ -151,17 +178,20 @@ describe('CategoryService', () => {
 
   it('hides a category from listByType and lists it under listHiddenByType', async () => {
     const created = await service.add('income', 'Salary');
+
     const hidden = await service.hide(created.id);
+    const active = await service.listByType('income');
+    const inactive = await service.listHiddenByType('income');
 
     expect(hidden.active).toBe(false);
-    expect((await service.listByType('income')).map((doc) => doc.name)).toEqual([]);
-    expect((await service.listHiddenByType('income')).map((doc) => doc.name)).toEqual(['Salary']);
+    expect(active.map((doc) => doc.name)).toEqual([]);
+    expect(inactive.map((doc) => doc.name)).toEqual(['Salary']);
     expect(service.revision()).toBe(1);
   });
 
   it('leaves budgetCells untouched after hide', async () => {
     const created = await service.add('income', 'Salary');
-    await testStore.store.insert(COLLECTIONS.budgetCells, {
+    await storeHarness.store.insert(COLLECTIONS.budgetCells, {
       categoryId: created.id,
       year: 2026,
       month: 1,
@@ -169,8 +199,8 @@ describe('CategoryService', () => {
     });
 
     await service.hide(created.id);
+    const cells = await storeHarness.store.list(COLLECTIONS.budgetCells);
 
-    const cells = await testStore.store.list(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
       categoryId: created.id,
@@ -183,7 +213,10 @@ describe('CategoryService', () => {
   it('unhides without changing sortOrder, name, or type', async () => {
     const created = await service.add('income', 'Salary');
     await service.hide(created.id);
+
     const restored = await service.unhide(created.id);
+    const active = await service.listByType('income');
+    const inactive = await service.listHiddenByType('income');
 
     expect(restored).toMatchObject({
       id: created.id,
@@ -192,8 +225,8 @@ describe('CategoryService', () => {
       type: 'income',
       active: true,
     });
-    expect((await service.listByType('income')).map((doc) => doc.name)).toEqual(['Salary']);
-    expect(await service.listHiddenByType('income')).toEqual([]);
+    expect(active.map((doc) => doc.name)).toEqual(['Salary']);
+    expect(inactive).toEqual([]);
     expect(service.revision()).toBe(2);
   });
 

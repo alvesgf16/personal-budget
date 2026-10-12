@@ -1,0 +1,56 @@
+---
+description: Clean Code Ch.9 Unit Tests — FIRST, AAA, one concept, Vitest harness style
+globs: **/*.{spec,harness}.ts
+alwaysApply: false
+---
+
+# Unit Tests (Ch.9)
+
+Source: Robert C. Martin, _Clean Code_. Inventory: `docs/clean-code-inventory.md`. ESLint: `@vitest/eslint-plugin` recommended + `consistent-test-it` (`it`) + `max-expects` (4) on `*.{spec,harness}.ts`; Ch.3 size/`complexity` offs (dual standard).
+
+## Three Laws of TDD
+
+Prefer a failing test before production behavior. Keep the suite green with the change. Do not skip the red step for “trivial” helpers.
+
+## Keeping Tests Clean
+
+Specs are first-class code. Prefer named harness helpers over giant `it` bodies. Do not leave commented-out tests (gated by ESLint).
+
+## Tests Enable the -ilities
+
+Trusted, readable specs are what make Plan / domain / store refactors safe.
+
+## Clean Tests
+
+- Behavior sentences for `it` titles (`'soft-deletes so list hides the row…'`), not `should` boilerplate.
+- Prefer `it` consistently (gated). Use `describe` for the unit or feature slice under test.
+
+### AAA
+
+Arrange / Act / Assert. Separate phases with a single blank line when the body is more than a few lines. Gather values needed for asserts (store lists, DOM reads into locals) in Act — do not put statements other than `expect` after the assert block starts.
+
+## Domain-Specific Testing Language
+
+- Store: `useDocumentStoreHarness` (no TestBed) vs `provideDocumentStoreHarness` (TestBed + `DOCUMENT_STORE`) from `document-store.harness.ts`.
+- Feature harnesses: `*.harness.ts` next to the component (e.g. `appHarness`, `planHarness`, `planAmountGridHarness`, settings / category-section / allocation-status harnesses). Prefer `aria-label` / `data-*` selectors.
+- Keep describe-local helpers only when they are not reused and the file stays small.
+
+## Dual Standard
+
+Specs may be longer and more linear than production. Ch.3 `complexity` / `max-depth` / `max-params` / `max-lines-per-function` stay off for `*.{spec,harness}.ts`. Named param object types (`no-restricted-syntax`) still apply.
+
+## One Assert / Single Concept
+
+Prefer the fewest expects that prove one outcome. Multiple expects are fine for one concept (e.g. insert metadata fields), capped at 4 per `it` (gated by `vitest/max-expects`). Split when one `it` packs unrelated stories or would exceed the cap. Type tables (`forEach` / `it.each`) that share one behavior stay acceptable.
+
+## F.I.R.S.T.
+
+- **Fast** — in-memory `fake-indexeddb`; unique DB per test; no real network/timers.
+- **Independent** — no `.only`; fresh store via harness seam `beforeEach` / dispose in `afterEach`.
+- **Repeatable** — always dispose IndexedDB; no order dependence across `it`s.
+- **Self-validating** — every test asserts (gated: `expect-expect`, `valid-expect`, `no-conditional-expect`).
+- **Timely** — write or adjust specs with the production change.
+
+## Spec DOM trains
+
+`fixture.nativeElement.querySelector…` is accepted harness style (not production LoD). Put trains behind named helpers in `*.harness.ts` rather than inline multi-hop chains in the `it` body. Do not require `By.css` or a page-object framework.

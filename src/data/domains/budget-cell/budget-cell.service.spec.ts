@@ -2,10 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { BudgetCellService } from './budget-cell.service';
 import type { BudgetCell } from './budget-cell';
 import { COLLECTIONS } from '../../store/types';
-import { provideTestDocumentStore } from '../../store/document-store/document-store.testing';
+import { provideDocumentStoreHarness } from '../../store/document-store/document-store.harness';
 
 describe('BudgetCellService', () => {
-  const testStore = provideTestDocumentStore('pb-21-budget-cell-service');
+  const storeHarness = provideDocumentStoreHarness('pb-21-budget-cell-service');
   let service: BudgetCellService;
 
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe('BudgetCellService', () => {
       amountCents: 250_000,
     });
 
-    const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+    const cells = await storeHarness.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
       categoryId: 'cat-salary',
@@ -65,7 +65,7 @@ describe('BudgetCellService', () => {
     });
 
     expect(await service.listForYear(2026)).toEqual([]);
-    expect(await testStore.store.list(COLLECTIONS.budgetCells)).toEqual([]);
+    expect(await storeHarness.store.list(COLLECTIONS.budgetCells)).toEqual([]);
   });
 
   it('lists only cells for the requested year', async () => {

@@ -1,9 +1,22 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { APP_TABS, routes } from './app.routes';
+import { appHarness } from './app.harness';
 
 describe('App', () => {
+  const {
+    renderAt,
+    navigateTo,
+    navLinks,
+    clickNavLabel,
+    routerUrl,
+    routedOutlet,
+    notFoundOutlet,
+    currentNavLink,
+    pageHeading,
+  } = appHarness();
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
@@ -11,55 +24,44 @@ describe('App', () => {
     }).compileComponents();
   });
 
-  async function renderAt(url: string) {
+  it('creates the root component', () => {
     const fixture = TestBed.createComponent(App);
-    await TestBed.inject(Router).navigateByUrl(url);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    return fixture;
-  }
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('renders four tab links that navigate via the router', async () => {
+  it('renders tab labels that match APP_TABS', async () => {
     const fixture = await renderAt('/');
-    expect(TestBed.inject(Router).url).toBe('/dashboard');
+    const labels = navLinks(fixture).map((link) => link.textContent?.trim());
 
-    const links = [...fixture.nativeElement.querySelectorAll('nav a')] as HTMLAnchorElement[];
+    expect(routerUrl()).toBe('/dashboard');
+    expect(labels).toEqual(APP_TABS.map((tab) => tab.label));
+  });
 
-    expect(links.map((link) => link.textContent?.trim())).toEqual(APP_TABS.map((tab) => tab.label));
+  it('navigates to Plan and marks the Plan tab current', async () => {
+    const fixture = await renderAt('/');
 
-    const plan = links.find((link) => link.textContent?.trim() === 'Plan');
-    plan?.click();
-    fixture.detectChanges();
-    await fixture.whenStable();
+    const plan = await clickNavLabel(fixture, 'Plan');
 
-    expect(TestBed.inject(Router).url).toBe('/plan');
+    expect(routerUrl()).toBe('/plan');
     expect(plan?.getAttribute('aria-current')).toBe('page');
   });
 
-  it('activates an empty routed component for each tab', async () => {
+  it.each(APP_TABS)('activates an empty routed component for the $label tab', async (tab) => {
     const fixture = await renderAt('/');
 
-    for (const tab of APP_TABS) {
-      await TestBed.inject(Router).navigateByUrl('/' + tab.path);
-      fixture.detectChanges();
-      await fixture.whenStable();
+    await navigateTo(fixture, '/' + tab.path);
 
-      expect(fixture.nativeElement.querySelector('app-' + tab.path)).not.toBeNull();
-      expect(TestBed.inject(Router).url).toBe('/' + tab.path);
-    }
+    expect(routedOutlet(fixture, tab.path)).not.toBeNull();
+    expect(routerUrl()).toBe('/' + tab.path);
   });
 
   it('keeps unknown paths on a 404 page with no tab selected', async () => {
     const fixture = await renderAt('/not-a-tab');
 
-    expect(TestBed.inject(Router).url).toBe('/not-a-tab');
-    expect(fixture.nativeElement.querySelector('app-not-found')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('nav a[aria-current]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain('Page not found');
+    expect(routerUrl()).toBe('/not-a-tab');
+    expect(notFoundOutlet(fixture)).not.toBeNull();
+    expect(currentNavLink(fixture)).toBeNull();
+    expect(pageHeading(fixture)).toContain('Page not found');
   });
 });

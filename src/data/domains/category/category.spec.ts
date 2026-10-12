@@ -1,9 +1,9 @@
 import { categorySchema, parseCategoryName, type Category } from './category';
 import { COLLECTIONS } from '../../store/types';
-import { useTestStore } from '../../store/document-store/document-store.testing';
+import { useDocumentStoreHarness } from '../../store/document-store/document-store.harness';
 
 describe('categorySchema', () => {
-  const valid = {
+  const activeIncomeCategory = {
     type: 'income' as const,
     name: 'Salary',
     sortOrder: 0,
@@ -11,16 +11,16 @@ describe('categorySchema', () => {
   };
 
   it('accepts a valid category', () => {
-    expect(categorySchema.parse(valid)).toEqual(valid);
+    expect(categorySchema.parse(activeIncomeCategory)).toEqual(activeIncomeCategory);
   });
 
   it('accepts expense and savings types', () => {
-    expect(categorySchema.parse({ ...valid, type: 'expense' }).type).toBe('expense');
-    expect(categorySchema.parse({ ...valid, type: 'savings' }).type).toBe('savings');
+    expect(categorySchema.parse({ ...activeIncomeCategory, type: 'expense' }).type).toBe('expense');
+    expect(categorySchema.parse({ ...activeIncomeCategory, type: 'savings' }).type).toBe('savings');
   });
 
   it('trims the name', () => {
-    expect(categorySchema.parse({ ...valid, name: '  Rent  ' }).name).toBe('Rent');
+    expect(categorySchema.parse({ ...activeIncomeCategory, name: '  Rent  ' }).name).toBe('Rent');
   });
 
   it('rejects a missing required field', () => {
@@ -28,20 +28,20 @@ describe('categorySchema', () => {
   });
 
   it('rejects an unknown type', () => {
-    expect(() => categorySchema.parse({ ...valid, type: 'other' })).toThrow();
+    expect(() => categorySchema.parse({ ...activeIncomeCategory, type: 'other' })).toThrow();
   });
 
   it('rejects a blank or whitespace-only name', () => {
-    expect(() => categorySchema.parse({ ...valid, name: '' })).toThrow();
-    expect(() => categorySchema.parse({ ...valid, name: '   ' })).toThrow();
+    expect(() => categorySchema.parse({ ...activeIncomeCategory, name: '' })).toThrow();
+    expect(() => categorySchema.parse({ ...activeIncomeCategory, name: '   ' })).toThrow();
   });
 
   it('rejects a non-integer sortOrder', () => {
-    expect(() => categorySchema.parse({ ...valid, sortOrder: 1.5 })).toThrow();
+    expect(() => categorySchema.parse({ ...activeIncomeCategory, sortOrder: 1.5 })).toThrow();
   });
 
   it('rejects a non-boolean active', () => {
-    expect(() => categorySchema.parse({ ...valid, active: 'yes' })).toThrow();
+    expect(() => categorySchema.parse({ ...activeIncomeCategory, active: 'yes' })).toThrow();
   });
 });
 
@@ -57,7 +57,7 @@ describe('parseCategoryName', () => {
 });
 
 describe('categories store round-trip', () => {
-  const testStore = useTestStore('pb-categories-test');
+  const storeHarness = useDocumentStoreHarness('pb-categories-test');
 
   it('inserts and reads a parsed category payload', async () => {
     const payload = categorySchema.parse({
@@ -66,8 +66,8 @@ describe('categories store round-trip', () => {
       sortOrder: 2,
       active: true,
     });
-    const created = await testStore.store.insert(COLLECTIONS.categories, payload);
-    const found = await testStore.store.getById<Category>(COLLECTIONS.categories, created.id);
+    const created = await storeHarness.store.insert(COLLECTIONS.categories, payload);
+    const found = await storeHarness.store.getById<Category>(COLLECTIONS.categories, created.id);
 
     expect(found).toEqual(created);
     expect(found).toMatchObject({

@@ -1,95 +1,55 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { BudgetCell } from '../../data/domains/budget-cell/budget-cell';
 import type { Category } from '../../data/domains/category/category';
 import { COLLECTIONS } from '../../data/store/types';
-import { provideTestDocumentStore } from '../../data/store/document-store/document-store.testing';
+import { provideDocumentStoreHarness } from '../../data/store/document-store/document-store.harness';
 import { Plan } from './plan';
+import { planHarness } from './plan.harness';
 
 describe('Plan year header', () => {
-  const testStore = provideTestDocumentStore('pb-19-plan', { imports: [Plan] });
+  const storeHarness = provideDocumentStoreHarness('pb-19-plan', { imports: [Plan] });
+  const { seedStartingYear, renderPlan, headerText } = planHarness(storeHarness);
 
   it('does not invent a year when none is saved', async () => {
-    const fixture = TestBed.createComponent(Plan);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    const fixture = await renderPlan();
 
-    expect(fixture.nativeElement.querySelector('h1')?.textContent?.trim()).toBe('Plan');
+    expect(headerText(fixture)).toBe('Plan');
     expect(fixture.nativeElement.textContent).not.toMatch(/\d{4}/);
   });
 
   it('shows the stored starting year in the header', async () => {
-    await testStore.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
+    await seedStartingYear(2026);
 
-    const fixture = TestBed.createComponent(Plan);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    const fixture = await renderPlan();
 
-    expect(fixture.nativeElement.querySelector('h1')?.textContent?.trim()).toBe('2026');
+    expect(headerText(fixture)).toBe('2026');
   });
 });
 
 describe('Plan category sections', () => {
-  const testStore = provideTestDocumentStore('pb-53-plan', { imports: [Plan] });
-
-  const render = async () => {
-    const fixture = TestBed.createComponent(Plan);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    return fixture;
-  };
-
-  const submitInSection = async (fixture: ComponentFixture<Plan>, type: string, name: string) => {
-    const section = fixture.nativeElement.querySelector(
-      `section[data-type="${type}"]`,
-    ) as HTMLElement;
-    const input = section.querySelector(`#category-name-${type}`) as HTMLInputElement;
-    input.value = name;
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    section.querySelector('form')!.dispatchEvent(new Event('submit'));
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
-
-  const setCell = async (fixture: ComponentFixture<Plan>, ariaLabel: string, value: string) => {
-    const input = fixture.nativeElement.querySelector(
-      `input[aria-label="${ariaLabel}"]`,
-    ) as HTMLInputElement;
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    input.dispatchEvent(new Event('blur'));
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
-
-  const listNames = (fixture: ComponentFixture<Plan>, type: string) =>
-    [...fixture.nativeElement.querySelectorAll(`section[data-type="${type}"] li input`)].map(
-      (el: Element) => (el as HTMLInputElement).value,
-    );
+  const storeHarness = provideDocumentStoreHarness('pb-53-plan', { imports: [Plan] });
+  const {
+    seedStartingYear,
+    renderPlan,
+    submitInSection,
+    enterExpenseAndSavingsJanuary,
+    sectionTypes,
+    sectionHeading,
+    listNames,
+    inputByAriaLabel,
+  } = planHarness(storeHarness);
 
   it('renders income, expense, and savings sections', async () => {
-    const fixture = await render();
-    const types = [...fixture.nativeElement.querySelectorAll('section[data-type]')].map(
-      (el: Element) => el.getAttribute('data-type'),
-    );
-    expect(types).toEqual(['income', 'expense', 'savings']);
-    expect(fixture.nativeElement.querySelector('section[data-type="income"] h2')?.textContent).toBe(
-      'Income',
-    );
-    expect(
-      fixture.nativeElement.querySelector('section[data-type="expense"] h2')?.textContent,
-    ).toBe('Expenses');
-    expect(
-      fixture.nativeElement.querySelector('section[data-type="savings"] h2')?.textContent,
-    ).toBe('Savings');
+    const fixture = await renderPlan();
+
+    expect(sectionTypes(fixture)).toEqual(['income', 'expense', 'savings']);
+    expect(sectionHeading(fixture, 'income')).toBe('Income');
+    expect(sectionHeading(fixture, 'expense')).toBe('Expenses');
+    expect(sectionHeading(fixture, 'savings')).toBe('Savings');
   });
 
   it('keeps an expense add inside the expense section only', async () => {
-    const fixture = await render();
+    const fixture = await renderPlan();
+
     await submitInSection(fixture, 'expense', 'Rent');
 
     expect(listNames(fixture, 'expense')).toEqual(['Rent']);
@@ -97,26 +57,22 @@ describe('Plan category sections', () => {
     expect(listNames(fixture, 'savings')).toEqual([]);
   });
 
-  it('persists expense and savings January amounts independently', async () => {
-    await testStore.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
+  it('persists expense and savings January amounts as separate budget cells', async () => {
+    await seedStartingYear(2026);
+    const fixture = await renderPlan();
 
-    const first = await render();
-    await submitInSection(first, 'expense', 'Rent');
-    await submitInSection(first, 'savings', 'Emergency');
-    await setCell(first, 'Rent January', '1200');
-    await setCell(first, 'Emergency January', '300');
-
-    const categories = await testStore.store.list<Category>(COLLECTIONS.categories);
+    await enterExpenseAndSavingsJanuary(fixture);
+    const categories = await storeHarness.store.list<Category>(COLLECTIONS.categories);
     const rent = categories.find(
       (category) => category.type === 'expense' && category.name === 'Rent',
     );
     const emergency = categories.find(
       (category) => category.type === 'savings' && category.name === 'Emergency',
     );
+    const cells = await storeHarness.store.list<BudgetCell>(COLLECTIONS.budgetCells);
+
     expect(rent).toBeDefined();
     expect(emergency).toBeDefined();
-
-    const cells = await testStore.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(2);
     expect(cells).toEqual(
       expect.arrayContaining([
@@ -134,25 +90,23 @@ describe('Plan category sections', () => {
         }),
       ]),
     );
+  });
 
+  it('reloads saved January amounts after remounting Plan', async () => {
+    await seedStartingYear(2026);
+    const first = await renderPlan();
+    await enterExpenseAndSavingsJanuary(first);
     first.destroy();
 
-    const second = await render();
+    const second = await renderPlan();
     await second.whenStable();
     second.detectChanges();
+    const rentJanuary = inputByAriaLabel(second, 'Rent January');
+    const emergencyJanuary = inputByAriaLabel(second, 'Emergency January');
+    const rentFebruary = inputByAriaLabel(second, 'Rent February');
 
-    const rentJanuary = second.nativeElement.querySelector(
-      'input[aria-label="Rent January"]',
-    ) as HTMLInputElement;
-    const emergencyJanuary = second.nativeElement.querySelector(
-      'input[aria-label="Emergency January"]',
-    ) as HTMLInputElement;
-    expect(rentJanuary.value).toBe('1200');
-    expect(emergencyJanuary.value).toBe('300');
-
-    const rentFebruary = second.nativeElement.querySelector(
-      'input[aria-label="Rent February"]',
-    ) as HTMLInputElement;
-    expect(rentFebruary.value).toBe('');
+    expect(rentJanuary?.value).toBe('1200');
+    expect(emergencyJanuary?.value).toBe('300');
+    expect(rentFebruary?.value).toBe('');
   });
 });
