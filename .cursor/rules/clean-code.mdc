@@ -305,7 +305,7 @@ Prefer omitting optionals or using `undefined` for “not provided” in new API
 
 ## Boundaries (Ch.8)
 
-ESLint: `no-restricted-imports` — Dexie / `BudgetDatabase` banned from `src/app`, `src/data/domains`, and `src/data/lib`; `DocumentStore` / `createDocumentStore` / `DOCUMENT_STORE` banned from `src/app`. Folder map and harness seam: `.cursor/rules/document-store.mdc`. Full `features → domains → store` direction is Systems (PB-100).
+ESLint: `no-restricted-imports` — Dexie / `BudgetDatabase` banned from `src/app`, `src/data/domains`, and `src/data/lib`; `DocumentStore` / `createDocumentStore` / `DOCUMENT_STORE` banned from `src/app`. Folder map and harness seam: `.cursor/rules/document-store.mdc`. Full `features → domains → store` import direction is enabled under Systems (Ch.11 / PB-100).
 
 ### Using Third-Party Code
 
@@ -329,7 +329,7 @@ Depend on what we control. Features → domain services (+ allowed `store/types`
 
 ## Classes (Ch.10)
 
-ESLint: `max-classes-per-file` (1), `max-lines` (100, skip blank/comments), `@angular-eslint/sort-lifecycle-methods`, `@angular-eslint/component-max-inline-declarations`, `@angular-eslint/use-injectable-provided-in`. Specs/harnesses turn off `max-lines` / `max-classes-per-file` (dual standard with Ch.3). Already on via `angular.configs.tsRecommended` (do not re-own here): `prefer-inject`, `prefer-standalone`, `prefer-on-push-component-change-detection`. Angular file/class/selector conventions stay under PB-87. Full import-direction layering is Systems (PB-100).
+ESLint: `max-classes-per-file` (1), `max-lines` (100, skip blank/comments), `@angular-eslint/sort-lifecycle-methods`, `@angular-eslint/component-max-inline-declarations`, `@angular-eslint/use-injectable-provided-in`. Specs/harnesses turn off `max-lines` / `max-classes-per-file` (dual standard with Ch.3). Already on via `angular.configs.tsRecommended` (do not re-own here): `prefer-inject`, `prefer-standalone`, `prefer-on-push-component-change-detection`. Angular file/class/selector conventions stay under PB-87. Full import-direction layering is enabled under Systems (Ch.11 / PB-100).
 
 ### Class Organization
 
@@ -357,4 +357,40 @@ Prefer many small classes that isolate change. Do not pile unrelated feature con
 
 ### Isolating from Change
 
-Depend on stable PB seams (`DOCUMENT_STORE`, domain services), not concrete third-party types — reinforces Boundaries. Full `features → domains → store` import direction is Systems (PB-100).
+Depend on stable PB seams (`DOCUMENT_STORE`, domain services), not concrete third-party types — reinforces Boundaries. Full `features → domains → store` import direction is enabled under Systems (Ch.11 / PB-100).
+
+## Systems (Ch.11)
+
+ESLint: `no-restricted-imports` for dependency direction (builds on Boundaries / PB-97) — domains and lib must not import `src/app`; lib must not import domains; store must not import `src/app` or domains. Folder map and allowed seams: `.cursor/rules/document-store.mdc`. “Features” means the UI layer (`src/app` as a whole: screens, `shared/`, shell) — not a required `src/app/features/` folder (Angular structure stays under PB-87).
+
+### Separate Concerns into Independently Developable Modules
+
+Four zones: `src/app` (features / UI), `src/data/domains` (domain services + Zod DTOs), `src/data/lib` (pure helpers), `src/data/store` (Dexie + `DocumentStore`). Keep each zone independently developable; do not grow cross-layer convenience re-exports that invert the graph. Within `src/app`, screens may import `shared/`; `shared/` must not import screens.
+
+### Separation of Construction and Use
+
+Features **use** domain services via `inject()` — they never construct `DocumentStore` or Dexie (PB-97). Domains **use** `DOCUMENT_STORE`; construction lives in `createDocumentStore` and harness providers. Do not add a second Angular store façade over domains.
+
+### Scaling Up / Keep the Architecture Modular
+
+Enforce one-way dependencies: features → domains → store. Lib is a leaf under features and domains. Do not let store or domains reach upward into the UI.
+
+### Proxies / AOP / AspectJ-Style Wiring
+
+Java proxy and AspectJ material does not apply to this Angular/TS app. Angular DI plus the `DOCUMENT_STORE` token are the PB stand-in for wiring concerns at the edge — not new AOP tooling.
+
+### Test-Drive the System Architecture
+
+Architecture stays provable: store specs exercise real `DocumentStore` behavior; feature and domain specs use `provideDocumentStoreHarness` (allowed seam; production app still banned from the harness by PB-97). Vitest style stays under Unit Tests (Ch.9).
+
+### Optimize Decision Making
+
+The owned seam is `DOCUMENT_STORE` plus domain services so persistence tech can change behind the store without rewriting features. Dexie and concrete store bans stay with Boundaries (Ch.8); this chapter owns direction.
+
+### Use Standards Wisely When They Add Demonstrable Value
+
+Automate reverse/upward imports only — no heavyweight module-boundary plugin. Exception-candidates (allowed): features → `store/types` (`StoreDocument`, `COLLECTIONS`, …); features and domains → `src/data/lib`; specs/harnesses → harness + `store/types`.
+
+### Systems Need Domain-Specific Languages
+
+PB vocabulary (Meaningful Names, Ch.2) and domain services are the app’s DSL: features speak `CategoryService` / `BudgetCellService` / `SettingsService`, not Dexie.

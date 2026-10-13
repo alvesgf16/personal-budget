@@ -12,11 +12,17 @@ alwaysApply: false
 - `lib/` — pure helpers (`plan-year`, `period-balance`, `persist-queue`)
 - `store/` — `types.ts` (collections + document shapes), `database.ts` (Dexie), `document-store/` (DocumentStore, token, harness, specs)
 
+## Layering (Clean Code Ch.11 / PB-100)
+
+Dependency direction: `src/app` (features / UI) → `src/data/domains` → `src/data/store`. `src/data/lib` is a pure leaf under features and domains. “Features” means the UI layer as a whole (screens, `shared/`, shell) — not a required `src/app/features/` folder.
+
+ESLint bans reverse edges: domains/lib must not import `src/app`; lib must not import domains; store must not import `src/app` or domains. Allowed downward seams: features → domain services + `store/types` + `lib`; domains → `DOCUMENT_STORE` + `store/types` + `lib`; specs/harnesses → harness + `store/types`.
+
 ## Rules
 
-- Feature screens inject a domain service (`SettingsService`, `CategoryService`, …) — do not import Dexie, `BudgetDatabase`, `createDocumentStore`, `DocumentStore`, `DOCUMENT_STORE`, or the harness seam from production UI code (ESLint `no-restricted-imports`, Clean Code Ch.8 / PB-97).
+- Feature screens inject a domain service (`SettingsService`, `CategoryService`, …) — do not import Dexie, `BudgetDatabase`, `createDocumentStore`, `DocumentStore`, `DOCUMENT_STORE`, or the harness seam from production UI code (ESLint `no-restricted-imports`, Clean Code Ch.8 / PB-97 and Ch.11 / PB-100).
 - Domain services inject the `DOCUMENT_STORE` token (not nested behind another Angular store facade). Domains and `lib` must not import Dexie, `BudgetDatabase`, `createDocumentStore`, or `DocumentStore`.
-- Features may import public DTOs from `store/types` (`StoreDocument`, `COLLECTIONS`, `CollectionName`). Broader “domains only” layering is Systems (PB-100).
+- Features may import public DTOs from `store/types` (`StoreDocument`, `COLLECTIONS`, `CollectionName`).
 - Collection names live in `COLLECTIONS` (`settings`, `categories`, …). Store/service methods take `CollectionName` (derived from that object) — add new piles there first.
 - Domain payloads: parse with Zod schemas (`settingsSchema`, `categorySchema`) **before** `insert` / `update`. Store metadata (`id`, `updatedAt`, `deletedAt`) is added by the store, not by the schema.
 - Every document has sync metadata: `id`, `updatedAt`, `deletedAt` (`null` while active).

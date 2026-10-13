@@ -149,9 +149,9 @@ module.exports = defineConfig([
       'max-classes-per-file': 'off',
     },
   },
-  // Clean Code Ch.8 (PB-97): Boundaries — Dexie / concrete store only inside store
+  // Clean Code Ch.8 (PB-97) + Ch.11 (PB-100): Domains — no Dexie/store impl; no upward app imports
   {
-    files: ['src/data/domains/**/*.ts', 'src/data/lib/**/*.ts'],
+    files: ['src/data/domains/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -175,7 +175,88 @@ module.exports = defineConfig([
                 '**/document-store/document-store.js',
               ],
               message:
-                'Do not import DocumentStore or createDocumentStore from domains or lib. Inject DOCUMENT_STORE.',
+                'Do not import DocumentStore or createDocumentStore from domains. Inject DOCUMENT_STORE.',
+            },
+            {
+              group: ['**/app/**'],
+              message:
+                'Domains must not import from src/app. Dependency direction is features → domains → store.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Clean Code Ch.8 (PB-97) + Ch.11 (PB-100): Lib — leaf helpers; no Dexie/store impl, app, or domains
+  {
+    files: ['src/data/lib/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'dexie',
+              message:
+                'Dexie stays inside the document store. Keep lib free of persistence imports.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/store/database', '**/store/database.*'],
+              message:
+                'BudgetDatabase stays inside the document store. Keep lib free of persistence.',
+            },
+            {
+              group: [
+                '**/document-store/document-store',
+                '**/document-store/document-store.ts',
+                '**/document-store/document-store.js',
+              ],
+              message:
+                'Do not import DocumentStore or createDocumentStore from lib. Keep lib a pure leaf.',
+            },
+            {
+              group: [
+                '**/document-store/document-store.token',
+                '**/document-store/document-store.token.ts',
+                '**/document-store/document-store.token.js',
+              ],
+              message:
+                'Do not inject DOCUMENT_STORE from lib. Keep lib a pure leaf free of persistence.',
+            },
+            {
+              group: ['**/app/**'],
+              message:
+                'Lib must not import from src/app. Dependency direction is features → domains → store.',
+            },
+            {
+              group: ['**/domains/**'],
+              message:
+                'Lib must not import from domains. Keep lib a pure leaf below domains and features.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Clean Code Ch.11 (PB-100): Systems — store must not depend upward on app or domains
+  {
+    files: ['src/data/store/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/app/**'],
+              message:
+                'Store must not import from src/app. Dependency direction is features → domains → store.',
+            },
+            {
+              group: ['**/domains/**'],
+              message:
+                'Store must not import from domains. Dependency direction is features → domains → store.',
             },
           ],
         },
@@ -183,6 +264,7 @@ module.exports = defineConfig([
     },
   },
   // Clean Code Ch.8 (PB-97): Feature specs may use the harness seam; not the store impl/token
+  // Ch.11 (PB-100): store/types and data/lib remain allowed downward seams
   {
     files: ['src/app/**/*.{spec,harness}.ts'],
     rules: {
@@ -224,6 +306,7 @@ module.exports = defineConfig([
     },
   },
   // Clean Code Ch.8 (PB-97): Production features must not reach store or harness seam
+  // Ch.11 (PB-100): store/types and data/lib remain allowed downward seams
   {
     files: ['src/app/**/*.ts'],
     ignores: ['src/app/**/*.{spec,harness}.ts'],
