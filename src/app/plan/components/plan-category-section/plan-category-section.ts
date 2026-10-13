@@ -9,12 +9,8 @@ import type { StoreDocument } from '../../../../data/store/types';
 import { attemptWhilePending } from '../../../shared/helpers/attempt-while-pending';
 import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';
 import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
-
-const SECTION_TITLES: Record<CategoryType, string> = {
-  income: 'Income',
-  expense: 'Expenses',
-  savings: 'Savings',
-};
+import { SECTION_TITLES } from './constants';
+import { categoryNameForRename } from './helpers/category-name-for-rename';
 
 @Component({
   selector: 'app-plan-category-section',
@@ -62,80 +58,45 @@ export class PlanCategorySection {
   protected async add(event: Event): Promise<void> {
     event.preventDefault();
 
-    const categoryName = this.parseCategoryName(this.nameInput());
-
-    if (!categoryName) {
-      return;
-    }
-
-    await this.attemptMutation(() => this.addCategory(categoryName));
-  }
-
-  private async addCategory(categoryName: string): Promise<void> {
-    await this.categoryService.add(this.type(), categoryName);
-
-    this.nameInput.set('');
-  }
-
-  protected async rename(categoryId: string, typedName: string): Promise<void> {
-    const categoryName = this.parseNameForRename(categoryId, typedName);
-
-    if (!categoryName) {
-      return;
-    }
-
-    await this.attemptMutation(() => this.renameCategory(categoryId, categoryName));
-  }
-
-  private parseNameForRename(categoryId: string, typedName: string): string | undefined {
-    const categoryName = this.parseCategoryName(typedName);
-
-    if (!categoryName || this.isNameUnchanged(categoryId, categoryName)) {
-      return undefined;
-    }
-
-    return categoryName;
-  }
-
-  private parseCategoryName(typedName: string): string | undefined {
-    const categoryName = parseCategoryName(typedName);
+    const categoryName = parseCategoryName(this.nameInput());
 
     if (!categoryName) {
       this.error.set('Enter a category name.');
 
-      return undefined;
+      return;
     }
 
-    return categoryName;
+    await this.attemptMutation(async () => {
+      await this.categoryService.add(this.type(), categoryName);
+      this.nameInput.set('');
+    });
   }
 
-  private isNameUnchanged(categoryId: string, categoryName: string): boolean {
-    return this.activeCategories().some(
-      (category) => category.id === categoryId && category.name === categoryName,
-    );
-  }
+  protected async rename(categoryId: string, typedName: string): Promise<void> {
+    const outcome = categoryNameForRename(categoryId, typedName, this.activeCategories());
 
-  private async renameCategory(id: string, name: string): Promise<void> {
-    await this.categoryService.rename(id, name);
+    if (outcome.status === 'empty-or-invalid') {
+      this.error.set('Enter a category name.');
+
+      return;
+    }
+
+    if (outcome.status === 'unchanged') {
+      return;
+    }
+
+    await this.attemptMutation(() => this.categoryService.rename(categoryId, outcome.categoryName));
   }
 
   protected async hide(categoryId: string): Promise<void> {
-    await this.attemptMutation(() => this.hideCategory(categoryId));
-  }
-
-  private async hideCategory(categoryId: string): Promise<void> {
-    await this.categoryService.hide(categoryId);
+    await this.attemptMutation(() => this.categoryService.hide(categoryId));
   }
 
   protected async unhide(categoryId: string): Promise<void> {
-    await this.attemptMutation(() => this.unhideCategory(categoryId));
+    await this.attemptMutation(() => this.categoryService.unhide(categoryId));
   }
 
-  private async unhideCategory(categoryId: string): Promise<void> {
-    await this.categoryService.unhide(categoryId);
-  }
-
-  private async attemptMutation(mutation: () => Promise<void>): Promise<void> {
+  private async attemptMutation(mutation: () => Promise<unknown>): Promise<void> {
     await attemptWhilePending(
       () => this.runThenRefresh(mutation),
       this.pendingTasks,
@@ -143,7 +104,9 @@ export class PlanCategorySection {
     );
   }
 
-  private async runThenRefresh(work: () => Promise<void> = () => Promise.resolve()): Promise<void> {
+  private async runThenRefresh(
+    work: () => Promise<unknown> = () => Promise.resolve(),
+  ): Promise<void> {
     this.error.set(null);
 
     await work();
