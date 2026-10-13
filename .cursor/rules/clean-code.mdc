@@ -1,5 +1,5 @@
 ---
-description: Clean Code judgment guidance (Meaningful Names through Boundaries; Unit Tests live in unit-tests.mdc)
+description: Clean Code judgment guidance (Meaningful Names through Boundaries and Classes; Unit Tests live in unit-tests.mdc)
 alwaysApply: true
 ---
 
@@ -326,3 +326,35 @@ Store-level specs are the Dexie upgrade safety net. Feature specs seed data with
 ### Clean Boundaries
 
 Depend on what we control. Features → domain services (+ allowed `store/types` DTOs and `src/data/lib`); domains → `DOCUMENT_STORE`; Dexie only in `src/data/store`. Keep third-party references few so upgrades stay cheap.
+
+## Classes (Ch.10)
+
+ESLint: `max-classes-per-file` (1), `max-lines` (100, skip blank/comments), `@angular-eslint/sort-lifecycle-methods`, `@angular-eslint/component-max-inline-declarations`, `@angular-eslint/use-injectable-provided-in`. Specs/harnesses turn off `max-lines` / `max-classes-per-file` (dual standard with Ch.3). Already on via `angular.configs.tsRecommended` (do not re-own here): `prefer-inject`, `prefer-standalone`, `prefer-on-push-component-change-detection`. Angular file/class/selector conventions stay under PB-87. Full import-direction layering is Systems (PB-100).
+
+### Class Organization
+
+Prefer the newspaper ordering from Formatting (Ch.5): public API and orchestration near the top; helpers step down. Enable lifecycle method sort via ESLint. Do not enable `@typescript-eslint/member-ordering` — it fights Angular `inject` / `input` / signal clusters and Ch.5 affinity judgment.
+
+### Encapsulation
+
+Keep collaborators private (`store`, injected services, private mutation helpers). Template-facing members stay `protected` (Angular requirement) — intentional, not a looseness smell. Prefer extracting a harness or helper over widening visibility for tests. Do not enable `explicit-member-accessibility`.
+
+### Classes Should Be Small!
+
+Gate size with `max-lines` and one class per file. Keep inline templates/styles tiny (`component-max-inline-declarations`); prefer `templateUrl` / `styleUrl`. Class names describe one responsibility in a short phrase without “and/or/if.” Weasel names (`Manager`, `Processor`, dumping-ground `Helper`) are a smell — prefer PB domain vocabulary from Meaningful Names (Ch.2).
+
+### The Single Responsibility Principle
+
+One reason to change per injectable or component. Domain services stay collection-scoped (`CategoryService`, `BudgetCellService`, `SettingsService`). Feature components orchestrate one UI concern; persistence stays in domains/store (Boundaries). If a class description needs “and,” extract a helper module or sibling component — do not grow god components. No SRP ESLint rule; judgment only.
+
+### Cohesion
+
+Fields and methods should hang together as one logical unit. Prefer extracting pure helpers to `helpers/` / `src/data/lib/` (Functions) over splitting a cohesive façade into artificial types. High method count alone is not a violation when every method serves the same reason to change; size is gated by `max-lines`. Exception-candidate: `DocumentStore` is a deliberate non-Angular façade (no `@Injectable`) with file-level helpers below the class — keep it under `max-lines` without forcing DI onto it.
+
+### Organizing for Change
+
+Prefer many small classes that isolate change. Do not pile unrelated feature concerns into one service for convenience. New `@Injectable`s declare `providedIn` (or an explicit provider at the owned boundary). Suffix/selector structure rules stay under PB-87.
+
+### Isolating from Change
+
+Depend on stable PB seams (`DOCUMENT_STORE`, domain services), not concrete third-party types — reinforces Boundaries. Full `features → domains → store` import direction is Systems (PB-100).

@@ -123,9 +123,15 @@ module.exports = defineConfig([
       'no-empty': 'error',
       'no-throw-literal': 'error',
       'prefer-promise-reject-errors': 'error',
+      // Clean Code Ch.10 (PB-99): Classes — size / DI cohesion (Angular-friendly)
+      'max-classes-per-file': ['error', 1],
+      'max-lines': ['error', { max: 100, skipBlankLines: true, skipComments: true }],
+      '@angular-eslint/sort-lifecycle-methods': 'error',
+      '@angular-eslint/component-max-inline-declarations': 'error',
+      '@angular-eslint/use-injectable-provided-in': 'error',
     },
   },
-  // Clean Code Ch.9 (PB-98): Unit Tests — Vitest gates + dual-standard Ch.3 size offs
+  // Clean Code Ch.9 (PB-98): Unit Tests — Vitest gates + dual-standard Ch.3/Ch.10 size offs
   {
     files: ['**/*.{spec,harness}.ts'],
     plugins: {
@@ -139,6 +145,8 @@ module.exports = defineConfig([
       'max-depth': 'off',
       'max-params': 'off',
       'max-lines-per-function': 'off',
+      'max-lines': 'off',
+      'max-classes-per-file': 'off',
     },
   },
   // Clean Code Ch.8 (PB-97): Boundaries — Dexie / concrete store only inside store
