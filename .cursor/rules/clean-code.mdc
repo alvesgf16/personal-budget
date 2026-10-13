@@ -1,5 +1,5 @@
 ---
-description: Clean Code judgment guidance (Meaningful Names through Boundaries and Classes; Unit Tests live in unit-tests.mdc)
+description: Clean Code judgment guidance (Meaningful Names through Systems and Emergence; Unit Tests live in unit-tests.mdc)
 alwaysApply: true
 ---
 
@@ -394,3 +394,23 @@ Automate reverse/upward imports only — no heavyweight module-boundary plugin. 
 ### Systems Need Domain-Specific Languages
 
 PB vocabulary (Meaningful Names, Ch.2) and domain services are the app’s DSL: features speak `CategoryService` / `BudgetCellService` / `SettingsService`, not Dexie.
+
+## Emergence (Ch.12)
+
+No new ESLint rules for this chapter. Kent Beck’s four rules of simple design are judgment plus overlap with earlier automate Tasks; duplication lint stays deferred to Smells (Ch.17 / PB-104).
+
+### Runs All the Tests
+
+A design that cannot be tested is not simple. Prefer seams that keep Vitest green: domain services, `provideDocumentStoreHarness` in specs, and pure helpers in `helpers/` / `src/data/lib`. Ticket finish bar stays `npm run lint` and `npm test` green. FIRST / AAA detail lives in `.cursor/rules/unit-tests.mdc` (Ch.9) — do not restate that matrix here.
+
+### Contains No Duplication
+
+Prefer one named extract over copy-paste. When two blocks share a concept, lift it once into `helpers/` or `src/data/lib` (Functions, Ch.3). Do not install duplication lint here — `eslint-plugin-sonarjs` and related smell gates belong to PB-104 so this chapter does not re-own earlier or later automate.
+
+### Expresses the Intent of the Programmer
+
+Intention-revealing names and small extracts beat comments that narrate what the next line does. Prefer PB vocabulary (`Category`, `amountCents`, `BudgetCell`, …). Naming, comment discipline, and extract style stay under Meaningful Names (Ch.2), Comments (Ch.4), and Functions (Ch.3). Refactor toward clarity once the tests are green.
+
+### Minimizes the Number of Classes and Methods
+
+Fewest elements that still express intent and pass tests — not a race to merge unrelated concerns. Do not invent pass-through wrappers, empty façades, or speculative types. Size gates already live under Functions (Ch.3) and Classes (Ch.10). Exception-candidate: do not collapse SRP injectables (`CategoryService` vs `BudgetCellService`) or Angular template/DI splits just to shrink the class count; Ch.10 SRP and PB-87 structure win when they conflict with “fewer files.”
