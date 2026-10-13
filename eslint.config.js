@@ -217,6 +217,15 @@ module.exports = defineConfig([
                 'Do not import DocumentStore or createDocumentStore from lib. Keep lib a pure leaf.',
             },
             {
+              group: [
+                '**/document-store/document-store.token',
+                '**/document-store/document-store.token.ts',
+                '**/document-store/document-store.token.js',
+              ],
+              message:
+                'Do not inject DOCUMENT_STORE from lib. Keep lib a pure leaf free of persistence.',
+            },
+            {
               group: ['**/app/**'],
               message:
                 'Lib must not import from src/app. Dependency direction is features → domains → store.',
