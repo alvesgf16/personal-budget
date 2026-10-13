@@ -5,6 +5,7 @@
 - Jira project: **PB** on [alvesgf.atlassian.net](https://alvesgf.atlassian.net)
 - Stack: **Angular web, local-only** (no cloud API, no native shell in v1)
 - Persistence: **document store, not SQL** (Dexie / IndexedDB via `DOCUMENT_STORE` and domain services)
+- Layering: **features (`src/app`) → `data/domains` → `data/store`** (`data/lib` is a pure leaf)
 
 ## Working style
 
