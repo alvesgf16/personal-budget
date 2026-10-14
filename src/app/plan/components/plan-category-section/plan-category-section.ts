@@ -6,11 +6,11 @@ import {
 } from '../../../../data/domains/category/category';
 import { CategoryService } from '../../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../../data/store/types';
-import { attemptWhilePending } from '../../../shared/helpers/attempt-while-pending';
 import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';
 import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
 import { SECTION_TITLES } from './constants';
 import { categoryNameForRename } from './helpers/category-name-for-rename';
+import { createCategorySectionLists } from './helpers/category-section-lists';
 
 @Component({
   selector: 'app-plan-category-section',
@@ -31,6 +31,15 @@ export class PlanCategorySection {
   protected readonly activeCategories = signal<StoreDocument<Category>[]>([]);
   protected readonly hiddenCategories = signal<StoreDocument<Category>[]>([]);
 
+  private readonly lists = createCategorySectionLists({
+    categoryService: this.categoryService,
+    pendingTasks: this.pendingTasks,
+    type: () => this.type(),
+    error: this.error,
+    activeCategories: this.activeCategories,
+    hiddenCategories: this.hiddenCategories,
+  });
+
   protected get title(): string {
     return SECTION_TITLES[this.type()];
   }
@@ -38,17 +47,8 @@ export class PlanCategorySection {
   constructor() {
     effect(() => {
       this.type();
-
-      void this.load();
+      void this.lists.load();
     });
-  }
-
-  private async load(): Promise<void> {
-    await attemptWhilePending(
-      () => this.runThenRefresh(),
-      this.pendingTasks,
-      () => this.error.set('Could not load categories. Refresh and try again.'),
-    );
   }
 
   protected onNameInput(event: Event): void {
@@ -66,7 +66,7 @@ export class PlanCategorySection {
       return;
     }
 
-    await this.attemptMutation(async () => {
+    await this.lists.attemptMutation(async () => {
       await this.categoryService.add(this.type(), categoryName);
       this.nameInput.set('');
     });
@@ -85,44 +85,16 @@ export class PlanCategorySection {
       return;
     }
 
-    await this.attemptMutation(() => this.categoryService.rename(categoryId, outcome.categoryName));
-  }
-
-  protected async hide(categoryId: string): Promise<void> {
-    await this.attemptMutation(() => this.categoryService.hide(categoryId));
-  }
-
-  protected async unhide(categoryId: string): Promise<void> {
-    await this.attemptMutation(() => this.categoryService.unhide(categoryId));
-  }
-
-  private async attemptMutation(mutation: () => Promise<unknown>): Promise<void> {
-    await attemptWhilePending(
-      () => this.runThenRefresh(mutation),
-      this.pendingTasks,
-      () => this.error.set('Could not save the category. Try again.'),
+    await this.lists.attemptMutation(() =>
+      this.categoryService.rename(categoryId, outcome.categoryName),
     );
   }
 
-  private async runThenRefresh(
-    work: () => Promise<unknown> = () => Promise.resolve(),
-  ): Promise<void> {
-    this.error.set(null);
-
-    await work();
-
-    await this.refresh();
+  protected async hide(categoryId: string): Promise<void> {
+    await this.lists.attemptMutation(() => this.categoryService.hide(categoryId));
   }
 
-  private async refresh(): Promise<void> {
-    const type = this.type();
-
-    const [active, hidden] = await Promise.all([
-      this.categoryService.listByType(type),
-      this.categoryService.listHiddenByType(type),
-    ]);
-
-    this.activeCategories.set(active);
-    this.hiddenCategories.set(hidden);
+  protected async unhide(categoryId: string): Promise<void> {
+    await this.lists.attemptMutation(() => this.categoryService.unhide(categoryId));
   }
 }

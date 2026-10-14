@@ -13,21 +13,45 @@ export function settingsHarness() {
     return fixture;
   };
 
+  /** Mount and kick load without awaiting whenStable (a deferred list would hang). */
+  const startSettingsLoadWithoutWaiting = async () => {
+    const fixture = TestBed.createComponent(Settings);
+
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    return fixture;
+  };
+
   const submitYear = async (fixture: ComponentFixture<Settings>, year: string) => {
+    submitYearWithoutWaiting(fixture, year);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+
+  /** Submit without awaiting whenStable (a deferred list would hang). */
+  const submitYearWithoutWaiting = (fixture: ComponentFixture<Settings>, year: string) => {
     const input = fixture.nativeElement.querySelector('#starting-year') as HTMLInputElement;
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
 
     input.value = year;
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-
     form.dispatchEvent(new Event('submit'));
-    await fixture.whenStable();
-    fixture.detectChanges();
   };
+
+  const yearInputValue = (fixture: ComponentFixture<Settings>) =>
+    (fixture.nativeElement.querySelector('#starting-year') as HTMLInputElement).value;
 
   const alertText = (fixture: ComponentFixture<Settings>) =>
     fixture.nativeElement.querySelector('[role="alert"]')?.textContent ?? null;
 
-  return { renderSettings, submitYear, alertText };
+  return {
+    renderSettings,
+    startSettingsLoadWithoutWaiting,
+    submitYear,
+    submitYearWithoutWaiting,
+    yearInputValue,
+    alertText,
+  };
 }

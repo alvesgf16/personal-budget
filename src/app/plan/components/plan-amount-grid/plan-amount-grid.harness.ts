@@ -1,10 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { Category } from '../../../../data/domains/category/category';
 import { COLLECTIONS, type StoreDocument } from '../../../../data/store/types';
-import {
-  holdFirstBudgetCellList,
-  type DocumentStoreHarness,
-} from '../../../../data/store/document-store/document-store.harness';
+import type { DocumentStoreHarness } from '../../../../data/store/document-store/document-store.harness-types';
 import { PlanAmountGrid } from './plan-amount-grid';
 
 /** Shared insert/render helpers for PlanAmountGrid specs. Call after provideDocumentStoreHarness. */
@@ -76,7 +73,7 @@ export function planAmountGridHarness(storeHarness: DocumentStoreHarness) {
       `input[aria-label="${ariaLabel}"]`,
     ) as HTMLInputElement | null;
 
-  /** Mount the grid and kick load without awaiting whenStable (held lists would hang). */
+  /** Mount the grid and kick load without awaiting whenStable (a deferred list would hang). */
   const startGridLoadWithoutWaiting = async (
     categories: StoreDocument<Category>[],
     year: number,
@@ -100,7 +97,6 @@ export function planAmountGridHarness(storeHarness: DocumentStoreHarness) {
     commitCell,
     outputText,
     inputByAriaLabel,
-    holdFirstBudgetCellList: () => holdFirstBudgetCellList(storeHarness),
     startGridLoadWithoutWaiting,
   };
 }

@@ -1,7 +1,10 @@
 import type { BudgetCell } from '../../../../data/domains/budget-cell/budget-cell';
 import type { Category } from '../../../../data/domains/category/category';
 import { COLLECTIONS } from '../../../../data/store/types';
-import { provideDocumentStoreHarness } from '../../../../data/store/document-store/document-store.harness';
+import {
+  deferCategoryListInStore,
+  provideDocumentStoreHarness,
+} from '../../../../data/store/document-store/document-store.harness';
 import { PlanCategorySection } from './plan-category-section';
 import { planCategorySectionHarness } from './plan-category-section.harness';
 
@@ -11,7 +14,9 @@ describe('PlanCategorySection', () => {
   });
   const {
     render,
+    startSectionLoadWithoutWaiting,
     submitName,
+    submitNameWithoutWaiting,
     setCell,
     renameByAriaLabel,
     clickNamedButton,
@@ -53,6 +58,20 @@ describe('PlanCategorySection', () => {
     });
   });
 
+  it('ignores a stale load when a mutation refresh finishes first', async () => {
+    const { releaseStale } = deferCategoryListInStore(storeHarness);
+    const fixture = await startSectionLoadWithoutWaiting('income');
+
+    submitNameWithoutWaiting(fixture, 'income', 'Salary');
+    await Promise.resolve();
+    await Promise.resolve();
+    releaseStale();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(listItems(fixture)).toEqual(['Salary']);
+  });
+
   it('does not persist a blank name and shows an alert', async () => {
     const fixture = await render();
 
@@ -65,9 +84,7 @@ describe('PlanCategorySection', () => {
   });
 
   it('shows an error when add persistence fails and keeps the draft', async () => {
-    storeHarness.store.insert = async () => {
-      throw new Error('unavailable');
-    };
+    storeHarness.store.insert = () => Promise.reject(new Error('unavailable'));
     const fixture = await render();
 
     await submitName(fixture, 'income', 'Salary');
@@ -128,9 +145,7 @@ describe('PlanCategorySection', () => {
   it('shows an error when rename persistence fails', async () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
-    storeHarness.store.update = async () => {
-      throw new Error('unavailable');
-    };
+    storeHarness.store.update = () => Promise.reject(new Error('unavailable'));
 
     await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
     const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);
@@ -210,9 +225,7 @@ describe('PlanCategorySection', () => {
   it('shows an error when hide persistence fails and keeps the row', async () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
-    storeHarness.store.update = async () => {
-      throw new Error('unavailable');
-    };
+    storeHarness.store.update = () => Promise.reject(new Error('unavailable'));
 
     await clickNamedButton(fixture, 'Hide Salary');
     const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);

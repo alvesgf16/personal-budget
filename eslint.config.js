@@ -15,6 +15,12 @@ module.exports = defineConfig([
       tseslint.configs.stylistic,
       angular.configs.tsRecommended,
     ],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
     processor: angular.processInlineTemplates,
     rules: {
       '@angular-eslint/directive-selector': [
@@ -119,10 +125,13 @@ module.exports = defineConfig([
       ],
       // Clean Code Ch.4 (PB-93): Comments — allow TODO; ban stale/urgent markers
       'no-warning-comments': ['error', { terms: ['fixme', 'xxx', 'hack'], location: 'start' }],
-      // Clean Code Ch.7 (PB-96): Error Handling — only-throw-error needs type-aware lint (PB-76)
+      // Clean Code Ch.7 (PB-96) + Ch.13 (PB-102): Error Handling / async type-aware rules
       'no-empty': 'error',
       'no-throw-literal': 'error',
       'prefer-promise-reject-errors': 'error',
+      '@typescript-eslint/only-throw-error': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/require-await': 'error',
       // Clean Code Ch.10 (PB-99): Classes — size / DI cohesion (Angular-friendly)
       'max-classes-per-file': ['error', 1],
       'max-lines': ['error', { max: 100, skipBlankLines: true, skipComments: true }],
@@ -347,6 +356,9 @@ module.exports = defineConfig([
                 '**/document-store/document-store.harness',
                 '**/document-store/document-store.harness.ts',
                 '**/document-store/document-store.harness.js',
+                '**/document-store/document-store.harness-types',
+                '**/document-store/document-store.harness-types.ts',
+                '**/document-store/document-store.harness-types.js',
               ],
               message:
                 'Do not import the document-store harness seam from production features. Specs use provideDocumentStoreHarness.',
