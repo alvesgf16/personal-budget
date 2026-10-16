@@ -16,7 +16,33 @@ export function planCategorySectionHarness() {
     return fixture;
   };
 
+  /** Mount and kick load without awaiting whenStable (a deferred list would hang). */
+  const startSectionLoadWithoutWaiting = async (
+    type: CategoryType = 'income',
+    year: number | null = null,
+  ) => {
+    const fixture = TestBed.createComponent(PlanCategorySection);
+
+    fixture.componentRef.setInput('type', type);
+    fixture.componentRef.setInput('year', year);
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    return fixture;
+  };
+
   const submitName = async (
+    fixture: ComponentFixture<PlanCategorySection>,
+    type: CategoryType,
+    name: string,
+  ) => {
+    submitNameWithoutWaiting(fixture, type, name);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+
+  /** Submit without awaiting whenStable (a deferred list would hang). */
+  const submitNameWithoutWaiting = (
     fixture: ComponentFixture<PlanCategorySection>,
     type: CategoryType,
     name: string,
@@ -27,10 +53,7 @@ export function planCategorySectionHarness() {
     input.value = name;
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-
     form.dispatchEvent(new Event('submit'));
-    await fixture.whenStable();
-    fixture.detectChanges();
   };
 
   const setCell = async (
@@ -113,7 +136,9 @@ export function planCategorySectionHarness() {
 
   return {
     render,
+    startSectionLoadWithoutWaiting,
     submitName,
+    submitNameWithoutWaiting,
     setCell,
     renameByAriaLabel,
     clickNamedButton,

@@ -1,7 +1,10 @@
 import type { BudgetCell } from '../../../../data/domains/budget-cell/budget-cell';
 import type { Category } from '../../../../data/domains/category/category';
 import { COLLECTIONS } from '../../../../data/store/types';
-import { provideDocumentStoreHarness } from '../../../../data/store/document-store/document-store.harness';
+import {
+  deferCategoryListInStore,
+  provideDocumentStoreHarness,
+} from '../../../../data/store/document-store/document-store.harness';
 import { PlanCategorySection } from './plan-category-section';
 import { planCategorySectionHarness } from './plan-category-section.harness';
 
@@ -11,7 +14,9 @@ describe('PlanCategorySection', () => {
   });
   const {
     render,
+    startSectionLoadWithoutWaiting,
     submitName,
+    submitNameWithoutWaiting,
     setCell,
     renameByAriaLabel,
     clickNamedButton,
@@ -51,6 +56,22 @@ describe('PlanCategorySection', () => {
 
       expect(listItems(fixture)).toEqual([first, second]);
     });
+  });
+
+  it('ignores a stale load when a mutation refresh finishes first', async () => {
+    const { releaseDeferred, whenDeferred, armNextList, whenNextList } =
+      deferCategoryListInStore(storeHarness);
+    const fixture = await startSectionLoadWithoutWaiting('income');
+
+    await whenDeferred;
+    submitNameWithoutWaiting(fixture, 'income', 'Salary');
+    armNextList();
+    await whenNextList;
+    releaseDeferred();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(listItems(fixture)).toEqual(['Salary']);
   });
 
   it('does not persist a blank name and shows an alert', async () => {
