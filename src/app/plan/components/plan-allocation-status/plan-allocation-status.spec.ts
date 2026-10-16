@@ -3,7 +3,10 @@ import type { BudgetCell } from '../../../../data/domains/budget-cell/budget-cel
 import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-cell.service';
 import { CategoryService } from '../../../../data/domains/category/category.service';
 import { COLLECTIONS } from '../../../../data/store/types';
-import { provideDocumentStoreHarness } from '../../../../data/store/document-store/document-store.harness';
+import {
+  deferBudgetCellListInStore,
+  provideDocumentStoreHarness,
+} from '../../../../data/store/document-store/document-store.harness';
 import { Plan } from '../../plan';
 import { PlanAllocationStatus } from './plan-allocation-status';
 import { planAllocationStatusHarness } from './plan-allocation-status.harness';
@@ -18,7 +21,6 @@ describe('PlanAllocationStatus', () => {
     seedUnderAllocatedJanuaryOnPlan,
     seedSalaryJanuaryWithExpenseCategory,
     completeJanuaryWithSavingsBlur,
-    holdFirstBudgetCellList,
     startStripLoadWithoutWaiting,
     renderStrip,
     stripStatus,
@@ -93,9 +95,12 @@ describe('PlanAllocationStatus', () => {
 
   it('ignores a stale reload when revision advances mid-flight', async () => {
     const { rent } = await seedSalaryJanuaryWithExpenseCategory();
-    const { releaseFirst } = holdFirstBudgetCellList();
+    const { releaseDeferred, whenDeferred, armNextList, whenNextList } =
+      deferBudgetCellListInStore(storeHarness);
     const fixture = await startStripLoadWithoutWaiting();
 
+    await whenDeferred;
+    armNextList();
     await TestBed.inject(BudgetCellService).save({
       categoryId: rent.id,
       year: 2026,
@@ -103,7 +108,8 @@ describe('PlanAllocationStatus', () => {
       amountCents: 120_000,
     });
     fixture.detectChanges();
-    releaseFirst();
+    await whenNextList;
+    releaseDeferred();
     await fixture.whenStable();
     fixture.detectChanges();
 
