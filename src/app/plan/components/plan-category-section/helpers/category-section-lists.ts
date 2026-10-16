@@ -2,8 +2,11 @@ import type { PendingTasks, WritableSignal } from '@angular/core';
 import type { Category, CategoryType } from '../../../../../data/domains/category/category';
 import type { CategoryService } from '../../../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../../../data/store/types';
-import { attemptWhilePending } from '../../../../shared/helpers/attempt-while-pending';
-import { listSectionCategoriesIfCurrent } from './list-section-categories';
+import type { OperationGeneration } from '../types';
+import {
+  attemptMutation as runAttemptMutation,
+  loadCategories,
+} from './category-section-list-commands';
 
 interface CategorySectionListsDeps {
   categoryService: Pick<CategoryService, 'listByType' | 'listHiddenByType'>;
@@ -14,87 +17,83 @@ interface CategorySectionListsDeps {
   hiddenCategories: WritableSignal<StoreDocument<Category>[]>;
 }
 
-export interface CategorySectionLists {
+interface CategorySectionLists {
   load: () => Promise<void>;
-  attemptMutation: (mutation: () => Promise<unknown>) => Promise<void>;
+  attemptMutation: (mutation: () => Promise<void>) => Promise<void>;
 }
 
-/** Load / mutation refresh with generation guards for overlapping async. */
+interface CategoryLists {
+  active: StoreDocument<Category>[];
+  hidden: StoreDocument<Category>[];
+}
+
+interface RefreshSnapshot {
+  type: CategoryType;
+  generation: number;
+}
+
 export function createCategorySectionLists(deps: CategorySectionListsDeps): CategorySectionLists {
-  const refresh = createRefresh(deps);
+  const operations = createOperationGeneration();
+  const refresh = createRefresh(operations, deps);
 
   return {
-    load: () => loadCategories(deps, refresh),
-    attemptMutation: (mutation: () => Promise<unknown>) =>
-      mutateThenRefresh(deps, refresh, mutation),
+    load: () => loadCategories({ refresh, operations, deps }),
+    attemptMutation: (mutation: () => Promise<void>) =>
+      runAttemptMutation({ refresh, mutation, operations, deps }),
   };
 }
 
-function createRefresh(deps: CategorySectionListsDeps): () => Promise<void> {
-  let loadGeneration = 0;
+function createOperationGeneration(): OperationGeneration {
+  let operationGeneration = 0;
 
+  return {
+    begin: () => ++operationGeneration,
+    current: () => operationGeneration,
+  };
+}
+
+function createRefresh(
+  operations: OperationGeneration,
+  deps: CategorySectionListsDeps,
+): () => Promise<void> {
   return async () => {
-    const type = deps.type();
-    const generation = ++loadGeneration;
-    const lists = await listSectionCategoriesIfCurrent(
-      deps.categoryService,
-      type,
-      () => generation === loadGeneration && deps.type() === type,
+    const snapshot: RefreshSnapshot = {
+      type: deps.type(),
+      generation: operations.current(),
+    };
+    const lists = await listSectionCategoriesIfCurrent(deps.categoryService, snapshot.type, () =>
+      isCurrentRefresh(operations, snapshot, deps),
     );
-
-    if (!lists) {
-      return;
-    }
-
-    deps.activeCategories.set(lists.active);
-    deps.hiddenCategories.set(lists.hidden);
+    applyCategoryLists(lists, deps);
   };
 }
 
-async function loadCategories(
+function isCurrentRefresh(
+  operations: OperationGeneration,
+  snapshot: RefreshSnapshot,
   deps: CategorySectionListsDeps,
-  refresh: () => Promise<void>,
-): Promise<void> {
-  const type = deps.type();
-
-  await attemptWhilePending(
-    async () => {
-      deps.error.set(null);
-      await refresh();
-    },
-    deps.pendingTasks,
-    () => {
-      if (deps.type() === type) {
-        deps.error.set('Could not load categories. Refresh and try again.');
-      }
-    },
-  );
+): boolean {
+  return snapshot.generation === operations.current() && deps.type() === snapshot.type;
 }
 
-async function mutateThenRefresh(
-  deps: CategorySectionListsDeps,
-  refresh: () => Promise<void>,
-  mutation: () => Promise<unknown>,
-): Promise<void> {
-  const type = deps.type();
+function applyCategoryLists(lists: CategoryLists | null, deps: CategorySectionListsDeps): void {
+  if (!lists) {
+    return;
+  }
 
-  await attemptWhilePending(
-    () => runWorkThenRefresh(deps, refresh, mutation),
-    deps.pendingTasks,
-    () => {
-      if (deps.type() === type) {
-        deps.error.set('Could not save the category. Try again.');
-      }
-    },
-  );
+  deps.activeCategories.set(lists.active);
+  deps.hiddenCategories.set(lists.hidden);
 }
 
-async function runWorkThenRefresh(
-  deps: CategorySectionListsDeps,
-  refresh: () => Promise<void>,
-  work: () => Promise<unknown>,
-): Promise<void> {
-  deps.error.set(null);
-  await work();
-  await refresh();
+async function listSectionCategoriesIfCurrent(
+  categoryService: Pick<CategoryService, 'listByType' | 'listHiddenByType'>,
+  type: CategoryType,
+  isCurrent: () => boolean,
+): Promise<CategoryLists | null> {
+  const [active, hidden] = await Promise.all([
+    categoryService.listByType(type),
+    categoryService.listHiddenByType(type),
+  ]);
+
+  return isCurrent() ? { active, hidden } : null;
 }

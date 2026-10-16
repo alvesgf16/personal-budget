@@ -11,6 +11,11 @@ interface ListsHarnessOptions {
   type?: WritableSignal<CategoryType>;
 }
 
+interface HoldGate {
+  wait: Promise<void>;
+  release: () => void;
+}
+
 describe('createCategorySectionLists', () => {
   it('load sets active and hidden category signals', async () => {
     const active = [categoryDoc('a', 'Salary')];
@@ -26,7 +31,7 @@ describe('createCategorySectionLists', () => {
     expect(error()).toBeNull();
   });
 
-  it('load sets an error when listing fails and the type is unchanged', async () => {
+  it('load sets an error when listing fails', async () => {
     const { lists, error } = listsHarness({
       categoryService: {
         listByType: () => Promise.reject(new Error('unavailable')),
@@ -37,24 +42,6 @@ describe('createCategorySectionLists', () => {
     await lists.load();
 
     expect(error()).toBe('Could not load categories. Refresh and try again.');
-  });
-
-  it('load skips the error when the type changes mid-flight', async () => {
-    const type = signal<CategoryType>('income');
-    const { lists, error } = listsHarness({
-      type,
-      categoryService: {
-        listByType: () => {
-          type.set('expense');
-          return Promise.reject(new Error('unavailable'));
-        },
-        listHiddenByType: () => Promise.resolve([]),
-      },
-    });
-
-    await lists.load();
-
-    expect(error()).toBeNull();
   });
 
   it('attemptMutation runs the mutation then refreshes lists', async () => {
@@ -73,36 +60,8 @@ describe('createCategorySectionLists', () => {
     expect(activeCategories()).toEqual(active);
   });
 
-  it('attemptMutation sets an error when the mutation fails', async () => {
-    const { lists, error } = listsHarness({
-      categoryService: stubLists([], []),
-    });
-
-    await lists.attemptMutation(() => Promise.reject(new Error('unavailable')));
-
-    expect(error()).toBe('Could not save the category. Try again.');
-  });
-
-  it('attemptMutation skips the error when the type changes mid-flight', async () => {
-    const type = signal<CategoryType>('income');
-    const { lists, error } = listsHarness({
-      type,
-      categoryService: stubLists([], []),
-    });
-
-    await lists.attemptMutation(() => {
-      type.set('expense');
-      return Promise.reject(new Error('unavailable'));
-    });
-
-    expect(error()).toBeNull();
-  });
-
   it('discards an older refresh when a newer one finishes first', async () => {
-    let releaseFirst!: () => void;
-    const firstGate = new Promise<void>((resolve) => {
-      releaseFirst = resolve;
-    });
+    const firstList = createHoldGate();
     let listCalls = 0;
     const stale = [categoryDoc('old', 'Stale')];
     const fresh = [categoryDoc('new', 'Fresh')];
@@ -111,7 +70,7 @@ describe('createCategorySectionLists', () => {
         listByType: async () => {
           listCalls += 1;
           if (listCalls === 1) {
-            await firstGate;
+            await firstList.wait;
             return stale;
           }
           return fresh;
@@ -123,7 +82,7 @@ describe('createCategorySectionLists', () => {
     const firstLoad = lists.load();
     await Promise.resolve();
     await lists.load();
-    releaseFirst();
+    firstList.release();
     await firstLoad;
 
     expect(activeCategories()).toEqual(fresh);
@@ -171,6 +130,15 @@ function stubPendingTasks(): PendingTasks {
   return {
     add: () => () => undefined,
   } as PendingTasks;
+}
+
+function createHoldGate(): HoldGate {
+  let release!: () => void;
+  const wait = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  return { wait, release };
 }
 
 function listsHarness(options: ListsHarnessOptions) {

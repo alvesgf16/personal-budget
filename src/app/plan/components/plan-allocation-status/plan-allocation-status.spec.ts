@@ -95,9 +95,12 @@ describe('PlanAllocationStatus', () => {
 
   it('ignores a stale reload when revision advances mid-flight', async () => {
     const { rent } = await seedSalaryJanuaryWithExpenseCategory();
-    const { releaseStale } = deferBudgetCellListInStore(storeHarness);
+    const { releaseDeferred, whenDeferred, armNextList, whenNextList } =
+      deferBudgetCellListInStore(storeHarness);
     const fixture = await startStripLoadWithoutWaiting();
 
+    await whenDeferred;
+    armNextList();
     await TestBed.inject(BudgetCellService).save({
       categoryId: rent.id,
       year: 2026,
@@ -105,7 +108,8 @@ describe('PlanAllocationStatus', () => {
       amountCents: 120_000,
     });
     fixture.detectChanges();
-    releaseStale();
+    await whenNextList;
+    releaseDeferred();
     await fixture.whenStable();
     fixture.detectChanges();
 

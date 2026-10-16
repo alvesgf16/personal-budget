@@ -85,16 +85,20 @@ export class PlanCategorySection {
       return;
     }
 
-    await this.lists.attemptMutation(() =>
-      this.categoryService.rename(categoryId, outcome.categoryName),
-    );
+    await this.lists.attemptMutation(async () => {
+      await this.categoryService.rename(categoryId, outcome.categoryName);
+    });
   }
 
   protected async hide(categoryId: string): Promise<void> {
-    await this.lists.attemptMutation(() => this.categoryService.hide(categoryId));
+    await this.lists.attemptMutation(async () => {
+      await this.categoryService.hide(categoryId);
+    });
   }
 
   protected async unhide(categoryId: string): Promise<void> {
-    await this.lists.attemptMutation(() => this.categoryService.unhide(categoryId));
+    await this.lists.attemptMutation(async () => {
+      await this.categoryService.unhide(categoryId);
+    });
   }
 }

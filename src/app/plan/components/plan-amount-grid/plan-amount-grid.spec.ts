@@ -25,12 +25,16 @@ describe('PlanAmountGrid', () => {
     const salary = await insertCategory('Salary');
     await insertCell(salary.id, 2026, 1, 100_000);
     await insertCell(salary.id, 2027, 1, 200_000);
-    const { releaseStale } = deferBudgetCellListInStore(storeHarness);
+    const { releaseDeferred, whenDeferred, armNextList, whenNextList } =
+      deferBudgetCellListInStore(storeHarness);
     const fixture = await startGridLoadWithoutWaiting([salary], 2026);
 
+    await whenDeferred;
     fixture.componentRef.setInput('year', 2027);
+    armNextList();
     fixture.detectChanges();
-    releaseStale();
+    await whenNextList;
+    releaseDeferred();
     await fixture.whenStable();
     fixture.detectChanges();
     const january = inputByAriaLabel(fixture, 'Salary January');

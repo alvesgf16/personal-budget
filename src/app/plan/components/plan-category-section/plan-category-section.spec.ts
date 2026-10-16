@@ -59,13 +59,15 @@ describe('PlanCategorySection', () => {
   });
 
   it('ignores a stale load when a mutation refresh finishes first', async () => {
-    const { releaseStale } = deferCategoryListInStore(storeHarness);
+    const { releaseDeferred, whenDeferred, armNextList, whenNextList } =
+      deferCategoryListInStore(storeHarness);
     const fixture = await startSectionLoadWithoutWaiting('income');
 
+    await whenDeferred;
     submitNameWithoutWaiting(fixture, 'income', 'Salary');
-    await Promise.resolve();
-    await Promise.resolve();
-    releaseStale();
+    armNextList();
+    await whenNextList;
+    releaseDeferred();
     await fixture.whenStable();
     fixture.detectChanges();
 

@@ -12,13 +12,27 @@ interface OpenedDocumentStoreHarness {
 
 interface DeferredRelease {
   untilReleased: Promise<void>;
-  releaseStale: () => void;
+  releaseDeferred: () => void;
 }
 
 interface CollectionListDeferral {
   deferredCollection: CollectionName;
   isActive: boolean;
   untilReleased: Promise<void>;
+  notifyDeferred: () => void;
+}
+
+interface ListDeferralControls {
+  releaseDeferred: () => void;
+  /** Resolves when the first matching `list` reaches the deferral gate. */
+  whenDeferred: Promise<void>;
+  /**
+   * After the competing load has been triggered, call this then await `whenNextList`
+   * so a parallel sibling `list` from the deferred load is not mistaken for the winner.
+   */
+  armNextList: () => void;
+  /** Resolves when the next armed matching pass-through `list` completes. */
+  whenNextList: Promise<void>;
 }
 
 /** Unique IndexedDB for schema/store specs (no TestBed). */
@@ -93,39 +107,69 @@ export function deferSettingsListInStore(storeHarness: DocumentStoreHarness) {
 }
 
 /**
- * Defers only the first matching `list` until `releaseStale()` (later calls pass through).
- * Call before the stale load starts, trigger the load that should win, then releaseStale().
- * Budget cells: change the year input, or save so revision advances.
- * Categories: submit a mutation that refreshes the section.
- * Settings: save so loadGeneration advances.
+ * Defers only the first matching `list` until `releaseDeferred()` (later calls pass through).
+ * Await `whenDeferred`, trigger the winning load, `armNextList()`, await `whenNextList`,
+ * then releaseDeferred(). Settings: save is queued behind get — release after arming is N/A.
  */
-function deferListInStore(collection: CollectionName, storeHarness: DocumentStoreHarness) {
+function deferListInStore(
+  collection: CollectionName,
+  storeHarness: DocumentStoreHarness,
+): ListDeferralControls {
   const deferred = createDeferredRelease();
+  let notifyDeferred!: () => void;
+  const whenDeferred = new Promise<void>((resolve) => {
+    notifyDeferred = resolve;
+  });
+  let notifyNextList!: () => void;
+  const whenNextList = new Promise<void>((resolve) => {
+    notifyNextList = resolve;
+  });
+  let nextListArmed = false;
+  let nextListNotified = false;
   const originalList = storeHarness.store.list.bind(storeHarness.store);
   const deferral: CollectionListDeferral = {
     deferredCollection: collection,
     isActive: true,
     untilReleased: deferred.untilReleased,
+    notifyDeferred,
   };
 
   storeHarness.store.list = async <T extends object>(queriedCollection: CollectionName) => {
     const rows = await originalList<T>(queriedCollection);
-    if (queriedCollection === deferral.deferredCollection) {
-      await awaitDeferralIfActive(deferral);
+    if (queriedCollection !== deferral.deferredCollection) {
+      return rows;
     }
+
+    if (deferral.isActive) {
+      await awaitDeferralIfActive(deferral);
+      return rows;
+    }
+
+    if (nextListArmed && !nextListNotified) {
+      nextListNotified = true;
+      notifyNextList();
+    }
+
     return rows;
   };
 
-  return { releaseStale: deferred.releaseStale };
+  return {
+    releaseDeferred: deferred.releaseDeferred,
+    whenDeferred,
+    armNextList: () => {
+      nextListArmed = true;
+    },
+    whenNextList,
+  };
 }
 
 function createDeferredRelease(): DeferredRelease {
-  let releaseStale!: () => void;
+  let releaseDeferred!: () => void;
   const untilReleased = new Promise<void>((resolve) => {
-    releaseStale = resolve;
+    releaseDeferred = resolve;
   });
 
-  return { untilReleased, releaseStale };
+  return { untilReleased, releaseDeferred };
 }
 
 async function awaitDeferralIfActive(deferral: CollectionListDeferral): Promise<void> {
@@ -134,5 +178,6 @@ async function awaitDeferralIfActive(deferral: CollectionListDeferral): Promise<
   }
 
   deferral.isActive = false;
+  deferral.notifyDeferred();
   await deferral.untilReleased;
 }

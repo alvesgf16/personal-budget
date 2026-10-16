@@ -104,21 +104,23 @@ describe('Settings starting year', () => {
     expect(alertText(fixture)).toContain('Could not load');
   });
 
-  it('ignores a stale load when a save finishes first', async () => {
+  it('ignores a stale load when a save is queued behind it', async () => {
     const primed = await renderSettings();
     await submitYear(primed, '2026');
     primed.destroy();
 
-    const { releaseStale } = deferSettingsListInStore(storeHarness);
+    const { releaseDeferred, whenDeferred } = deferSettingsListInStore(storeHarness);
     const fixture = await startSettingsLoadWithoutWaiting();
 
+    await whenDeferred;
     submitYearWithoutWaiting(fixture, '2027');
-    await Promise.resolve();
-    await Promise.resolve();
-    releaseStale();
+    releaseDeferred();
     await fixture.whenStable();
     fixture.detectChanges();
+    const saved = await storeHarness.store.list<DomainSettings>(COLLECTIONS.settings);
 
     expect(yearInputValue(fixture)).toBe('2027');
+    expect(saved).toHaveLength(1);
+    expect(saved[0]?.startingYear).toBe(2027);
   });
 });

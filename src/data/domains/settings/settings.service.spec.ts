@@ -1,6 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../store/types';
-import { provideDocumentStoreHarness } from '../../store/document-store/document-store.harness';
+import {
+  deferSettingsListInStore,
+  provideDocumentStoreHarness,
+} from '../../store/document-store/document-store.harness';
 import type { Settings } from './settings';
 import { SettingsService } from './settings.service';
 
@@ -40,6 +43,20 @@ describe('SettingsService', () => {
     expect(updated).toHaveLength(1);
     expect(updated[0]?.id).toBe(created[0]?.id);
     expect(updated[0]?.startingYear).toBe(2027);
+  });
+
+  it('serializes save behind an in-flight get so documentId stays consistent', async () => {
+    const { releaseDeferred, whenDeferred } = deferSettingsListInStore(storeHarness);
+    const pendingGet = service.get();
+
+    await whenDeferred;
+    const pendingSave = service.save({ startingYear: 2027 });
+    releaseDeferred();
+    await Promise.all([pendingGet, pendingSave]);
+    const saved = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
+
+    expect(saved).toHaveLength(1);
+    expect(saved[0]?.startingYear).toBe(2027);
   });
 
   it('keeps overlapping saves on a single settings document', async () => {
