@@ -1,10 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { Category } from '../../../../data/domains/category/category';
 import { COLLECTIONS } from '../../../../data/store/types';
-import {
-  holdFirstBudgetCellList,
-  type DocumentStoreHarness,
-} from '../../../../data/store/document-store/document-store.harness';
+import type { DocumentStoreHarness } from '../../../../data/store/document-store/document-store.harness-types';
 import { planHarness } from '../../plan.harness';
 import { Plan } from '../../plan';
 import { PlanAllocationStatus } from './plan-allocation-status';
@@ -67,7 +64,7 @@ export function planAllocationStatusHarness(storeHarness: DocumentStoreHarness) 
     return fixture;
   };
 
-  /** Mount the strip and kick the effect without awaiting whenStable (held lists would hang). */
+  /** Mount the strip and kick the effect without awaiting whenStable (a deferred list would hang). */
   const startStripLoadWithoutWaiting = async () => {
     const fixture = TestBed.createComponent(PlanAllocationStatus);
     fixture.componentRef.setInput('year', 2026);
@@ -124,6 +121,5 @@ export function planAllocationStatusHarness(storeHarness: DocumentStoreHarness) 
     stripStatus,
     renderPlan,
     planStatus,
-    holdFirstBudgetCellList: () => holdFirstBudgetCellList(storeHarness),
   };
 }
