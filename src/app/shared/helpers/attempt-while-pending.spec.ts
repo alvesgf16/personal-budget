@@ -20,8 +20,9 @@ describe('attemptWhilePending', () => {
     const { pendingTasks, open } = stubPendingTasks();
     let ran = false;
     await attemptWhilePending(
-      async () => {
+      () => {
         ran = true;
+        return Promise.resolve();
       },
       pendingTasks,
       () => {
@@ -36,9 +37,7 @@ describe('attemptWhilePending', () => {
     const { pendingTasks, open } = stubPendingTasks();
     const error = signal<string | null>(null);
     await attemptWhilePending(
-      async () => {
-        throw new Error('unavailable');
-      },
+      () => Promise.reject(new Error('unavailable')),
       pendingTasks,
       () => {
         error.set('Could not save.');
@@ -52,12 +51,10 @@ describe('attemptWhilePending', () => {
     const { pendingTasks } = stubPendingTasks();
     const error = signal<string | null>(null);
     await attemptWhilePending(
-      async () => {
-        throw new Error('unavailable');
-      },
+      () => Promise.reject(new Error('unavailable')),
       pendingTasks,
       () => {
-        /* stillValid was false — leave error alone */
+        /* Caller chose not to set an error. */
       },
     );
     expect(error()).toBeNull();

@@ -14,9 +14,9 @@ describe('PersistQueue', () => {
       order.push(1);
       return 'first';
     });
-    const second = queue.enqueue(async () => {
+    const second = queue.enqueue(() => {
       order.push(2);
-      return 'second';
+      return Promise.resolve('second');
     });
 
     releaseFirst();
@@ -28,13 +28,13 @@ describe('PersistQueue', () => {
     const queue = new PersistQueue();
     const order: string[] = [];
 
-    const failed = queue.enqueue(async () => {
+    const failed = queue.enqueue(() => {
       order.push('fail');
-      throw new Error('write failed');
+      return Promise.reject(new Error('write failed'));
     });
-    const next = queue.enqueue(async () => {
+    const next = queue.enqueue(() => {
       order.push('next');
-      return 'ok';
+      return Promise.resolve('ok');
     });
 
     await expect(failed).rejects.toThrow('write failed');

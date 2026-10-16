@@ -17,7 +17,7 @@ function stubPendingTasks(): { pendingTasks: PendingTasks; open: () => number } 
 describe('runWhilePending', () => {
   it('returns the work result and closes the pending slot', async () => {
     const { pendingTasks, open } = stubPendingTasks();
-    const result = await runWhilePending(async () => 'ok', pendingTasks);
+    const result = await runWhilePending(() => Promise.resolve('ok'), pendingTasks);
     expect(result).toBe('ok');
     expect(open()).toBe(0);
   });
@@ -25,9 +25,7 @@ describe('runWhilePending', () => {
   it('closes the pending slot when work throws', async () => {
     const { pendingTasks, open } = stubPendingTasks();
     await expect(
-      runWhilePending(async () => {
-        throw new Error('failed');
-      }, pendingTasks),
+      runWhilePending(() => Promise.reject(new Error('failed')), pendingTasks),
     ).rejects.toThrow('failed');
     expect(open()).toBe(0);
   });
