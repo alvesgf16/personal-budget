@@ -1,5 +1,5 @@
 ---
-description: Clean Code judgment guidance (Meaningful Names through Systems and Emergence; Unit Tests live in unit-tests.mdc)
+description: Clean Code judgment guidance (Meaningful Names through Concurrency; Unit Tests live in unit-tests.mdc)
 alwaysApply: true
 ---
 
@@ -269,7 +269,7 @@ Do not put navigation or persistence on the record type. `Category` / `BudgetCel
 
 ## Error Handling (Ch.7)
 
-ESLint: `no-empty` (no empty `catch`); `no-throw-literal`; `prefer-promise-reject-errors`. Recommended also supplies `no-ex-assign`, `no-unsafe-finally`, `no-useless-catch`. Type-aware `@typescript-eslint/only-throw-error` and async/promise footguns stay under PB-76.
+ESLint: `no-empty` (no empty `catch`); `no-throw-literal`; `prefer-promise-reject-errors`. Recommended also supplies `no-ex-assign`, `no-unsafe-finally`, `no-useless-catch`. Type-aware `@typescript-eslint/only-throw-error`, `await-thenable`, and `require-await` are enabled under Concurrency (Ch.13 / PB-102).
 
 ### Use Exceptions Rather Than Return Codes
 
@@ -389,7 +389,7 @@ The owned seam is `DOCUMENT_STORE` plus domain services so persistence tech can 
 
 ### Use Standards Wisely When They Add Demonstrable Value
 
-Automate reverse/upward imports only — no heavyweight module-boundary plugin. Exception-candidates (allowed): features → `store/types` (`StoreDocument`, `COLLECTIONS`, …); features and domains → `src/data/lib`; specs/harnesses → harness + `store/types`.
+Automate reverse/upward imports only — no heavyweight module-boundary plugin. Exception-candidates (allowed): features → `store/types` (`StoreDocument`, `COLLECTIONS`, …); features and domains → `src/data/lib`; specs/harnesses → harness + harness-types + `store/types`.
 
 ### Systems Need Domain-Specific Languages
 
@@ -414,3 +414,47 @@ Intention-revealing names and small extracts beat comments that narrate what the
 ### Minimizes the Number of Classes and Methods
 
 Fewest elements that still express intent and pass tests — not a race to merge unrelated concerns. Do not invent pass-through wrappers, empty façades, or speculative types. Size gates already live under Functions (Ch.3) and Classes (Ch.10). Exception-candidate: do not collapse SRP injectables (`CategoryService` vs `BudgetCellService`) or Angular template/DI splits just to shrink the class count; Ch.10 SRP and PB-87 structure win when they conflict with “fewer files.”
+
+## Concurrency (Ch.13)
+
+ESLint (type-aware via `parserOptions.projectService`): `@typescript-eslint/await-thenable`, `require-await`, `only-throw-error` (PB-102; precedes the Post-v1 DX slice that was [PB-76](https://alvesgf.atlassian.net/browse/PB-76)). Java thread/lock/synchronized material is N/A on a single browser thread. Error swallowing at boundaries stays under Error Handling (Ch.7) — `attemptWhilePending` and `PersistQueue` intentional recovery.
+
+### Why Concurrency? / Myths and Misconceptions
+
+PB concurrency is cooperative async on one thread: Promises, `async`/`await`, and Angular change detection — not OS parallelism. Do not frame guidance around “concurrency is always faster” or free performance from threads.
+
+### Single Responsibility (Concurrency-Related Code)
+
+Keep async orchestration at clear boundaries: domain mutations via `PersistQueue`; UI busy/error via `runWhilePending` / `attemptWhilePending`; cross-component refresh via domain `revision` signals and `effect`. Do not scatter ad-hoc promise chains or duplicate `PendingTasks.add` / `done` in feature components.
+
+### Limit the Scope of Data
+
+Shared mutable writes stay narrow: one `PersistQueue` instance per domain service. Features must not fan out concurrent mutating store calls with `Promise.all`.
+
+### Use Copies of Data
+
+When loads can finish after inputs change, capture a snapshot (year and revision counters) and discard stale results before updating the UI — see `PlanAllocationStatus`. Prefer snapshot fields over mutating shared in-flight state.
+
+### Threads Should Be as Independent as Possible
+
+Treat in-flight loads and saves as independent units coupled only through owned seams (`PersistQueue`, `revision()`, `PendingTasks`). Prefer `Promise.all` only for read-only parallel domain calls, then one guarded UI update.
+
+### Know Your Library
+
+Prefer `PersistQueue`, pending helpers, Angular `PendingTasks`, signals, and `effect` over inventing new async control. Intentional fire-and-forget from a synchronous effect uses `void this.load(...)` (or a named loader). Do not mix in RxJS subscriptions without reason — v1 stays on Promises plus signals/`effect`.
+
+### Know Your Execution Models
+
+PB models: serialized writer chain (`PersistQueue`); `effect` triggers async via `void` loaders; revision-driven reload. N/A: producer-consumer thread pools, readers-writers locks, dining philosophers, synchronized monitors.
+
+### Beware Dependencies Between Synchronized Methods / Keep Synchronized Sections Small
+
+Java `synchronized` and lock ordering are N/A. Keep the critical section small in spirit: enqueue one store write unit; do not hold UI pending across unrelated work.
+
+### Writing Correct Shut-Down Code Is Hard
+
+Thread shutdown and poison pills are N/A. `runWhilePending` clears the pending token in `finally`; ignore stale async after a snapshot mismatch.
+
+### Testing Threaded Code
+
+Cover serialization and races with focused Vitest specs (`persist-queue.spec.ts`, overlapping domain saves, stale mid-flight loads with hold/release stalls). Treat flaky async failures as race candidates. N/A: more threads than processors, multi-platform thread stress, ThreadJiggle-style tooling. FIRST / AAA stay in `.cursor/rules/unit-tests.mdc` (Ch.9).

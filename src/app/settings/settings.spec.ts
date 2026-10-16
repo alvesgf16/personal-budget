@@ -76,9 +76,7 @@ describe('Settings starting year', () => {
   });
 
   it('shows an error when save persistence fails', async () => {
-    storeHarness.store.insert = async () => {
-      throw new Error('unavailable');
-    };
+    storeHarness.store.insert = () => Promise.reject(new Error('unavailable'));
     const fixture = await renderSettings();
 
     await submitYear(fixture, '2026');
@@ -89,9 +87,7 @@ describe('Settings starting year', () => {
   });
 
   it('shows an error when settings cannot be loaded', async () => {
-    storeHarness.store.list = async () => {
-      throw new Error('unavailable');
-    };
+    storeHarness.store.list = () => Promise.reject(new Error('unavailable'));
 
     const fixture = await renderSettings();
 
