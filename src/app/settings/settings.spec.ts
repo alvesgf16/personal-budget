@@ -1,5 +1,8 @@
 import { COLLECTIONS } from '../../data/store/types';
-import { provideDocumentStoreHarness } from '../../data/store/document-store/document-store.harness';
+import {
+  deferSettingsListInStore,
+  provideDocumentStoreHarness,
+} from '../../data/store/document-store/document-store.harness';
 import type { Settings as DomainSettings } from '../../data/domains/settings/settings';
 import { Plan } from '../plan/plan';
 import { planHarness } from '../plan/plan.harness';
@@ -10,7 +13,14 @@ describe('Settings starting year', () => {
   const storeHarness = provideDocumentStoreHarness('pb-19-settings', {
     imports: [Settings, Plan],
   });
-  const { renderSettings, submitYear, alertText } = settingsHarness();
+  const {
+    renderSettings,
+    startSettingsLoadWithoutWaiting,
+    submitYear,
+    submitYearWithoutWaiting,
+    yearInputValue,
+    alertText,
+  } = settingsHarness();
   const { renderPlan, headerText } = planHarness(storeHarness);
 
   it('rejects an empty year with an alert and does not persist', async () => {
@@ -92,5 +102,25 @@ describe('Settings starting year', () => {
     const fixture = await renderSettings();
 
     expect(alertText(fixture)).toContain('Could not load');
+  });
+
+  it('ignores a stale load when a save is queued behind it', async () => {
+    const primed = await renderSettings();
+    await submitYear(primed, '2026');
+    primed.destroy();
+
+    const { releaseDeferred, whenDeferred } = deferSettingsListInStore(storeHarness);
+    const fixture = await startSettingsLoadWithoutWaiting();
+
+    await whenDeferred;
+    submitYearWithoutWaiting(fixture, '2027');
+    releaseDeferred();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const saved = await storeHarness.store.list<DomainSettings>(COLLECTIONS.settings);
+
+    expect(yearInputValue(fixture)).toBe('2027');
+    expect(saved).toHaveLength(1);
+    expect(saved[0]?.startingYear).toBe(2027);
   });
 });
