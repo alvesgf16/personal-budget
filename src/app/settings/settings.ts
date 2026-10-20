@@ -18,23 +18,34 @@ export class Settings implements OnInit {
 
   protected readonly yearInput = signal('');
   protected readonly error = signal<string | null>(null);
+  private loadGeneration = 0;
 
   ngOnInit(): void {
     void this.load();
   }
 
   private async load(): Promise<void> {
+    const generation = ++this.loadGeneration;
+
     await attemptWhilePending(
-      () => this.loadSettings(),
+      () => this.loadSettings(generation),
       this.pendingTasks,
-      () => this.error.set('Could not load the starting year. Refresh and try again.'),
+      () => {
+        if (generation === this.loadGeneration) {
+          this.error.set('Could not load the starting year. Refresh and try again.');
+        }
+      },
     );
   }
 
-  private async loadSettings(): Promise<void> {
+  private async loadSettings(generation: number): Promise<void> {
     this.error.set(null);
 
     const settings = await this.settingsService.get();
+
+    if (generation !== this.loadGeneration) {
+      return;
+    }
 
     if (settings) {
       this.yearInput.set(String(settings.startingYear));
@@ -42,6 +53,7 @@ export class Settings implements OnInit {
   }
 
   protected onYearInput(event: Event): void {
+    this.loadGeneration += 1;
     this.yearInput.set((event.target as HTMLInputElement).value);
   }
 
@@ -56,10 +68,12 @@ export class Settings implements OnInit {
       return;
     }
 
+    const generation = ++this.loadGeneration;
+
     await attemptWhilePending(
       () => this.saveSettings(settings),
       this.pendingTasks,
-      () => this.error.set('Could not save the starting year. Try again.'),
+      () => this.reportSaveFailure(generation),
     );
   }
 
@@ -67,5 +81,11 @@ export class Settings implements OnInit {
     this.error.set(null);
 
     await this.settingsService.save(settings);
+  }
+
+  private reportSaveFailure(generation: number): void {
+    if (generation === this.loadGeneration) {
+      this.error.set('Could not save the starting year. Try again.');
+    }
   }
 }
