@@ -68,17 +68,24 @@ export class Settings implements OnInit {
       return;
     }
 
+    const generation = ++this.loadGeneration;
+
     await attemptWhilePending(
       () => this.saveSettings(settings),
       this.pendingTasks,
-      () => this.error.set('Could not save the starting year. Try again.'),
+      () => this.reportSaveFailure(generation),
     );
   }
 
   private async saveSettings(settings: DomainSettings): Promise<void> {
     this.error.set(null);
-    this.loadGeneration += 1;
 
     await this.settingsService.save(settings);
+  }
+
+  private reportSaveFailure(generation: number): void {
+    if (generation === this.loadGeneration) {
+      this.error.set('Could not save the starting year. Try again.');
+    }
   }
 }

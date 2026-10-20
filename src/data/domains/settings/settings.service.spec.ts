@@ -53,10 +53,14 @@ describe('SettingsService', () => {
     const pendingSave = service.save({ startingYear: 2027 });
     releaseFirstList();
     await Promise.all([pendingGet, pendingSave]);
+    const afterOverlap = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
+
+    await service.save({ startingYear: 2028 });
     const saved = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
 
     expect(saved).toHaveLength(1);
-    expect(saved[0]?.startingYear).toBe(2027);
+    expect(saved[0]?.id).toBe(afterOverlap[0]?.id);
+    expect(saved[0]?.startingYear).toBe(2028);
   });
 
   it('keeps overlapping saves on a single settings document', async () => {
