@@ -10,13 +10,12 @@ describe('createRevisionCounter', () => {
     expect(revisionCounter.next()).toBe(3);
   });
 
-  it('isLatest is true only for the most recent next value', () => {
+  it('current tracks the latest next value without advancing', () => {
     const revisionCounter = createRevisionCounter();
-    const first = revisionCounter.next();
-    const second = revisionCounter.next();
 
-    expect(revisionCounter.isLatest(first)).toBe(false);
-    expect(revisionCounter.isLatest(second)).toBe(true);
+    expect(revisionCounter.current()).toBe(0);
+    expect(revisionCounter.next()).toBe(1);
+    expect(revisionCounter.current()).toBe(1);
   });
 
   it('keeps independent counters isolated', () => {
@@ -27,7 +26,7 @@ describe('createRevisionCounter', () => {
     otherCounter.next();
     otherCounter.next();
 
-    expect(counter.isLatest(revision)).toBe(true);
-    expect(otherCounter.isLatest(revision)).toBe(false);
+    expect(revision).toBe(counter.current());
+    expect(revision).not.toBe(otherCounter.current());
   });
 });

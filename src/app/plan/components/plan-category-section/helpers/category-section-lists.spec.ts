@@ -64,7 +64,67 @@ describe('createCategorySectionLists', () => {
     expect(steps.slice(1).sort()).toEqual(['listByType', 'listHiddenByType']);
     expect(activeCategories()).toEqual(active);
   });
+
+  it('discards an older refresh when a newer one finishes first', async () => {
+    const firstList = createHoldGate();
+    let listCalls = 0;
+    const stale = [categoryDoc('old', 'Stale')];
+    const fresh = [categoryDoc('new', 'Fresh')];
+    const { lists, activeCategories } = listsHarness({
+      categoryService: {
+        listByType: async () => {
+          listCalls += 1;
+          if (listCalls === 1) {
+            await firstList.wait;
+            return stale;
+          }
+          return fresh;
+        },
+        listHiddenByType: () => Promise.resolve([]),
+      },
+    });
+
+    const firstLoad = lists.load();
+    await Promise.resolve();
+    await lists.load();
+    firstList.release();
+    await firstLoad;
+
+    expect(activeCategories()).toEqual(fresh);
+  });
+
+  it('discards refresh results when the type changes mid-flight', async () => {
+    const type = signal<CategoryType>('income');
+    const { lists, activeCategories } = listsHarness({
+      type,
+      categoryService: {
+        listByType: () => {
+          type.set('expense');
+          return Promise.resolve([categoryDoc('a', 'Salary')]);
+        },
+        listHiddenByType: () => Promise.resolve([]),
+      },
+    });
+
+    await lists.load();
+
+    expect(activeCategories()).toEqual([]);
+  });
 });
+
+interface HoldGate {
+  wait: Promise<void>;
+  release: () => void;
+}
+
+function createHoldGate(): HoldGate {
+  let release!: () => void;
+  const wait = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  return { wait, release };
+}
 
 function categoryDoc(id: string, name: string, active = true): StoreDocument<Category> {
   return {

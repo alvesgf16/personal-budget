@@ -2,6 +2,7 @@ import type { PendingTasks, WritableSignal } from '@angular/core';
 import type { Category, CategoryType } from '../../../../../data/domains/category/category';
 import type { CategoryService } from '../../../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../../../data/store/types';
+import type { RevisionCounter, TypeSnapshot } from '../types';
 import {
   attemptMutation as runAttemptMutation,
   loadCategories,
@@ -31,7 +32,7 @@ export function createCategorySectionLists(
   context: CategorySectionListsContext,
 ): CategorySectionLists {
   const revisionCounter = createRevisionCounter();
-  const refresh = createRefresh(context);
+  const refresh = createRefresh(revisionCounter, context);
 
   return {
     load: () => loadCategories(refresh, { revisionCounter, context }),
@@ -40,26 +41,53 @@ export function createCategorySectionLists(
   };
 }
 
-function createRefresh(context: CategorySectionListsContext): () => Promise<void> {
+function createRefresh(
+  revisionCounter: RevisionCounter,
+  context: CategorySectionListsContext,
+): () => Promise<void> {
   return async () => {
-    const lists = await listSectionCategories(context.categoryService, context.type());
+    const snapshot: TypeSnapshot = {
+      type: context.type(),
+      revision: revisionCounter.current(),
+    };
+    const lists = await listSectionCategoriesIfSnapshotMatches(
+      context.categoryService,
+      snapshot.type,
+      () => matchesSnapshot(revisionCounter, snapshot, context),
+    );
     applyCategoryLists(lists, context);
   };
 }
 
-function applyCategoryLists(lists: CategoryLists, context: CategorySectionListsContext): void {
+function matchesSnapshot(
+  revisionCounter: RevisionCounter,
+  snapshot: TypeSnapshot,
+  context: CategorySectionListsContext,
+): boolean {
+  return snapshot.revision === revisionCounter.current() && context.type() === snapshot.type;
+}
+
+function applyCategoryLists(
+  lists: CategoryLists | null,
+  context: CategorySectionListsContext,
+): void {
+  if (!lists) {
+    return;
+  }
+
   context.activeCategories.set(lists.active);
   context.hiddenCategories.set(lists.hidden);
 }
 
-async function listSectionCategories(
+async function listSectionCategoriesIfSnapshotMatches(
   categoryService: Pick<CategoryService, 'listByType' | 'listHiddenByType'>,
   type: CategoryType,
-): Promise<CategoryLists> {
+  snapshotMatches: () => boolean,
+): Promise<CategoryLists | null> {
   const [active, hidden] = await Promise.all([
     categoryService.listByType(type),
     categoryService.listHiddenByType(type),
   ]);
 
-  return { active, hidden };
+  return snapshotMatches() ? { active, hidden } : null;
 }

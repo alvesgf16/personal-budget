@@ -1,7 +1,7 @@
 import type { PendingTasks, WritableSignal } from '@angular/core';
 import type { CategoryType } from '../../../../../data/domains/category/category';
 import { attemptWhilePending } from '../../../../shared/helpers/attempt-while-pending';
-import type { RevisionCounter } from '../types';
+import type { RevisionCounter, TypeSnapshot } from '../types';
 
 interface ListCommandsContext {
   pendingTasks: PendingTasks;
@@ -20,19 +20,14 @@ interface AttemptMutationOptions {
   context: ListCommandsContext;
 }
 
-interface AttemptWorkOptions {
+interface RunAttemptOptions {
   revisionCounter: RevisionCounter;
   failMessage: string;
   context: ListCommandsContext;
 }
 
-interface AttemptSnapshot {
-  categoryType: CategoryType;
-  revision: number;
-}
-
-interface FailureReport {
-  snapshot: AttemptSnapshot;
+interface FailureReportOptions {
+  snapshot: TypeSnapshot;
   failMessage: string;
   context: ListCommandsContext;
 }
@@ -41,7 +36,7 @@ export async function loadCategories(
   refresh: () => Promise<void>,
   { revisionCounter, context }: LoadCategoriesOptions,
 ): Promise<void> {
-  await attemptWork(refresh, {
+  await runAttempt(refresh, {
     revisionCounter,
     failMessage: 'Could not load categories. Refresh and try again.',
     context,
@@ -52,7 +47,7 @@ export async function attemptMutation(
   mutation: () => Promise<unknown>,
   { refresh, revisionCounter, context }: AttemptMutationOptions,
 ): Promise<void> {
-  await attemptWork(() => mutateThenRefresh(mutation, refresh), {
+  await runAttempt(() => mutateThenRefresh(mutation, refresh), {
     revisionCounter,
     failMessage: 'Could not save the category. Try again.',
     context,
@@ -67,25 +62,22 @@ async function mutateThenRefresh(
   await refresh();
 }
 
-async function attemptWork(
-  work: () => Promise<void>,
-  { revisionCounter, failMessage, context }: AttemptWorkOptions,
+async function runAttempt(
+  run: () => Promise<void>,
+  { revisionCounter, failMessage, context }: RunAttemptOptions,
 ): Promise<void> {
   const snapshot = captureAttempt(revisionCounter, context.type);
 
   await attemptWhilePending(
-    () => clearErrorThen(work, context.error),
+    () => clearErrorThen(run, context.error),
     context.pendingTasks,
     () => reportFailureIfStillRelevant(revisionCounter, { snapshot, failMessage, context }),
   );
 }
 
-function captureAttempt(
-  revisionCounter: RevisionCounter,
-  type: () => CategoryType,
-): AttemptSnapshot {
+function captureAttempt(revisionCounter: RevisionCounter, type: () => CategoryType): TypeSnapshot {
   return {
-    categoryType: type(),
+    type: type(),
     revision: revisionCounter.next(),
   };
 }
@@ -100,9 +92,17 @@ async function clearErrorThen(
 
 function reportFailureIfStillRelevant(
   revisionCounter: RevisionCounter,
-  { snapshot, failMessage, context }: FailureReport,
+  { snapshot, failMessage, context }: FailureReportOptions,
 ): void {
-  if (revisionCounter.isLatest(snapshot.revision) && context.type() === snapshot.categoryType) {
+  if (matchesSnapshot(revisionCounter, snapshot, context)) {
     context.error.set(failMessage);
   }
+}
+
+function matchesSnapshot(
+  revisionCounter: RevisionCounter,
+  snapshot: TypeSnapshot,
+  context: ListCommandsContext,
+): boolean {
+  return snapshot.revision === revisionCounter.current() && context.type() === snapshot.type;
 }
