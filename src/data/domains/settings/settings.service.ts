@@ -5,7 +5,7 @@ import { PersistQueue } from '../../lib/persist-queue';
 import type { Settings } from './settings';
 
 /**
- * Settings document access: get the singleton and serialize overlapping saves.
+ * Settings document access: get the singleton and serialize overlapping gets and saves.
  * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
  */
 @Injectable({ providedIn: 'root' })

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../store/types';
 import {
-  deferSettingsListInStore,
+  deferFirstStoreSettingsList,
   provideDocumentStoreHarness,
 } from '../../store/document-store/document-store.harness';
 import type { Settings } from './settings';
@@ -46,12 +46,12 @@ describe('SettingsService', () => {
   });
 
   it('serializes save behind an in-flight get so documentId stays consistent', async () => {
-    const { releaseDeferred, whenDeferred } = deferSettingsListInStore(storeHarness);
+    const { whenFirstListArrives, releaseFirstList } = deferFirstStoreSettingsList(storeHarness);
     const pendingGet = service.get();
 
-    await whenDeferred;
+    await whenFirstListArrives;
     const pendingSave = service.save({ startingYear: 2027 });
-    releaseDeferred();
+    releaseFirstList();
     await Promise.all([pendingGet, pendingSave]);
     const saved = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
 

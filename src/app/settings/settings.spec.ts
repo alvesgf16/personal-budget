@@ -1,6 +1,6 @@
 import { COLLECTIONS } from '../../data/store/types';
 import {
-  deferSettingsListInStore,
+  deferFirstStoreSettingsList,
   provideDocumentStoreHarness,
 } from '../../data/store/document-store/document-store.harness';
 import type { Settings as DomainSettings } from '../../data/domains/settings/settings';
@@ -109,12 +109,12 @@ describe('Settings starting year', () => {
     await submitYear(primed, '2026');
     primed.destroy();
 
-    const { releaseDeferred, whenDeferred } = deferSettingsListInStore(storeHarness);
+    const { whenFirstListArrives, releaseFirstList } = deferFirstStoreSettingsList(storeHarness);
     const fixture = await startSettingsLoadWithoutWaiting();
 
-    await whenDeferred;
+    await whenFirstListArrives;
     submitYearWithoutWaiting(fixture, '2027');
-    releaseDeferred();
+    releaseFirstList();
     await fixture.whenStable();
     fixture.detectChanges();
     const saved = await storeHarness.store.list<DomainSettings>(COLLECTIONS.settings);
