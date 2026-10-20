@@ -27,9 +27,14 @@ interface CategoryLists {
   hidden: StoreDocument<Category>[];
 }
 
+interface RefreshSnapshot {
+  type: CategoryType;
+  generation: number;
+}
+
 export function createCategorySectionLists(deps: CategorySectionListsDeps): CategorySectionLists {
   const operations = createOperationGeneration();
-  const refresh = createRefresh(deps);
+  const refresh = createRefresh(operations, deps);
 
   return {
     load: () => loadCategories({ refresh, operations, deps }),
@@ -47,26 +52,48 @@ function createOperationGeneration(): OperationGeneration {
   };
 }
 
-function createRefresh(deps: CategorySectionListsDeps): () => Promise<void> {
+function createRefresh(
+  operations: OperationGeneration,
+  deps: CategorySectionListsDeps,
+): () => Promise<void> {
   return async () => {
-    const lists = await listSectionCategories(deps.categoryService, deps.type());
+    const snapshot: RefreshSnapshot = {
+      type: deps.type(),
+      generation: operations.current(),
+    };
+    const lists = await listSectionCategoriesIfCurrent(deps.categoryService, snapshot.type, () =>
+      isCurrentRefresh(operations, snapshot, deps),
+    );
     applyCategoryLists(lists, deps);
   };
 }
 
-function applyCategoryLists(lists: CategoryLists, deps: CategorySectionListsDeps): void {
+function isCurrentRefresh(
+  operations: OperationGeneration,
+  snapshot: RefreshSnapshot,
+  deps: CategorySectionListsDeps,
+): boolean {
+  return snapshot.generation === operations.current() && deps.type() === snapshot.type;
+}
+
+function applyCategoryLists(lists: CategoryLists | null, deps: CategorySectionListsDeps): void {
+  if (!lists) {
+    return;
+  }
+
   deps.activeCategories.set(lists.active);
   deps.hiddenCategories.set(lists.hidden);
 }
 
-async function listSectionCategories(
+async function listSectionCategoriesIfCurrent(
   categoryService: Pick<CategoryService, 'listByType' | 'listHiddenByType'>,
   type: CategoryType,
-): Promise<CategoryLists> {
+  isCurrent: () => boolean,
+): Promise<CategoryLists | null> {
   const [active, hidden] = await Promise.all([
     categoryService.listByType(type),
     categoryService.listHiddenByType(type),
   ]);
 
-  return { active, hidden };
+  return isCurrent() ? { active, hidden } : null;
 }
