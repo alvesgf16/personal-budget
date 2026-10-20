@@ -39,6 +39,49 @@ describe('loadCategories', () => {
 
     expect(error()).toBe('Could not load categories. Refresh and try again.');
   });
+
+  it('skips the load error when the type changes mid-flight', async () => {
+    const type = signal<CategoryType>('income');
+    const error = signal<string | null>(null);
+
+    await loadCategories({
+      refresh: () => {
+        type.set('expense');
+        return Promise.reject(new Error('unavailable'));
+      },
+      operations: operationGeneration(),
+      deps: commandDeps({
+        type: () => type(),
+        error,
+      }),
+    });
+
+    expect(error()).toBeNull();
+  });
+
+  it('skips the load error when a newer operation has begun', async () => {
+    const error = signal<string | null>(null);
+    const operations = operationGeneration();
+    let releaseRefresh!: () => void;
+    const refreshGate = new Promise<void>((resolve) => {
+      releaseRefresh = resolve;
+    });
+
+    const pending = loadCategories({
+      refresh: async () => {
+        await refreshGate;
+        throw new Error('unavailable');
+      },
+      operations,
+      deps: commandDeps({ error }),
+    });
+    await Promise.resolve();
+    operations.begin();
+    releaseRefresh();
+    await pending;
+
+    expect(error()).toBeNull();
+  });
 });
 
 describe('attemptMutation', () => {
@@ -74,6 +117,51 @@ describe('attemptMutation', () => {
     });
 
     expect(error()).toBe('Could not save the category. Try again.');
+  });
+
+  it('skips the save error when the type changes mid-flight', async () => {
+    const type = signal<CategoryType>('income');
+    const error = signal<string | null>(null);
+
+    await attemptMutation({
+      refresh: () => Promise.resolve(),
+      mutation: () => {
+        type.set('expense');
+        return Promise.reject(new Error('unavailable'));
+      },
+      operations: operationGeneration(),
+      deps: commandDeps({
+        type: () => type(),
+        error,
+      }),
+    });
+
+    expect(error()).toBeNull();
+  });
+
+  it('skips the save error when a newer operation has begun', async () => {
+    const error = signal<string | null>(null);
+    const operations = operationGeneration();
+    let releaseMutation!: () => void;
+    const mutationGate = new Promise<void>((resolve) => {
+      releaseMutation = resolve;
+    });
+
+    const pending = attemptMutation({
+      refresh: () => Promise.resolve(),
+      mutation: async () => {
+        await mutationGate;
+        throw new Error('unavailable');
+      },
+      operations,
+      deps: commandDeps({ error }),
+    });
+    await Promise.resolve();
+    operations.begin();
+    releaseMutation();
+    await pending;
+
+    expect(error()).toBeNull();
   });
 });
 

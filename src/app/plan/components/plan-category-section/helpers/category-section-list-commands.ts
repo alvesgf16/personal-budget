@@ -17,6 +17,9 @@ interface AttemptMutationArgs {
 }
 
 interface FailureHandlerArgs {
+  type: CategoryType;
+  generation: number;
+  operations: OperationGeneration;
   message: string;
   deps: ListCommandDeps;
 }
@@ -32,12 +35,16 @@ export async function loadCategories({
   operations,
   deps,
 }: LoadCategoriesArgs): Promise<void> {
-  operations.begin();
+  const type = deps.type();
+  const generation = operations.begin();
 
   await attemptWhilePending(
     () => clearErrorThen(refresh, deps),
     deps.pendingTasks,
     createFailureHandler({
+      type,
+      generation,
+      operations,
       message: 'Could not load categories. Refresh and try again.',
       deps,
     }),
@@ -50,12 +57,16 @@ export async function attemptMutation({
   operations,
   deps,
 }: AttemptMutationArgs): Promise<void> {
-  operations.begin();
+  const type = deps.type();
+  const generation = operations.begin();
 
   await attemptWhilePending(
     () => clearErrorThen(() => mutateThenRefresh(mutation, refresh), deps),
     deps.pendingTasks,
     createFailureHandler({
+      type,
+      generation,
+      operations,
       message: 'Could not save the category. Try again.',
       deps,
     }),
@@ -70,9 +81,17 @@ async function mutateThenRefresh(
   await refresh();
 }
 
-function createFailureHandler({ message, deps }: FailureHandlerArgs): () => void {
+function createFailureHandler({
+  type,
+  generation,
+  operations,
+  message,
+  deps,
+}: FailureHandlerArgs): () => void {
   return () => {
-    deps.error.set(message);
+    if (generation === operations.current() && deps.type() === type) {
+      deps.error.set(message);
+    }
   };
 }
 
