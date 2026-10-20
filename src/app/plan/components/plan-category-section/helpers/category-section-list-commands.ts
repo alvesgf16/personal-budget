@@ -11,7 +11,7 @@ interface LoadCategoriesArgs {
 
 interface AttemptMutationArgs {
   refresh: () => Promise<void>;
-  mutation: () => Promise<void>;
+  mutation: () => Promise<unknown>;
   operations: OperationGeneration;
   deps: ListCommandDeps;
 }
@@ -63,7 +63,7 @@ export async function attemptMutation({
 }
 
 async function mutateThenRefresh(
-  mutation: () => Promise<void>,
+  mutation: () => Promise<unknown>,
   refresh: () => Promise<void>,
 ): Promise<void> {
   await mutation();
