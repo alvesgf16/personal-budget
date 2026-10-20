@@ -109,7 +109,8 @@ export function deferFirstStoreSettingsList(storeHarness: DocumentStoreHarness) 
 
 /**
  * Defers only the first matching `list` until `releaseFirstList()` (later calls pass through).
- * Settings: save is queued behind get — release after arming is unnecessary.
+ * Settings save is not queued behind get. Do not save while a deferred settings list is held —
+ * a stale get can reset documentId and a later save may insert a duplicate.
  */
 function deferFirstStoreList(
   collection: CollectionName,
