@@ -17,6 +17,7 @@ describe('Settings starting year', () => {
     renderSettings,
     startSettingsLoadWithoutWaiting,
     submitYear,
+    typeYearWithoutWaiting,
     submitYearWithoutWaiting,
     yearInputValue,
     alertText,
@@ -122,5 +123,23 @@ describe('Settings starting year', () => {
     expect(yearInputValue(fixture)).toBe('2027');
     expect(saved).toHaveLength(1);
     expect(saved[0]?.startingYear).toBe(2027);
+  });
+
+  it('keeps a typed year when load finishes after the edit', async () => {
+    const primed = await renderSettings();
+    await submitYear(primed, '2026');
+    primed.destroy();
+
+    const { whenFirstListArrives, releaseFirstList } = deferFirstStoreSettingsList(storeHarness);
+    const fixture = await startSettingsLoadWithoutWaiting();
+
+    await whenFirstListArrives;
+    typeYearWithoutWaiting(fixture, '2028');
+    releaseFirstList();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(yearInputValue(fixture)).toBe('2028');
+    expect(alertText(fixture)).toBeNull();
   });
 });

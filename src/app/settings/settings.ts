@@ -53,6 +53,7 @@ export class Settings implements OnInit {
   }
 
   protected onYearInput(event: Event): void {
+    this.loadGeneration += 1;
     this.yearInput.set((event.target as HTMLInputElement).value);
   }
 

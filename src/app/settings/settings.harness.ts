@@ -29,14 +29,20 @@ export function settingsHarness() {
     fixture.detectChanges();
   };
 
-  /** Submit without awaiting whenStable (a deferred list would hang). */
-  const submitYearWithoutWaiting = (fixture: ComponentFixture<Settings>, year: string) => {
+  /** Type without awaiting whenStable (a deferred list would hang). */
+  const typeYearWithoutWaiting = (fixture: ComponentFixture<Settings>, year: string) => {
     const input = fixture.nativeElement.querySelector('#starting-year') as HTMLInputElement;
-    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
 
     input.value = year;
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+  };
+
+  /** Submit without awaiting whenStable (a deferred list would hang). */
+  const submitYearWithoutWaiting = (fixture: ComponentFixture<Settings>, year: string) => {
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+
+    typeYearWithoutWaiting(fixture, year);
     form.dispatchEvent(new Event('submit'));
   };
 
@@ -50,6 +56,7 @@ export function settingsHarness() {
     renderSettings,
     startSettingsLoadWithoutWaiting,
     submitYear,
+    typeYearWithoutWaiting,
     submitYearWithoutWaiting,
     yearInputValue,
     alertText,
