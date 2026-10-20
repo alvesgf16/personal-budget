@@ -1,6 +1,6 @@
 import { COLLECTIONS } from '../../../../data/store/types';
 import {
-  deferBudgetCellListInStore,
+  deferFirstStoreBudgetCellList,
   provideDocumentStoreHarness,
 } from '../../../../data/store/document-store/document-store.harness';
 import { PlanAmountGrid } from './plan-amount-grid';
@@ -25,16 +25,16 @@ describe('PlanAmountGrid', () => {
     const salary = await insertCategory('Salary');
     await insertCell(salary.id, 2026, 1, 100_000);
     await insertCell(salary.id, 2027, 1, 200_000);
-    const { releaseDeferred, whenDeferred, armNextList, whenNextList } =
-      deferBudgetCellListInStore(storeHarness);
+    const { whenFirstListArrives, armNextListWatch, whenNextListCompletes, releaseFirstList } =
+      deferFirstStoreBudgetCellList(storeHarness);
     const fixture = await startGridLoadWithoutWaiting([salary], 2026);
 
-    await whenDeferred;
+    await whenFirstListArrives;
+    armNextListWatch();
     fixture.componentRef.setInput('year', 2027);
-    armNextList();
     fixture.detectChanges();
-    await whenNextList;
-    releaseDeferred();
+    await whenNextListCompletes;
+    releaseFirstList();
     await fixture.whenStable();
     fixture.detectChanges();
     const january = inputByAriaLabel(fixture, 'Salary January');

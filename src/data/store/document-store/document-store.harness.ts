@@ -10,29 +10,30 @@ interface OpenedDocumentStoreHarness {
   dispose: () => void;
 }
 
-interface DeferredRelease {
-  untilReleased: Promise<void>;
-  releaseDeferred: () => void;
+interface Deferred {
+  whenNotified: Promise<void>;
+  notify: () => void;
 }
 
-interface CollectionListDeferral {
-  deferredCollection: CollectionName;
-  isActive: boolean;
-  untilReleased: Promise<void>;
-  notifyDeferred: () => void;
+interface ListGate {
+  collection: CollectionName;
+  firstListRelease: Deferred;
+  firstListArrival: Deferred;
+  nextListCompletion: Deferred;
+  isFirstListBeingHeld: boolean;
+  isNextListWatchArmed: boolean;
+  isNextListCompletionNotified: boolean;
 }
 
 interface ListDeferralControls {
-  releaseDeferred: () => void;
-  /** Resolves when the first matching `list` reaches the deferral gate. */
-  whenDeferred: Promise<void>;
+  whenFirstListArrives: Promise<void>;
   /**
-   * After the competing load has been triggered, call this then await `whenNextList`
+   * After the competing load has been triggered, call this then await `whenNextListCompletes`
    * so a parallel sibling `list` from the deferred load is not mistaken for the winner.
    */
-  armNextList: () => void;
-  /** Resolves when the next armed matching pass-through `list` completes. */
-  whenNextList: Promise<void>;
+  armNextListWatch: () => void;
+  whenNextListCompletes: Promise<void>;
+  releaseFirstList: () => void;
 }
 
 /** Unique IndexedDB for schema/store specs (no TestBed). */
@@ -94,90 +95,94 @@ function openDocumentStoreHarness(prefix: string): OpenedDocumentStoreHarness {
   };
 }
 
-export function deferBudgetCellListInStore(storeHarness: DocumentStoreHarness) {
-  return deferListInStore(COLLECTIONS.budgetCells, storeHarness);
+export function deferFirstStoreBudgetCellList(storeHarness: DocumentStoreHarness) {
+  return deferFirstStoreList(COLLECTIONS.budgetCells, storeHarness);
 }
 
-export function deferCategoryListInStore(storeHarness: DocumentStoreHarness) {
-  return deferListInStore(COLLECTIONS.categories, storeHarness);
+export function deferFirstStoreCategoryList(storeHarness: DocumentStoreHarness) {
+  return deferFirstStoreList(COLLECTIONS.categories, storeHarness);
 }
 
-export function deferSettingsListInStore(storeHarness: DocumentStoreHarness) {
-  return deferListInStore(COLLECTIONS.settings, storeHarness);
+export function deferFirstStoreSettingsList(storeHarness: DocumentStoreHarness) {
+  return deferFirstStoreList(COLLECTIONS.settings, storeHarness);
 }
 
 /**
- * Defers only the first matching `list` until `releaseDeferred()` (later calls pass through).
- * Await `whenDeferred`, trigger the winning load, `armNextList()`, await `whenNextList`,
- * then releaseDeferred(). Settings: save is queued behind get — release after arming is N/A.
+ * Defers only the first matching `list` until `releaseFirstList()` (later calls pass through).
+ * Settings: save is queued behind get — release after arming is unnecessary.
  */
-function deferListInStore(
+function deferFirstStoreList(
   collection: CollectionName,
   storeHarness: DocumentStoreHarness,
 ): ListDeferralControls {
-  const deferred = createDeferredRelease();
-  let notifyDeferred!: () => void;
-  const whenDeferred = new Promise<void>((resolve) => {
-    notifyDeferred = resolve;
-  });
-  let notifyNextList!: () => void;
-  const whenNextList = new Promise<void>((resolve) => {
-    notifyNextList = resolve;
-  });
-  let nextListArmed = false;
-  let nextListNotified = false;
+  const gate = createListGate(collection);
   const originalList = storeHarness.store.list.bind(storeHarness.store);
-  const deferral: CollectionListDeferral = {
-    deferredCollection: collection,
-    isActive: true,
-    untilReleased: deferred.untilReleased,
-    notifyDeferred,
-  };
 
   storeHarness.store.list = async <T extends object>(queriedCollection: CollectionName) => {
     const rows = await originalList<T>(queriedCollection);
-    if (queriedCollection !== deferral.deferredCollection) {
-      return rows;
-    }
-
-    if (deferral.isActive) {
-      await awaitDeferralIfActive(deferral);
-      return rows;
-    }
-
-    if (nextListArmed && !nextListNotified) {
-      nextListNotified = true;
-      notifyNextList();
-    }
-
+    await applyListGate(gate, queriedCollection);
     return rows;
   };
 
   return {
-    releaseDeferred: deferred.releaseDeferred,
-    whenDeferred,
-    armNextList: () => {
-      nextListArmed = true;
+    whenFirstListArrives: gate.firstListArrival.whenNotified,
+    armNextListWatch: () => {
+      gate.isNextListWatchArmed = true;
     },
-    whenNextList,
+    whenNextListCompletes: gate.nextListCompletion.whenNotified,
+    releaseFirstList: () => {
+      gate.firstListRelease.notify();
+      gate.isFirstListBeingHeld = false;
+    },
   };
 }
 
-function createDeferredRelease(): DeferredRelease {
-  let releaseDeferred!: () => void;
-  const untilReleased = new Promise<void>((resolve) => {
-    releaseDeferred = resolve;
-  });
-
-  return { untilReleased, releaseDeferred };
+function createListGate(collection: CollectionName): ListGate {
+  return {
+    collection,
+    firstListArrival: createDeferred(),
+    firstListRelease: createDeferred(),
+    nextListCompletion: createDeferred(),
+    isFirstListBeingHeld: false,
+    isNextListWatchArmed: false,
+    isNextListCompletionNotified: false,
+  };
 }
 
-async function awaitDeferralIfActive(deferral: CollectionListDeferral): Promise<void> {
-  if (!deferral.isActive) {
+function createDeferred(): Deferred {
+  let notify!: () => void;
+
+  const whenNotified = new Promise<void>((resolve) => {
+    notify = resolve;
+  });
+
+  return { whenNotified, notify };
+}
+
+async function applyListGate(gate: ListGate, queriedCollection: CollectionName): Promise<void> {
+  if (queriedCollection !== gate.collection) {
     return;
   }
 
-  deferral.isActive = false;
-  deferral.notifyDeferred();
-  await deferral.untilReleased;
+  if (!gate.isFirstListBeingHeld) {
+    await holdFirstList(gate);
+    return;
+  }
+
+  notifyNextListIfArmed(gate);
+}
+
+async function holdFirstList(gate: ListGate): Promise<void> {
+  gate.isFirstListBeingHeld = true;
+  gate.firstListArrival.notify();
+  await gate.firstListRelease.whenNotified;
+}
+
+function notifyNextListIfArmed(gate: ListGate): void {
+  if (!gate.isNextListWatchArmed || gate.isNextListCompletionNotified) {
+    return;
+  }
+
+  gate.nextListCompletion.notify();
+  gate.isNextListCompletionNotified = true;
 }

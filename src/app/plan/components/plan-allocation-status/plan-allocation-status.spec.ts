@@ -4,7 +4,7 @@ import { BudgetCellService } from '../../../../data/domains/budget-cell/budget-c
 import { CategoryService } from '../../../../data/domains/category/category.service';
 import { COLLECTIONS } from '../../../../data/store/types';
 import {
-  deferBudgetCellListInStore,
+  deferFirstStoreBudgetCellList,
   provideDocumentStoreHarness,
 } from '../../../../data/store/document-store/document-store.harness';
 import { Plan } from '../../plan';
@@ -95,12 +95,12 @@ describe('PlanAllocationStatus', () => {
 
   it('ignores a stale reload when revision advances mid-flight', async () => {
     const { rent } = await seedSalaryJanuaryWithExpenseCategory();
-    const { releaseDeferred, whenDeferred, armNextList, whenNextList } =
-      deferBudgetCellListInStore(storeHarness);
+    const { whenFirstListArrives, armNextListWatch, whenNextListCompletes, releaseFirstList } =
+      deferFirstStoreBudgetCellList(storeHarness);
     const fixture = await startStripLoadWithoutWaiting();
 
-    await whenDeferred;
-    armNextList();
+    await whenFirstListArrives;
+    armNextListWatch();
     await TestBed.inject(BudgetCellService).save({
       categoryId: rent.id,
       year: 2026,
@@ -108,8 +108,8 @@ describe('PlanAllocationStatus', () => {
       amountCents: 120_000,
     });
     fixture.detectChanges();
-    await whenNextList;
-    releaseDeferred();
+    await whenNextListCompletes;
+    releaseFirstList();
     await fixture.whenStable();
     fixture.detectChanges();
 
