@@ -16,7 +16,7 @@ alwaysApply: false
 
 Dependency direction: `src/app` (features / UI) → `src/data/domains` → `src/data/store`. `src/data/lib` is a pure leaf under features and domains. “Features” means the UI layer as a whole (screens, `shared/`, shell) — not a required `src/app/features/` folder.
 
-ESLint bans reverse edges: domains/lib must not import `src/app`; lib must not import domains; store must not import `src/app` or domains. Allowed downward seams: features → domain services + `store/types` + `lib`; domains → `DOCUMENT_STORE` + `store/types` + `lib`; specs/harnesses → harness + `store/types`.
+ESLint bans reverse edges: domains/lib must not import `src/app`; lib must not import domains; store must not import `src/app` or domains. Allowed downward seams: features → domain services + `store/types` + `lib`; domains → `DOCUMENT_STORE` + `store/types` + `lib`; specs/harnesses → harness + harness-types + `store/types`.
 
 ## Rules
 
@@ -28,4 +28,4 @@ ESLint bans reverse edges: domains/lib must not import `src/app`; lib must not i
 - Every document has sync metadata: `id`, `updatedAt`, `deletedAt` (`null` while active).
 - Soft-delete sets `deletedAt`; `list` hides tombstones; `getById` still returns them.
 - Persistence is IndexedDB via Dexie — never query SQL from app code.
-- Tests use `useDocumentStoreHarness` / `provideDocumentStoreHarness` (unique DB name, token override, close + deleteDatabase). Feature specs and `*.harness.ts` helpers may import the harness seam and `store/types` — not the store implementation or token.
+- Tests use `useDocumentStoreHarness` / `provideDocumentStoreHarness` (unique DB name, token override, close + deleteDatabase). Feature specs and `*.harness.ts` helpers may import the harness seam (`document-store.harness`, `document-store.harness-types`) and `store/types` — not the store implementation or token. Production features must not import either harness module (ESLint).

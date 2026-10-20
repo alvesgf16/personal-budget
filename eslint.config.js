@@ -356,6 +356,9 @@ module.exports = defineConfig([
                 '**/document-store/document-store.harness',
                 '**/document-store/document-store.harness.ts',
                 '**/document-store/document-store.harness.js',
+                '**/document-store/document-store.harness-types',
+                '**/document-store/document-store.harness-types.ts',
+                '**/document-store/document-store.harness-types.js',
               ],
               message:
                 'Do not import the document-store harness seam from production features. Specs use provideDocumentStoreHarness.',

@@ -3,14 +3,37 @@ import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS, type CollectionName } from '../types';
 import { DOCUMENT_STORE } from './document-store.token';
 import { createDocumentStore, type DocumentStore } from './document-store';
-
-export interface DocumentStoreHarness {
-  store: DocumentStore;
-}
+import type { DocumentStoreHarness } from './document-store.harness-types';
 
 interface OpenedDocumentStoreHarness {
   store: DocumentStore;
   dispose: () => void;
+}
+
+interface Deferred {
+  whenNotified: Promise<void>;
+  notify: () => void;
+}
+
+interface ListGate {
+  collection: CollectionName;
+  firstListRelease: Deferred;
+  firstListArrival: Deferred;
+  nextListCompletion: Deferred;
+  isFirstListBeingHeld: boolean;
+  isNextListWatchArmed: boolean;
+  isNextListCompletionNotified: boolean;
+}
+
+interface ListDeferralControls {
+  whenFirstListArrives: Promise<void>;
+  /**
+   * After the competing load has been triggered, call this then await `whenNextListCompletes`
+   * so a parallel sibling `list` from the deferred load is not mistaken for the winner.
+   */
+  armNextListWatch: () => void;
+  whenNextListCompletes: Promise<void>;
+  releaseFirstList: () => void;
 }
 
 /** Unique IndexedDB for schema/store specs (no TestBed). */
@@ -59,33 +82,6 @@ export function provideDocumentStoreHarness(
   return harness;
 }
 
-/** Stall the first budgetCells list until releaseFirst(); for stale-load races. */
-export function holdFirstBudgetCellList(storeHarness: DocumentStoreHarness) {
-  let releaseFirst!: () => void;
-
-  const firstListGate = new Promise<void>((resolve) => {
-    releaseFirst = resolve;
-  });
-  const originalList = storeHarness.store.list.bind(storeHarness.store);
-  let budgetListCalls = 0;
-
-  storeHarness.store.list = async <T extends object>(collection: CollectionName) => {
-    const rows = await originalList<T>(collection);
-
-    if (collection === COLLECTIONS.budgetCells) {
-      budgetListCalls += 1;
-
-      if (budgetListCalls === 1) {
-        await firstListGate;
-      }
-    }
-
-    return rows;
-  };
-
-  return { releaseFirst };
-}
-
 function openDocumentStoreHarness(prefix: string): OpenedDocumentStoreHarness {
   const dbName = `${prefix}-${crypto.randomUUID()}`;
   const store = createDocumentStore(dbName);
@@ -97,4 +93,97 @@ function openDocumentStoreHarness(prefix: string): OpenedDocumentStoreHarness {
       indexedDB.deleteDatabase(dbName);
     },
   };
+}
+
+export function deferFirstStoreBudgetCellList(storeHarness: DocumentStoreHarness) {
+  return deferFirstStoreList(COLLECTIONS.budgetCells, storeHarness);
+}
+
+export function deferFirstStoreCategoryList(storeHarness: DocumentStoreHarness) {
+  return deferFirstStoreList(COLLECTIONS.categories, storeHarness);
+}
+
+export function deferFirstStoreSettingsList(storeHarness: DocumentStoreHarness) {
+  return deferFirstStoreList(COLLECTIONS.settings, storeHarness);
+}
+
+/**
+ * Defers only the first matching `list` until `releaseFirstList()` (later calls pass through).
+ * Settings save is not queued behind get. Do not save while a deferred settings list is held —
+ * a stale get can reset documentId and a later save may insert a duplicate.
+ */
+function deferFirstStoreList(
+  collection: CollectionName,
+  storeHarness: DocumentStoreHarness,
+): ListDeferralControls {
+  const gate = createListGate(collection);
+  const originalList = storeHarness.store.list.bind(storeHarness.store);
+
+  storeHarness.store.list = async <T extends object>(queriedCollection: CollectionName) => {
+    const rows = await originalList<T>(queriedCollection);
+    await applyListGate(gate, queriedCollection);
+    return rows;
+  };
+
+  return {
+    whenFirstListArrives: gate.firstListArrival.whenNotified,
+    armNextListWatch: () => {
+      gate.isNextListWatchArmed = true;
+    },
+    whenNextListCompletes: gate.nextListCompletion.whenNotified,
+    releaseFirstList: () => {
+      gate.firstListRelease.notify();
+      gate.isFirstListBeingHeld = false;
+    },
+  };
+}
+
+function createListGate(collection: CollectionName): ListGate {
+  return {
+    collection,
+    firstListArrival: createDeferred(),
+    firstListRelease: createDeferred(),
+    nextListCompletion: createDeferred(),
+    isFirstListBeingHeld: false,
+    isNextListWatchArmed: false,
+    isNextListCompletionNotified: false,
+  };
+}
+
+function createDeferred(): Deferred {
+  let notify!: () => void;
+
+  const whenNotified = new Promise<void>((resolve) => {
+    notify = resolve;
+  });
+
+  return { whenNotified, notify };
+}
+
+async function applyListGate(gate: ListGate, queriedCollection: CollectionName): Promise<void> {
+  if (queriedCollection !== gate.collection) {
+    return;
+  }
+
+  if (!gate.isFirstListBeingHeld) {
+    await holdFirstList(gate);
+    return;
+  }
+
+  notifyNextListIfArmed(gate);
+}
+
+async function holdFirstList(gate: ListGate): Promise<void> {
+  gate.isFirstListBeingHeld = true;
+  gate.firstListArrival.notify();
+  await gate.firstListRelease.whenNotified;
+}
+
+function notifyNextListIfArmed(gate: ListGate): void {
+  if (!gate.isNextListWatchArmed || gate.isNextListCompletionNotified) {
+    return;
+  }
+
+  gate.nextListCompletion.notify();
+  gate.isNextListCompletionNotified = true;
 }
