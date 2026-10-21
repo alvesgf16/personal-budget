@@ -19,7 +19,7 @@ interface CategorySectionListsContext {
 
 interface CategorySectionLists {
   load: () => Promise<void>;
-  attemptMutation: (mutation: () => Promise<void>) => Promise<void>;
+  attemptMutation: (mutation: () => Promise<unknown>) => Promise<void>;
 }
 
 interface CategoryLists {
@@ -35,7 +35,7 @@ export function createCategorySectionLists(
 
   return {
     load: () => loadCategories(refresh, { revisionCounter, context }),
-    attemptMutation: (mutation: () => Promise<void>) =>
+    attemptMutation: (mutation: () => Promise<unknown>) =>
       runAttemptMutation(mutation, { refresh, revisionCounter, context }),
   };
 }

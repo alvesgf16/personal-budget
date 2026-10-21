@@ -41,17 +41,27 @@ describe('createCategorySectionLists', () => {
 
   it('attemptMutation runs the mutation then refreshes lists', async () => {
     const active = [categoryDoc('a', 'Salary')];
-    let mutated = false;
+    const steps: string[] = [];
     const { lists, activeCategories } = listsHarness({
-      categoryService: stubLists(active, []),
+      categoryService: {
+        listByType: () => {
+          steps.push('listByType');
+          return Promise.resolve(active);
+        },
+        listHiddenByType: () => {
+          steps.push('listHiddenByType');
+          return Promise.resolve([]);
+        },
+      },
     });
 
     await lists.attemptMutation(() => {
-      mutated = true;
+      steps.push('mutation');
       return Promise.resolve();
     });
 
-    expect(mutated).toBe(true);
+    expect(steps[0]).toBe('mutation');
+    expect(steps.slice(1).sort()).toEqual(['listByType', 'listHiddenByType']);
     expect(activeCategories()).toEqual(active);
   });
 });
