@@ -1,14 +1,14 @@
 import { parseCategoryName, type Category } from '../../../../../data/domains/category/category';
 import type { StoreDocument } from '../../../../../data/store/types';
 
-export type CategoryNameForRename =
+export type CategoryRenameOutcome =
   { status: 'empty-or-invalid' } | { status: 'unchanged' } | { status: 'ok'; categoryName: string };
 
-export function categoryNameForRename(
+export function decideCategoryRename(
   categoryId: string,
   typedName: string,
   activeCategories: StoreDocument<Category>[],
-): CategoryNameForRename {
+): CategoryRenameOutcome {
   const categoryName = parseCategoryName(typedName);
 
   if (!categoryName) {

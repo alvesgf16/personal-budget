@@ -18,32 +18,32 @@ export class Settings implements OnInit {
 
   protected readonly yearInput = signal('');
   protected readonly error = signal<string | null>(null);
-  private loadGeneration = 0;
+  private uiRevision = 0;
 
   ngOnInit(): void {
     void this.load();
   }
 
   private async load(): Promise<void> {
-    const generation = ++this.loadGeneration;
+    const revision = ++this.uiRevision;
 
     await attemptWhilePending(
-      () => this.loadSettings(generation),
+      () => this.loadSettings(revision),
       this.pendingTasks,
       () => {
-        if (generation === this.loadGeneration) {
+        if (revision === this.uiRevision) {
           this.error.set('Could not load the starting year. Refresh and try again.');
         }
       },
     );
   }
 
-  private async loadSettings(generation: number): Promise<void> {
+  private async loadSettings(revision: number): Promise<void> {
     this.error.set(null);
 
     const settings = await this.settingsService.get();
 
-    if (generation !== this.loadGeneration) {
+    if (revision !== this.uiRevision) {
       return;
     }
 
@@ -53,7 +53,7 @@ export class Settings implements OnInit {
   }
 
   protected onYearInput(event: Event): void {
-    this.loadGeneration += 1;
+    this.uiRevision += 1;
     this.yearInput.set((event.target as HTMLInputElement).value);
   }
 
@@ -68,12 +68,12 @@ export class Settings implements OnInit {
       return;
     }
 
-    const generation = ++this.loadGeneration;
+    const revision = ++this.uiRevision;
 
     await attemptWhilePending(
       () => this.saveSettings(settings),
       this.pendingTasks,
-      () => this.reportSaveFailure(generation),
+      () => this.reportSaveFailure(revision),
     );
   }
 
@@ -83,8 +83,8 @@ export class Settings implements OnInit {
     await this.settingsService.save(settings);
   }
 
-  private reportSaveFailure(generation: number): void {
-    if (generation === this.loadGeneration) {
+  private reportSaveFailure(revision: number): void {
+    if (revision === this.uiRevision) {
       this.error.set('Could not save the starting year. Try again.');
     }
   }
