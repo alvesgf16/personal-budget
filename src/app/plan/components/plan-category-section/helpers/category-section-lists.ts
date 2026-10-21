@@ -2,13 +2,13 @@ import type { PendingTasks, WritableSignal } from '@angular/core';
 import type { Category, CategoryType } from '../../../../../data/domains/category/category';
 import type { CategoryService } from '../../../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../../../data/store/types';
-import type { OperationGeneration } from '../types';
 import {
   attemptMutation as runAttemptMutation,
   loadCategories,
 } from './category-section-list-commands';
+import { createRevisionCounter } from './create-revision-counter';
 
-interface CategorySectionListsDeps {
+interface CategorySectionListsContext {
   categoryService: Pick<CategoryService, 'listByType' | 'listHiddenByType'>;
   pendingTasks: PendingTasks;
   type: () => CategoryType;
@@ -27,36 +27,29 @@ interface CategoryLists {
   hidden: StoreDocument<Category>[];
 }
 
-export function createCategorySectionLists(deps: CategorySectionListsDeps): CategorySectionLists {
-  const operations = createOperationGeneration();
-  const refresh = createRefresh(deps);
+export function createCategorySectionLists(
+  context: CategorySectionListsContext,
+): CategorySectionLists {
+  const revisionCounter = createRevisionCounter();
+  const refresh = createRefresh(context);
 
   return {
-    load: () => loadCategories({ refresh, operations, deps }),
+    load: () => loadCategories(refresh, { revisionCounter, context }),
     attemptMutation: (mutation: () => Promise<void>) =>
-      runAttemptMutation({ refresh, mutation, operations, deps }),
+      runAttemptMutation(mutation, { refresh, revisionCounter, context }),
   };
 }
 
-function createOperationGeneration(): OperationGeneration {
-  let operationGeneration = 0;
-
-  return {
-    begin: () => ++operationGeneration,
-    current: () => operationGeneration,
-  };
-}
-
-function createRefresh(deps: CategorySectionListsDeps): () => Promise<void> {
+function createRefresh(context: CategorySectionListsContext): () => Promise<void> {
   return async () => {
-    const lists = await listSectionCategories(deps.categoryService, deps.type());
-    applyCategoryLists(lists, deps);
+    const lists = await listSectionCategories(context.categoryService, context.type());
+    applyCategoryLists(lists, context);
   };
 }
 
-function applyCategoryLists(lists: CategoryLists, deps: CategorySectionListsDeps): void {
-  deps.activeCategories.set(lists.active);
-  deps.hiddenCategories.set(lists.hidden);
+function applyCategoryLists(lists: CategoryLists, context: CategorySectionListsContext): void {
+  context.activeCategories.set(lists.active);
+  context.hiddenCategories.set(lists.hidden);
 }
 
 async function listSectionCategories(

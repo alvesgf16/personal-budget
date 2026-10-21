@@ -2,8 +2,8 @@ import type { PendingTasks, WritableSignal } from '@angular/core';
 import { signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 import type { CategoryType } from '../../../../../data/domains/category/category';
-import type { RevisionCounter } from '../types';
 import { attemptMutation, loadCategories } from './category-section-list-commands';
+import { createRevisionCounter } from './create-revision-counter';
 
 interface ListCommandsContextOptions {
   error: WritableSignal<string | null>;
@@ -186,14 +186,5 @@ function createListCommandsContext(options: ListCommandsContextOptions) {
     } as PendingTasks,
     type: options.type ?? (() => 'income' as CategoryType),
     error: options.error,
-  };
-}
-
-function createRevisionCounter(): RevisionCounter {
-  let latestRevision = 0;
-
-  return {
-    next: () => ++latestRevision,
-    isLatest: (revision) => revision === latestRevision,
   };
 }
