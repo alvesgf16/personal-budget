@@ -1,76 +1,62 @@
 import type { PendingTasks, WritableSignal } from '@angular/core';
 import type { CategoryType } from '../../../../../data/domains/category/category';
 import { attemptWhilePending } from '../../../../shared/helpers/attempt-while-pending';
-import type { OperationGeneration } from '../types';
+import type { RevisionCounter } from '../types';
 
-interface LoadCategoriesArgs {
-  refresh: () => Promise<void>;
-  operations: OperationGeneration;
-  deps: ListCommandDeps;
-}
-
-interface AttemptMutationArgs {
-  refresh: () => Promise<void>;
-  mutation: () => Promise<unknown>;
-  operations: OperationGeneration;
-  deps: ListCommandDeps;
-}
-
-interface FailureHandlerArgs {
-  type: CategoryType;
-  generation: number;
-  operations: OperationGeneration;
-  message: string;
-  deps: ListCommandDeps;
-}
-
-interface ListCommandDeps {
+interface ListCommandsContext {
   pendingTasks: PendingTasks;
   type: () => CategoryType;
   error: WritableSignal<string | null>;
 }
 
-export async function loadCategories({
-  refresh,
-  operations,
-  deps,
-}: LoadCategoriesArgs): Promise<void> {
-  const type = deps.type();
-  const generation = operations.begin();
-
-  await attemptWhilePending(
-    () => clearErrorThen(refresh, deps),
-    deps.pendingTasks,
-    createFailureHandler({
-      type,
-      generation,
-      operations,
-      message: 'Could not load categories. Refresh and try again.',
-      deps,
-    }),
-  );
+interface LoadCategoriesOptions {
+  revisionCounter: RevisionCounter;
+  context: ListCommandsContext;
 }
 
-export async function attemptMutation({
-  refresh,
-  mutation,
-  operations,
-  deps,
-}: AttemptMutationArgs): Promise<void> {
-  const type = deps.type();
-  const generation = operations.begin();
+interface AttemptMutationOptions {
+  refresh: () => Promise<void>;
+  revisionCounter: RevisionCounter;
+  context: ListCommandsContext;
+}
 
-  await attemptWhilePending(
-    () => clearErrorThen(() => mutateThenRefresh(mutation, refresh), deps),
-    deps.pendingTasks,
-    createFailureHandler({
-      type,
-      generation,
-      operations,
-      message: 'Could not save the category. Try again.',
-      deps,
-    }),
-  );
+interface AttemptWorkOptions {
+  revisionCounter: RevisionCounter;
+  failMessage: string;
+  context: ListCommandsContext;
+}
+
+interface AttemptSnapshot {
+  categoryType: CategoryType;
+  revision: number;
+}
+
+interface FailureReport {
+  snapshot: AttemptSnapshot;
+  failMessage: string;
+  context: ListCommandsContext;
+}
+
+export async function loadCategories(
+  refresh: () => Promise<void>,
+  { revisionCounter, context }: LoadCategoriesOptions,
+): Promise<void> {
+  await attemptWork(refresh, {
+    revisionCounter,
+    failMessage: 'Could not load categories. Refresh and try again.',
+    context,
+  });
+}
+
+export async function attemptMutation(
+  mutation: () => Promise<unknown>,
+  { refresh, revisionCounter, context }: AttemptMutationOptions,
+): Promise<void> {
+  await attemptWork(() => mutateThenRefresh(mutation, refresh), {
+    revisionCounter,
+    failMessage: 'Could not save the category. Try again.',
+    context,
+  });
 }
 
 async function mutateThenRefresh(
@@ -81,21 +67,42 @@ async function mutateThenRefresh(
   await refresh();
 }
 
-function createFailureHandler({
-  type,
-  generation,
-  operations,
-  message,
-  deps,
-}: FailureHandlerArgs): () => void {
-  return () => {
-    if (generation === operations.current() && deps.type() === type) {
-      deps.error.set(message);
-    }
+async function attemptWork(
+  work: () => Promise<void>,
+  { revisionCounter, failMessage, context }: AttemptWorkOptions,
+): Promise<void> {
+  const snapshot = captureAttempt(revisionCounter, context.type);
+
+  await attemptWhilePending(
+    () => clearErrorThen(work, context.error),
+    context.pendingTasks,
+    () => reportFailureIfStillRelevant(revisionCounter, { snapshot, failMessage, context }),
+  );
+}
+
+function captureAttempt(
+  revisionCounter: RevisionCounter,
+  type: () => CategoryType,
+): AttemptSnapshot {
+  return {
+    categoryType: type(),
+    revision: revisionCounter.next(),
   };
 }
 
-async function clearErrorThen(run: () => Promise<void>, deps: ListCommandDeps): Promise<void> {
-  deps.error.set(null);
+async function clearErrorThen(
+  run: () => Promise<void>,
+  error: WritableSignal<string | null>,
+): Promise<void> {
+  error.set(null);
   await run();
+}
+
+function reportFailureIfStillRelevant(
+  revisionCounter: RevisionCounter,
+  { snapshot, failMessage, context }: FailureReport,
+): void {
+  if (revisionCounter.isLatest(snapshot.revision) && context.type() === snapshot.categoryType) {
+    context.error.set(failMessage);
+  }
 }
