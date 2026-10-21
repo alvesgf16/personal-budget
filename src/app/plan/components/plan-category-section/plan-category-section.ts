@@ -10,7 +10,7 @@ import { attemptWhilePending } from '../../../shared/helpers/attempt-while-pendi
 import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';
 import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
 import { SECTION_TITLES } from './constants';
-import { categoryNameForRename } from './helpers/category-name-for-rename';
+import { decideCategoryRename } from './helpers/decide-category-rename';
 
 @Component({
   selector: 'app-plan-category-section',
@@ -73,7 +73,7 @@ export class PlanCategorySection {
   }
 
   protected async rename(categoryId: string, typedName: string): Promise<void> {
-    const outcome = categoryNameForRename(categoryId, typedName, this.activeCategories());
+    const outcome = decideCategoryRename(categoryId, typedName, this.activeCategories());
 
     if (outcome.status === 'empty-or-invalid') {
       this.error.set('Enter a category name.');
