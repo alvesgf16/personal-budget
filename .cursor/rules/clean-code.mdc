@@ -458,3 +458,35 @@ Thread shutdown and poison pills are N/A. `runWhilePending` clears the pending t
 ### Testing Threaded Code
 
 Cover serialization and races with focused Vitest specs (`persist-queue.spec.ts`, overlapping domain saves, stale mid-flight loads with hold/release stalls). Treat flaky async failures as race candidates. N/A: more threads than processors, multi-platform thread stress, ThreadJiggle-style tooling. FIRST / AAA stay in `.cursor/rules/unit-tests.mdc` (Ch.9).
+
+## Successive Refinement (Ch.14)
+
+No new ESLint rules for this chapter. Process guidance only: first make it work, then refine in small steps with the bar green; do not leave a broken intermediate on the path to `main`. Much of the first draft is agent-authored — refinement is human-gated. Cursor rules are guidance (probabilistic), not a hard runtime lock. Commit-only-when-asked stays the existing user rule; Husky `pre-push`, CI, and the PR Test plan already gate “no broken main.”
+
+### First Draft, Then Refine
+
+Prefer a working slice, then extract and rename toward Clean Code. Do not treat the first agent or human draft as the merge-ready design. Emergence (Ch.12) owns simple-design judgment; this chapter owns the refine loop.
+
+### Approve or Refine Before Commit
+
+Treat uncommitted working-tree changes as the draft. After a substantive edit round, end by asking whether to approve as-is or refine further. Commit only when the developer explicitly asks. Do not land a half-reviewed draft in git history just to checkpoint messy intermediate design. If the agent forgets to ask, nothing irreversible has happened — the draft stays local until the developer reviews and requests a commit.
+
+### What Refine Means
+
+A bare “refine” is enough. Re-check the draft against Clean Code guidance already enabled for this epic (this file, Ch.2 onward as landed), plus sibling always-on rules when they apply (`.cursor/rules/unit-tests.mdc`, `.cursor/rules/document-store.mdc`, `AGENTS.md` / inventory pointer). Prefer fixing names, extracts, layering, and test shape over restating principles. Naming a chapter is an optional sharper prompt, not required. Soft: rely on always-applied rules in context; do not claim a perfect full-matrix audit or re-open the book. When neither human nor agent catches a miss, remaining nets are `npm run lint`, CI, Husky, and PR review — guide-only chapters have no lint backstop.
+
+### Keep the Bar Green Between Steps
+
+Before claiming done (and before the approved commit or PR), `npm run lint` and `npm test` stay green. Aligns with Emergence “Runs All the Tests” as process, not as a new design criterion. Do not restate FIRST / AAA here.
+
+### Small Steps on a Feature Branch
+
+Refine on a story branch and open a PR. Do not push broken WIP to `main` — already enforced by Husky `pre-push` and CI.
+
+### No Broken Steps on Main
+
+Every mergeable commit on the path to `main` should build and pass checks. Unfinished spikes stay local or on the branch until green and human-approved.
+
+### Out of Scope for This Chapter
+
+Do not rewrite git or CI foundation, mass-rewrite history, invent a Successive Refinement skill, or encode Cursor Plan mode / approval UI as required product steps. Process lives here; deterministic gates stay lint, Husky, and CI.
