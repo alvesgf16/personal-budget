@@ -9,13 +9,15 @@ interface ListCommandsContext {
   error: WritableSignal<string | null>;
 }
 
+type RefreshLists = (revision: number) => Promise<void>;
+
 interface LoadCategoriesOptions {
   revisionCounter: RevisionCounter;
   context: ListCommandsContext;
 }
 
 interface AttemptMutationOptions {
-  refresh: () => Promise<void>;
+  refresh: RefreshLists;
   revisionCounter: RevisionCounter;
   context: ListCommandsContext;
 }
@@ -33,7 +35,7 @@ interface FailureReportOptions {
 }
 
 export async function loadCategories(
-  refresh: () => Promise<void>,
+  refresh: RefreshLists,
   { revisionCounter, context }: LoadCategoriesOptions,
 ): Promise<void> {
   await runAttempt(refresh, {
@@ -47,7 +49,7 @@ export async function attemptMutation(
   mutation: () => Promise<unknown>,
   { refresh, revisionCounter, context }: AttemptMutationOptions,
 ): Promise<void> {
-  await runAttempt(() => mutateThenRefresh(mutation, refresh), {
+  await runAttempt((revision) => mutateThenRefresh(mutation, () => refresh(revision)), {
     revisionCounter,
     failMessage: 'Could not save the category. Try again.',
     context,
@@ -63,13 +65,13 @@ async function mutateThenRefresh(
 }
 
 async function runAttempt(
-  run: () => Promise<void>,
+  run: RefreshLists,
   { revisionCounter, failMessage, context }: RunAttemptOptions,
 ): Promise<void> {
   const snapshot = captureAttempt(revisionCounter, context.type);
 
   await attemptWhilePending(
-    () => clearErrorThen(run, context.error),
+    () => clearErrorThen(() => run(snapshot.revision), context.error),
     context.pendingTasks,
     () => reportFailureIfStillRelevant(revisionCounter, { snapshot, failMessage, context }),
   );

@@ -93,6 +93,32 @@ describe('createCategorySectionLists', () => {
     expect(activeCategories()).toEqual(fresh);
   });
 
+  it('discards a mutation refresh that finishes after a newer load', async () => {
+    const mutationGate = createHoldGate();
+    let listCalls = 0;
+    const stale = [categoryDoc('old', 'Stale')];
+    const fresh = [categoryDoc('new', 'Fresh')];
+    const { lists, activeCategories } = listsHarness({
+      categoryService: {
+        listByType: () => {
+          listCalls += 1;
+          return Promise.resolve(listCalls === 1 ? fresh : stale);
+        },
+        listHiddenByType: () => Promise.resolve([]),
+      },
+    });
+
+    const pendingMutation = lists.attemptMutation(async () => {
+      await mutationGate.wait;
+    });
+    await Promise.resolve();
+    await lists.load();
+    mutationGate.release();
+    await pendingMutation;
+
+    expect(activeCategories()).toEqual(fresh);
+  });
+
   it('discards refresh results when the type changes mid-flight', async () => {
     const type = signal<CategoryType>('income');
     const { lists, activeCategories } = listsHarness({

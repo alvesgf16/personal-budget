@@ -44,11 +44,11 @@ export function createCategorySectionLists(
 function createRefresh(
   revisionCounter: RevisionCounter,
   context: CategorySectionListsContext,
-): () => Promise<void> {
-  return async () => {
+): (revision: number) => Promise<void> {
+  return async (revision) => {
     const snapshot: TypeSnapshot = {
       type: context.type(),
-      revision: revisionCounter.current(),
+      revision,
     };
     const lists = await listSectionCategoriesIfSnapshotMatches(
       context.categoryService,
