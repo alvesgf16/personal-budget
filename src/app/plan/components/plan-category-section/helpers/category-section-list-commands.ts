@@ -1,15 +1,15 @@
-import type { PendingTasks, WritableSignal } from '@angular/core';
-import type { CategoryType } from '../../../../../data/domains/category/category';
 import { attemptWhilePending } from '../../../../shared/helpers/attempt-while-pending';
-import type { RevisionCounter, TypeSnapshot } from '../types';
-
-interface ListCommandsContext {
-  pendingTasks: PendingTasks;
-  type: () => CategoryType;
-  error: WritableSignal<string | null>;
-}
-
-type RefreshLists = (revision: number) => Promise<void>;
+import { runWhilePending } from '../../../../shared/helpers/run-while-pending';
+import type { RevisionCounter } from '../types';
+import {
+  captureAttempt,
+  clearErrorThen,
+  matchesSnapshot,
+  reportFailureIfStillRelevant,
+  type FailureReportOptions,
+  type ListCommandsContext,
+  type RefreshLists,
+} from './category-section-list-snapshots';
 
 interface LoadCategoriesOptions {
   revisionCounter: RevisionCounter;
@@ -28,10 +28,9 @@ interface RunAttemptOptions {
   context: ListCommandsContext;
 }
 
-interface FailureReportOptions {
-  snapshot: TypeSnapshot;
-  failMessage: string;
-  context: ListCommandsContext;
+interface MutationFailureOptions extends FailureReportOptions {
+  refresh: RefreshLists;
+  revisionCounter: RevisionCounter;
 }
 
 export async function loadCategories(
@@ -47,13 +46,32 @@ export async function loadCategories(
 
 export async function attemptMutation(
   mutation: () => Promise<unknown>,
-  { refresh, revisionCounter, context }: AttemptMutationOptions,
+  options: AttemptMutationOptions,
 ): Promise<void> {
-  await runAttempt((revision) => mutateThenRefresh(mutation, () => refresh(revision)), {
-    revisionCounter,
-    failMessage: 'Could not save the category. Try again.',
-    context,
-  });
+  const snapshot = captureAttempt(options.revisionCounter, options.context.type);
+
+  try {
+    await runMutationWhilePending(mutation, snapshot.revision, options);
+  } catch {
+    await recoverFailedMutation({
+      snapshot,
+      failMessage: 'Could not save the category. Try again.',
+      context: options.context,
+      refresh: options.refresh,
+      revisionCounter: options.revisionCounter,
+    });
+  }
+}
+
+async function runMutationWhilePending(
+  mutation: () => Promise<unknown>,
+  revision: number,
+  { refresh, context }: AttemptMutationOptions,
+): Promise<void> {
+  await runWhilePending(
+    () => clearErrorThen(() => mutateThenRefresh(mutation, () => refresh(revision)), context.error),
+    context.pendingTasks,
+  );
 }
 
 async function mutateThenRefresh(
@@ -77,34 +95,17 @@ async function runAttempt(
   );
 }
 
-function captureAttempt(revisionCounter: RevisionCounter, type: () => CategoryType): TypeSnapshot {
-  return {
-    type: type(),
-    revision: revisionCounter.next(),
-  };
-}
-
-async function clearErrorThen(
-  run: () => Promise<void>,
-  error: WritableSignal<string | null>,
-): Promise<void> {
-  error.set(null);
-  await run();
-}
-
-function reportFailureIfStillRelevant(
-  revisionCounter: RevisionCounter,
-  { snapshot, failMessage, context }: FailureReportOptions,
-): void {
-  if (matchesSnapshot(revisionCounter, snapshot, context)) {
-    context.error.set(failMessage);
+async function recoverFailedMutation({
+  snapshot,
+  failMessage,
+  context,
+  refresh,
+  revisionCounter,
+}: MutationFailureOptions): Promise<void> {
+  if (!matchesSnapshot(revisionCounter, snapshot, context)) {
+    return;
   }
-}
 
-function matchesSnapshot(
-  revisionCounter: RevisionCounter,
-  snapshot: TypeSnapshot,
-  context: ListCommandsContext,
-): boolean {
-  return snapshot.revision === revisionCounter.current() && context.type() === snapshot.type;
+  context.error.set(failMessage);
+  await runWhilePending(() => refresh(revisionCounter.next()), context.pendingTasks);
 }

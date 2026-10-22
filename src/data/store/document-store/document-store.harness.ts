@@ -19,19 +19,27 @@ interface ListGate {
   collection: CollectionName;
   firstListRelease: Deferred;
   firstListArrival: Deferred;
+  siblingListPass: Deferred;
   nextListCompletion: Deferred;
   isFirstListBeingHeld: boolean;
+  isSiblingPassNotified: boolean;
   isNextListWatchArmed: boolean;
+  nextListCompletionsNeeded: number;
+  nextListCompletionsSeen: number;
   isNextListCompletionNotified: boolean;
 }
 
 interface ListDeferralControls {
   whenFirstListArrives: Promise<void>;
+  /** Resolves when another matching `list` finishes while the first is still held. */
+  whenSiblingListCompletes: Promise<void>;
   /**
    * After the competing load has been triggered, call this then await `whenNextListCompletes`
    * so a parallel sibling `list` from the deferred load is not mistaken for the winner.
+   * Pass `completeAfter` when the winner issues multiple matching `list` calls (e.g. add
+   * pre-insert lookup plus active and hidden refresh).
    */
-  armNextListWatch: () => void;
+  armNextListWatch: (completeAfter?: number) => void;
   whenNextListCompletes: Promise<void>;
   releaseFirstList: () => void;
 }
@@ -126,8 +134,11 @@ function deferFirstStoreList(
 
   return {
     whenFirstListArrives: gate.firstListArrival.whenNotified,
-    armNextListWatch: () => {
+    whenSiblingListCompletes: gate.siblingListPass.whenNotified,
+    armNextListWatch: (completeAfter = 1) => {
       gate.isNextListWatchArmed = true;
+      gate.nextListCompletionsNeeded = completeAfter;
+      gate.nextListCompletionsSeen = 0;
     },
     whenNextListCompletes: gate.nextListCompletion.whenNotified,
     releaseFirstList: () => {
@@ -142,9 +153,13 @@ function createListGate(collection: CollectionName): ListGate {
     collection,
     firstListArrival: createDeferred(),
     firstListRelease: createDeferred(),
+    siblingListPass: createDeferred(),
     nextListCompletion: createDeferred(),
     isFirstListBeingHeld: false,
+    isSiblingPassNotified: false,
     isNextListWatchArmed: false,
+    nextListCompletionsNeeded: 1,
+    nextListCompletionsSeen: 0,
     isNextListCompletionNotified: false,
   };
 }
@@ -169,6 +184,7 @@ async function applyListGate(gate: ListGate, queriedCollection: CollectionName):
     return;
   }
 
+  notifySiblingPassIfNeeded(gate);
   notifyNextListIfArmed(gate);
 }
 
@@ -178,8 +194,22 @@ async function holdFirstList(gate: ListGate): Promise<void> {
   await gate.firstListRelease.whenNotified;
 }
 
+function notifySiblingPassIfNeeded(gate: ListGate): void {
+  if (gate.isSiblingPassNotified || gate.isNextListWatchArmed) {
+    return;
+  }
+
+  gate.isSiblingPassNotified = true;
+  gate.siblingListPass.notify();
+}
+
 function notifyNextListIfArmed(gate: ListGate): void {
   if (!gate.isNextListWatchArmed || gate.isNextListCompletionNotified) {
+    return;
+  }
+
+  gate.nextListCompletionsSeen += 1;
+  if (gate.nextListCompletionsSeen < gate.nextListCompletionsNeeded) {
     return;
   }
 
