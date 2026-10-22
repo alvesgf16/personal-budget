@@ -1,4 +1,11 @@
+import type { CategoryType } from '../../../../data/domains/category/category';
+
 export interface RevisionCounter {
   next: () => number;
-  isLatest: (revision: number) => boolean;
+  current: () => number;
+}
+
+export interface TypeSnapshot {
+  type: CategoryType;
+  revision: number;
 }
