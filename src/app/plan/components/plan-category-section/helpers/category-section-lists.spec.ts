@@ -120,6 +120,33 @@ describe('createCategorySectionLists', () => {
     expect(activeCategories()).toEqual(fresh);
   });
 
+  it('reloads lists when a mutation fails while an older load is pending', async () => {
+    const firstList = createHoldGate();
+    let listCalls = 0;
+    const existing = [categoryDoc('a', 'Salary')];
+    const { lists, activeCategories, error } = listsHarness({
+      categoryService: {
+        listByType: async () => {
+          listCalls += 1;
+          if (listCalls === 1) {
+            await firstList.wait;
+          }
+          return existing;
+        },
+        listHiddenByType: () => Promise.resolve([]),
+      },
+    });
+
+    const pendingLoad = lists.load();
+    await Promise.resolve();
+    await lists.attemptMutation(() => Promise.reject(new Error('unavailable')));
+    firstList.release();
+    await pendingLoad;
+
+    expect(activeCategories()).toEqual(existing);
+    expect(error()).toBe('Could not save the category. Try again.');
+  });
+
   it('discards refresh results when the type changes mid-flight', async () => {
     const type = signal<CategoryType>('income');
     const { lists, activeCategories } = listsHarness({

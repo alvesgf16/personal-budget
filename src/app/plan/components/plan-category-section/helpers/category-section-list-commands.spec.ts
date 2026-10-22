@@ -110,14 +110,19 @@ describe('attemptMutation', () => {
 
   it('sets a save error when the mutation fails and the revision is still current', async () => {
     const { error, revisionCounter, context } = createTestContext();
+    let refreshCount = 0;
 
     await attemptMutation(() => Promise.reject(new Error('unavailable')), {
-      refresh: () => Promise.resolve(),
+      refresh: () => {
+        refreshCount += 1;
+        return Promise.resolve();
+      },
       revisionCounter,
       context,
     });
 
     expect(error()).toBe('Could not save the category. Try again.');
+    expect(refreshCount).toBe(1);
   });
 
   it('skips the save error when the type changes mid-flight', async () => {
