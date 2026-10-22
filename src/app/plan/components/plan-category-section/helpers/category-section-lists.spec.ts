@@ -116,6 +116,7 @@ describe('createCategorySectionLists', () => {
     mutationGate.release();
     await pendingMutation;
 
+    expect(listCalls).toBe(2);
     expect(activeCategories()).toEqual(fresh);
   });
 
