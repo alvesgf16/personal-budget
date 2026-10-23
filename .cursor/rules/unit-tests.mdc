@@ -42,7 +42,7 @@ Specs may be longer and more linear than production. Ch.3 `complexity` / `max-de
 
 ## Coverage (Ch.17 T2)
 
-Use `npm run test:coverage` (`ng test --coverage` via `@vitest/coverage-v8`). CI runs coverage on the test job. Pre-commit keeps bare `npm test` (no instrumentation). When debugging failures, use coverage patterns (T8) to see what the suite did not exercise.
+Use `npm run test:coverage` (`ng test --coverage` via `@vitest/coverage-v8`). CI runs coverage on the test job. Pre-commit keeps bare `npm test` (no instrumentation). Coverage includes production `src/**/*.ts` and excludes specs, harnesses, and `test-setup` so the 80% floor applies to the app, not only files loaded by the suite. When debugging failures, use coverage patterns (T8) to see what the suite did not exercise.
 
 ## One Assert / Single Concept
 

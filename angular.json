@@ -67,6 +67,8 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "setupFiles": ["src/test-setup.ts"],
+            "coverageInclude": ["src/**/*.ts"],
+            "coverageExclude": ["src/**/*.spec.ts", "src/**/*.harness.ts", "src/test-setup.ts"],
             "coverageThresholds": {
               "statements": 80,
               "branches": 80,
