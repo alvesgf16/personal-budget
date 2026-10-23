@@ -44,6 +44,11 @@ interface ListDeferralControls {
   releaseFirstList: () => void;
 }
 
+interface InsertDeferralControls {
+  whenFirstInsertArrives: Promise<void>;
+  releaseFirstInsert: () => void;
+}
+
 /** Unique IndexedDB for schema/store specs (no TestBed). */
 export function useDocumentStoreHarness(prefix: string): DocumentStoreHarness {
   const harness = {} as DocumentStoreHarness;
@@ -164,16 +169,6 @@ function createListGate(collection: CollectionName): ListGate {
   };
 }
 
-function createDeferred(): Deferred {
-  let notify!: () => void;
-
-  const whenNotified = new Promise<void>((resolve) => {
-    notify = resolve;
-  });
-
-  return { whenNotified, notify };
-}
-
 async function applyListGate(gate: ListGate, queriedCollection: CollectionName): Promise<void> {
   if (queriedCollection !== gate.collection) {
     return;
@@ -215,4 +210,32 @@ function notifyNextListIfArmed(gate: ListGate): void {
 
   gate.nextListCompletion.notify();
   gate.isNextListCompletionNotified = true;
+}
+
+/** Defers `insert` calls until `releaseFirstInsert()` so overlapping writes can be asserted. */
+export function deferFirstStoreInsert(storeHarness: DocumentStoreHarness): InsertDeferralControls {
+  const originalInsert = storeHarness.store.insert.bind(storeHarness.store);
+  const firstInsertRelease = createDeferred();
+  const firstInsertArrival = createDeferred();
+
+  storeHarness.store.insert = async (collection, payload) => {
+    firstInsertArrival.notify();
+    await firstInsertRelease.whenNotified;
+    return originalInsert(collection, payload);
+  };
+
+  return {
+    whenFirstInsertArrives: firstInsertArrival.whenNotified,
+    releaseFirstInsert: firstInsertRelease.notify,
+  };
+}
+
+function createDeferred(): Deferred {
+  let notify!: () => void;
+
+  const whenNotified = new Promise<void>((resolve) => {
+    notify = resolve;
+  });
+
+  return { whenNotified, notify };
 }

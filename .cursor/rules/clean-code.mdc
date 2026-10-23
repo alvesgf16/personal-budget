@@ -510,7 +510,7 @@ F1–F3 already under Functions (Ch.3). **F4 Dead Function** — knip finds unus
 ### General (G1–G36)
 
 - **G1** — require `templateUrl` / `styleUrl` (inline declarations max 0).
-- **G5** — `jscpd` in `npm run lint` (clone detection on production `src`, not `*.{spec,harness}.ts`); extract shared helpers instead of copying.
+- **G5** — `jscpd` in `npm run lint` (clone detection across `src`, including specs/harnesses); extract shared helpers instead of copying.
 - **G7 Base Classes Depending on Their Derivatives** — guide: prefer composition; a base must not import or switch on concrete derivatives. Catch when inheritance appears.
 - **G9** — knip for dead exports; core `no-useless-return`; unicorn useless-length/spread/fallback rules; unused locals already gated.
 - **G14 Feature Envy** — guide: keep behavior with the owning domain or helper.

@@ -1,18 +1,5 @@
-import type { PendingTasks } from '@angular/core';
 import { runWhilePending } from './run-while-pending';
-
-function stubPendingTasks(): { pendingTasks: PendingTasks; open: () => number } {
-  let open = 0;
-  const pendingTasks = {
-    add: () => {
-      open += 1;
-      return () => {
-        open -= 1;
-      };
-    },
-  } as PendingTasks;
-  return { pendingTasks, open: () => open };
-}
+import { stubPendingTasks } from '../harness/stub-pending-tasks.harness';
 
 describe('runWhilePending', () => {
   it('returns the work result and closes the pending slot', async () => {

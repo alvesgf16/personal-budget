@@ -19,17 +19,21 @@ export class CategoryService {
    */
   readonly revision = signal(0);
 
-  async listByType(type: CategoryType): Promise<StoreDocument<Category>[]> {
-    const categories = await this.store.list<Category>(COLLECTIONS.categories);
-    return categories
-      .filter((category) => category.type === type && category.active)
-      .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id));
+  listByType(type: CategoryType): Promise<StoreDocument<Category>[]> {
+    return this.listFiltered(type, (category) => category.active);
   }
 
-  async listHiddenByType(type: CategoryType): Promise<StoreDocument<Category>[]> {
+  listHiddenByType(type: CategoryType): Promise<StoreDocument<Category>[]> {
+    return this.listFiltered(type, (category) => !category.active);
+  }
+
+  private async listFiltered(
+    type: CategoryType,
+    isIncluded: (category: StoreDocument<Category>) => boolean,
+  ): Promise<StoreDocument<Category>[]> {
     const categories = await this.store.list<Category>(COLLECTIONS.categories);
     return categories
-      .filter((category) => category.type === type && !category.active)
+      .filter((category) => category.type === type && isIncluded(category))
       .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id));
   }
 

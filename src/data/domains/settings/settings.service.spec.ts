@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../store/types';
 import {
+  deferFirstStoreInsert,
   deferFirstStoreSettingsList,
   provideDocumentStoreHarness,
 } from '../../store/document-store/document-store.harness';
@@ -64,25 +65,12 @@ describe('SettingsService', () => {
   });
 
   it('keeps overlapping saves on a single settings document', async () => {
-    const originalInsert = storeHarness.store.insert.bind(storeHarness.store);
-    let releaseInsert: () => void = () => undefined;
-    const insertHold = new Promise<void>((resolve) => {
-      releaseInsert = resolve;
-    });
-    let enteredInsert: () => void = () => undefined;
-    const insertStarted = new Promise<void>((resolve) => {
-      enteredInsert = resolve;
-    });
-    storeHarness.store.insert = async (collection, payload) => {
-      enteredInsert();
-      await insertHold;
-      return originalInsert(collection, payload);
-    };
+    const { whenFirstInsertArrives, releaseFirstInsert } = deferFirstStoreInsert(storeHarness);
 
     const first = service.save({ startingYear: 2026 });
-    await insertStarted;
+    await whenFirstInsertArrives;
     const second = service.save({ startingYear: 2027 });
-    releaseInsert();
+    releaseFirstInsert();
     await Promise.all([first, second]);
     const saved = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
 

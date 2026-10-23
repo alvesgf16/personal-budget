@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { CategoryType } from '../../data/domains/category/category';
 import { COLLECTIONS } from '../../data/store/types';
 import type { DocumentStoreHarness } from '../../data/store/document-store/document-store.harness-types';
+import { commitInputByAriaLabel } from '../shared/harness/commit-input-by-aria-label.harness';
 import { Plan } from './plan';
 
 /** Shared seed/render helpers for Plan specs. Call after provideDocumentStoreHarness. */
@@ -39,19 +40,8 @@ export function planHarness(storeHarness: DocumentStoreHarness) {
     fixture.detectChanges();
   };
 
-  const setCell = async (fixture: ComponentFixture<Plan>, ariaLabel: string, value: string) => {
-    const input = fixture.nativeElement.querySelector(
-      `input[aria-label="${ariaLabel}"]`,
-    ) as HTMLInputElement;
-
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-
-    input.dispatchEvent(new Event('blur'));
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
+  const setCell = (fixture: ComponentFixture<Plan>, ariaLabel: string, value: string) =>
+    commitInputByAriaLabel(fixture, ariaLabel, value);
 
   const enterExpenseAndSavingsJanuary = async (fixture: ComponentFixture<Plan>) => {
     await submitInSection(fixture, 'expense', 'Rent');

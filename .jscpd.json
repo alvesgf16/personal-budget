@@ -3,7 +3,7 @@
   "minLines": 10,
   "minTokens": 70,
   "format": ["typescript", "tsx"],
-  "ignore": ["**/node_modules/**", "**/coverage/**", "**/dist/**", "**/*.{spec,harness}.ts"],
+  "ignore": ["**/node_modules/**", "**/coverage/**", "**/dist/**"],
   "absolute": true,
   "gitignore": true
 }

@@ -1,7 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../store/types';
 import { CategoryService } from './category.service';
-import { provideDocumentStoreHarness } from '../../store/document-store/document-store.harness';
+import {
+  deferFirstStoreInsert,
+  provideDocumentStoreHarness,
+} from '../../store/document-store/document-store.harness';
 
 const missingCategoryId = 'missing-id';
 
@@ -97,25 +100,12 @@ describe('CategoryService', () => {
   });
 
   it('keeps overlapping adds on distinct sortOrders', async () => {
-    const originalInsert = storeHarness.store.insert.bind(storeHarness.store);
-    let releaseInsert: () => void = () => undefined;
-    const insertHold = new Promise<void>((resolve) => {
-      releaseInsert = resolve;
-    });
-    let enteredInsert: () => void = () => undefined;
-    const insertStarted = new Promise<void>((resolve) => {
-      enteredInsert = resolve;
-    });
-    storeHarness.store.insert = async (collection, payload) => {
-      enteredInsert();
-      await insertHold;
-      return originalInsert(collection, payload);
-    };
+    const { whenFirstInsertArrives, releaseFirstInsert } = deferFirstStoreInsert(storeHarness);
 
     const first = service.add('income', 'Salary');
-    await insertStarted;
+    await whenFirstInsertArrives;
     const second = service.add('income', 'Bonus');
-    releaseInsert();
+    releaseFirstInsert();
     const [salary, bonus] = await Promise.all([first, second]);
     const listed = await storeHarness.store.list(COLLECTIONS.categories);
 

@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Unit Tests (Ch.9)
 
-Source: Robert C. Martin, _Clean Code_. Inventory: `docs/clean-code-inventory.md`. ESLint: `@vitest/eslint-plugin` recommended + `consistent-test-it` (`it`) + `max-expects` (4) on `*.{spec,harness}.ts`; Ch.3 size/`complexity` offs (dual standard). Ch.17: `jscpd` gates production clones; specs/harnesses are dual-standard (prefer shared fixtures/helpers over copy-paste).
+Source: Robert C. Martin, _Clean Code_. Inventory: `docs/clean-code-inventory.md`. ESLint: `@vitest/eslint-plugin` recommended + `consistent-test-it` (`it`) + `max-expects` (4) on `*.{spec,harness}.ts`; Ch.3 size/`complexity` offs (dual standard). Ch.17: `jscpd` gates clones across `src` (including specs/harnesses) — prefer shared fixtures/helpers over copy-paste.
 
 ## Three Laws of TDD
 
@@ -33,11 +33,12 @@ Arrange / Act / Assert. Separate phases with a single blank line when the body i
 
 - Store: `useDocumentStoreHarness` (no TestBed) vs `provideDocumentStoreHarness` (TestBed + `DOCUMENT_STORE`) from `document-store.harness.ts`.
 - Feature harnesses: `*.harness.ts` next to the component (e.g. `appHarness`, `planHarness`, `planAmountGridHarness`, settings / category-section / allocation-status harnesses). Prefer `aria-label` / `data-*` selectors.
+- Cross-feature harness helpers live under `src/app/shared/harness/` as `*.harness.ts` (not in production `shared/helpers/`).
 - Keep describe-local helpers only when they are not reused and the file stays small.
 
 ## Dual Standard
 
-Specs may be longer and more linear than production. Ch.3 `complexity` / `max-depth` / `max-params` / `max-lines-per-function` stay off for `*.{spec,harness}.ts`. Named param object types (`no-restricted-syntax`) still apply; prefer shared fixtures/helpers over copy-paste.
+Specs may be longer and more linear than production. Ch.3 `complexity` / `max-depth` / `max-params` / `max-lines-per-function` stay off for `*.{spec,harness}.ts`. Named param object types (`no-restricted-syntax`) still apply; avoid copy-paste that trips `jscpd`.
 
 ## Coverage (Ch.17 T2)
 
