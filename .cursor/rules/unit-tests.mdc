@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Unit Tests (Ch.9)
 
-Source: Robert C. Martin, _Clean Code_. Inventory: `docs/clean-code-inventory.md`. ESLint: `@vitest/eslint-plugin` recommended + `consistent-test-it` (`it`) + `max-expects` (4) on `*.{spec,harness}.ts`; Ch.3 size/`complexity` offs (dual standard). Ch.17: `sonarjs/cognitive-complexity` off on specs; keep `no-identical-functions` / `no-duplicate-string` on — extract shared fixtures for repeated labels and messages.
+Source: Robert C. Martin, _Clean Code_. Inventory: `docs/clean-code-inventory.md`. ESLint: `@vitest/eslint-plugin` recommended + `consistent-test-it` (`it`) + `max-expects` (4) on `*.{spec,harness}.ts`; Ch.3 size/`complexity` offs (dual standard). Ch.17: `jscpd` gates production clones; specs/harnesses are dual-standard (prefer shared fixtures/helpers over copy-paste).
 
 ## Three Laws of TDD
 
@@ -37,7 +37,7 @@ Arrange / Act / Assert. Separate phases with a single blank line when the body i
 
 ## Dual Standard
 
-Specs may be longer and more linear than production. Ch.3 `complexity` / `max-depth` / `max-params` / `max-lines-per-function` and Ch.17 `sonarjs/cognitive-complexity` stay off for `*.{spec,harness}.ts`. Named param object types (`no-restricted-syntax`) and duplication smells still apply.
+Specs may be longer and more linear than production. Ch.3 `complexity` / `max-depth` / `max-params` / `max-lines-per-function` stay off for `*.{spec,harness}.ts`. Named param object types (`no-restricted-syntax`) still apply; prefer shared fixtures/helpers over copy-paste.
 
 ## Coverage (Ch.17 T2)
 

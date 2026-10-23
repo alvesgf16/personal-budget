@@ -5,7 +5,7 @@ const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 const eslintConfigPrettier = require('eslint-config-prettier');
 const vitest = require('@vitest/eslint-plugin');
-const sonarjs = require('eslint-plugin-sonarjs');
+const unicorn = require('eslint-plugin-unicorn').default;
 
 module.exports = defineConfig([
   {
@@ -17,7 +17,7 @@ module.exports = defineConfig([
       angular.configs.tsRecommended,
     ],
     plugins: {
-      sonarjs,
+      unicorn,
     },
     languageOptions: {
       parserOptions: {
@@ -143,32 +143,19 @@ module.exports = defineConfig([
       // Clean Code Ch.17 (PB-104) G1: require templateUrl / styleUrl
       '@angular-eslint/component-max-inline-declarations': ['error', { template: 0, styles: 0 }],
       '@angular-eslint/use-injectable-provided-in': 'error',
-      // Clean Code Ch.17 (PB-104): Smells — curated sonarjs (not full recommended)
-      'sonarjs/no-commented-code': 'error',
-      'sonarjs/no-identical-functions': 'error',
-      'sonarjs/no-duplicated-branches': 'error',
-      'sonarjs/no-all-duplicated-branches': 'error',
-      'sonarjs/no-identical-conditions': 'error',
-      'sonarjs/no-identical-expressions': 'error',
-      'sonarjs/no-duplicate-string': ['error', { threshold: 3 }],
-      'sonarjs/no-dead-store': 'error',
-      'sonarjs/no-unused-collection': 'error',
-      'sonarjs/no-element-overwrite': 'error',
-      'sonarjs/no-collection-size-mischeck': 'error',
-      'sonarjs/no-redundant-jump': 'error',
-      'sonarjs/no-gratuitous-expressions': 'error',
-      'sonarjs/no-redundant-boolean': 'error',
-      'sonarjs/no-small-switch': 'error',
-      'sonarjs/no-nested-switch': 'error',
-      'sonarjs/no-nested-conditional': 'error',
-      'sonarjs/no-collapsible-if': 'error',
-      'sonarjs/prefer-single-boolean-return': 'error',
-      'sonarjs/cognitive-complexity': ['error', 15],
-      'sonarjs/no-inverted-boolean-check': 'error',
+      // Clean Code Ch.17 (PB-104): Smells — MIT unicorn + core (not LGPL sonarjs)
+      'no-nested-ternary': 'error',
+      'no-useless-return': 'error',
+      'unicorn/no-lonely-if': 'error',
+      'unicorn/no-negated-condition': 'error',
+      'unicorn/no-useless-fallback-in-spread': 'error',
+      'unicorn/no-useless-length-check': 'error',
+      'unicorn/no-useless-spread': 'error',
+      'unicorn/prefer-array-find': 'error',
+      'unicorn/prefer-includes': 'error',
     },
   },
   // Clean Code Ch.9 (PB-98): Unit Tests — Vitest gates + dual-standard Ch.3/Ch.10 size offs
-  // Ch.17 (PB-104): off cognitive-complexity only (keep duplication rules on)
   {
     files: ['**/*.{spec,harness}.ts'],
     plugins: {
@@ -184,7 +171,6 @@ module.exports = defineConfig([
       'max-lines-per-function': 'off',
       'max-lines': 'off',
       'max-classes-per-file': 'off',
-      'sonarjs/cognitive-complexity': 'off',
     },
   },
   // Clean Code Ch.8 (PB-97) + Ch.11 (PB-100): Domains — no Dexie/store impl; no upward app imports
