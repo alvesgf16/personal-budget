@@ -6,6 +6,8 @@ import {
 import { PlanAmountGrid } from './plan-amount-grid';
 import { planAmountGridHarness } from './plan-amount-grid.harness';
 
+const salaryJanuaryLabel = 'Salary January';
+
 describe('PlanAmountGrid', () => {
   const storeHarness = provideDocumentStoreHarness('pb-21-amount-grid', {
     imports: [PlanAmountGrid],
@@ -37,7 +39,7 @@ describe('PlanAmountGrid', () => {
     releaseFirstList();
     await fixture.whenStable();
     fixture.detectChanges();
-    const january = inputByAriaLabel(fixture, 'Salary January');
+    const january = inputByAriaLabel(fixture, salaryJanuaryLabel);
 
     expect(january?.value).toBe('2000');
   });
@@ -47,7 +49,7 @@ describe('PlanAmountGrid', () => {
       const salary = await insertCategory('Salary');
       const fixture = await render([salary]);
 
-      typeCell(fixture, 'Salary January', '1000');
+      typeCell(fixture, salaryJanuaryLabel, '1000');
       const cells = await storeHarness.store.list(COLLECTIONS.budgetCells);
 
       expect(outputText(fixture, 'Salary year total')).toBe('0');
@@ -58,7 +60,7 @@ describe('PlanAmountGrid', () => {
       const salary = await insertCategory('Salary');
       const fixture = await render([salary]);
 
-      await commitCell(fixture, 'Salary January', '1000');
+      await commitCell(fixture, salaryJanuaryLabel, '1000');
       const cells = await storeHarness.store.list(COLLECTIONS.budgetCells);
 
       expect(outputText(fixture, 'Salary year total')).toBe('1000');

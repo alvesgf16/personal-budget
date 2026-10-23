@@ -63,6 +63,8 @@ describe('matchesSnapshot', () => {
   });
 });
 
+const categorySaveFailMessage = 'Could not save the category. Try again.';
+
 describe('reportFailureIfStillRelevant', () => {
   it('sets the failure message when the snapshot is still current', () => {
     const { error, revisionCounter, context } = createSnapshotHarness();
@@ -70,11 +72,11 @@ describe('reportFailureIfStillRelevant', () => {
 
     reportFailureIfStillRelevant(revisionCounter, {
       snapshot,
-      failMessage: 'Could not save the category. Try again.',
+      failMessage: categorySaveFailMessage,
       context,
     });
 
-    expect(error()).toBe('Could not save the category. Try again.');
+    expect(error()).toBe(categorySaveFailMessage);
   });
 
   it('skips the failure message when the snapshot is stale', () => {
@@ -84,7 +86,7 @@ describe('reportFailureIfStillRelevant', () => {
 
     reportFailureIfStillRelevant(revisionCounter, {
       snapshot,
-      failMessage: 'Could not save the category. Try again.',
+      failMessage: categorySaveFailMessage,
       context,
     });
 

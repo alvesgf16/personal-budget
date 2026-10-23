@@ -4,6 +4,8 @@ import type { BudgetCell } from './budget-cell';
 import { COLLECTIONS } from '../../store/types';
 import { provideDocumentStoreHarness } from '../../store/document-store/document-store.harness';
 
+const salaryCategoryId = 'cat-salary';
+
 describe('BudgetCellService', () => {
   const storeHarness = provideDocumentStoreHarness('pb-21-budget-cell-service');
   let service: BudgetCellService;
@@ -14,13 +16,13 @@ describe('BudgetCellService', () => {
 
   it('upserts the same March cell twice as one document', async () => {
     await service.save({
-      categoryId: 'cat-salary',
+      categoryId: salaryCategoryId,
       year: 2026,
       month: 3,
       amountCents: 100_000,
     });
     await service.save({
-      categoryId: 'cat-salary',
+      categoryId: salaryCategoryId,
       year: 2026,
       month: 3,
       amountCents: 250_000,
@@ -29,7 +31,7 @@ describe('BudgetCellService', () => {
     const cells = await storeHarness.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     expect(cells).toHaveLength(1);
     expect(cells[0]).toMatchObject({
-      categoryId: 'cat-salary',
+      categoryId: salaryCategoryId,
       year: 2026,
       month: 3,
       amountCents: 250_000,
@@ -38,7 +40,7 @@ describe('BudgetCellService', () => {
 
   it('saves January without creating a February cell', async () => {
     await service.save({
-      categoryId: 'cat-salary',
+      categoryId: salaryCategoryId,
       year: 2026,
       month: 1,
       amountCents: 500_000,
@@ -52,13 +54,13 @@ describe('BudgetCellService', () => {
 
   it('soft-deletes when clearing a cell with null', async () => {
     await service.save({
-      categoryId: 'cat-salary',
+      categoryId: salaryCategoryId,
       year: 2026,
       month: 1,
       amountCents: 100_000,
     });
     await service.save({
-      categoryId: 'cat-salary',
+      categoryId: salaryCategoryId,
       year: 2026,
       month: 1,
       amountCents: null,
@@ -70,13 +72,13 @@ describe('BudgetCellService', () => {
 
   it('lists only cells for the requested year', async () => {
     await service.save({
-      categoryId: 'cat-salary',
+      categoryId: salaryCategoryId,
       year: 2026,
       month: 1,
       amountCents: 100_000,
     });
     await service.save({
-      categoryId: 'cat-salary',
+      categoryId: salaryCategoryId,
       year: 2027,
       month: 1,
       amountCents: 200_000,

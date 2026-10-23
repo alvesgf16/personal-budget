@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-tracking',
-  template: '',
+  styleUrl: './tracking.css',
+  templateUrl: './tracking.html',
 })
 export class Tracking {}

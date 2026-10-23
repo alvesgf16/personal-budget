@@ -83,7 +83,7 @@ Prefer a top-down narrative: public method → named helpers at the next level o
 
 ### Switch Statements
 
-Prefer polymorphism for large type switches; bury unavoidable small switches once. Broader smell gates are PB-104.
+Prefer polymorphism for large type switches; bury unavoidable small switches once. Broader smell gates are enabled in Smells (Ch.17 / PB-104).
 
 ### Use Descriptive Names
 
@@ -116,7 +116,7 @@ See Error Handling (Ch.7).
 
 ### Don't Repeat Yourself
 
-Prefer helpers/`lib` extracts over copy-paste. Automated duplication detection is PB-104.
+Prefer helpers/`lib` extracts over copy-paste. Automated duplication detection is enabled in Smells (Ch.17 / PB-104).
 
 ### Structured Programming
 
@@ -397,7 +397,7 @@ PB vocabulary (Meaningful Names, Ch.2) and domain services are the app’s DSL: 
 
 ## Emergence (Ch.12)
 
-No new ESLint rules for this chapter. Kent Beck’s four rules of simple design are judgment plus overlap with earlier automate Tasks; duplication lint stays deferred to Smells (Ch.17 / PB-104).
+No new ESLint rules for this chapter. Kent Beck’s four rules of simple design are judgment plus overlap with earlier automate Tasks; duplication lint is enabled in Smells (Ch.17 / PB-104).
 
 ### Runs All the Tests
 
@@ -405,7 +405,7 @@ A design that cannot be tested is not simple. Prefer seams that keep Vitest gree
 
 ### Contains No Duplication
 
-Prefer one named extract over copy-paste. When two blocks share a concept, lift it once into `helpers/` or `src/data/lib` (Functions, Ch.3). Do not install duplication lint here — `eslint-plugin-sonarjs` and related smell gates belong to PB-104 so this chapter does not re-own earlier or later automate.
+Prefer one named extract over copy-paste. When two blocks share a concept, lift it once into `helpers/` or `src/data/lib` (Functions, Ch.3). Duplication lint lives under Smells (Ch.17 / PB-104) — do not re-own it here.
 
 ### Expresses the Intent of the Programmer
 
@@ -490,3 +490,45 @@ Every mergeable commit on the path to `main` should build and pass checks. Unfin
 ### Out of Scope for This Chapter
 
 Do not rewrite git or CI foundation, mass-rewrite history, invent a Successive Refinement skill, or encode Cursor Plan mode / approval UI as required product steps. Process lives here; deterministic gates stay lint, Husky, and CI.
+
+## Smells and Heuristics (Ch.17)
+
+ESLint: curated `eslint-plugin-sonarjs` (not full `recommended`) plus knip for dead exports and `@angular-eslint/component-max-inline-declarations` `{ template: 0, styles: 0 }`. Specs/harnesses turn off only `sonarjs/cognitive-complexity` (keep duplication rules on). Coverage: `npm run test:coverage` (CI). Details: `eslint.config.js`, `knip.json`, `.cursor/rules/unit-tests.mdc`.
+
+### Comments (C1–C5)
+
+C1–C4 already under Comments (Ch.4). **C5 Commented-Out Code** — `sonarjs/no-commented-code`.
+
+### Environment (E1–E2)
+
+Already: `npm run build`, `npm test` / `npm run lint` / `npm run test:coverage`.
+
+### Functions (F1–F4)
+
+F1–F3 already under Functions (Ch.3). **F4 Dead Function** — knip finds unused exports (sonarjs does not); locals stay under `@typescript-eslint/no-unused-vars` / `no-unused-private-class-members`.
+
+### General (G1–G36)
+
+- **G1** — require `templateUrl` / `styleUrl` (inline declarations max 0).
+- **G5** — `no-identical-functions`, branch/condition/expression dupes, `no-duplicate-string` (threshold 3) on prod and specs; extract shared fixtures instead of copying literals.
+- **G7 Base Classes Depending on Their Derivatives** — guide: prefer composition; a base must not import or switch on concrete derivatives. Catch when inheritance appears.
+- **G9** — sonarjs dead-store / unused-collection / element-overwrite / collection-size / redundant-jump / gratuitous-expressions / redundant-boolean (+ knip for exports).
+- **G14 Feature Envy** — guide: keep behavior with the owning domain or helper.
+- **G23** — `no-small-switch`, `no-nested-switch`, `no-nested-conditional`, `no-collapsible-if`; large type switches stay guide (prefer polymorphism).
+- **G28** — `prefer-single-boolean-return` + `cognitive-complexity` 15 (second net under cyclomatic 5).
+- **G29** — `no-inverted-boolean-check`.
+- G2, G6, G12, G16–G22, G25–G27, G31–G33, G35 — guide or already covered by earlier chapters (names, layering, PersistQueue, Boundaries). Do not re-enable Ch.3/10 size rules via sonarjs.
+
+### Java (J1–J3) → TypeScript
+
+- **J1** — N/A / invert: prefer explicit imports, not star imports.
+- **J2** — guide: do not inherit an interface/class only for constants; import a `const` / `as const` map.
+- **J3** — guide: closed sets prefer enums, string unions, or Zod enums over magic numbers / ad-hoc strings.
+
+### Names (N1–N7)
+
+Mostly Meaningful Names (Ch.2). N6 encodings already automated; N1/N4 partial via denylist; N2, N3, N5, N7 stay guide.
+
+### Tests (T1–T9)
+
+See `.cursor/rules/unit-tests.mdc`. T2 coverage tool is wired; T4/T9 partial via Vitest ESLint + FIRST; T1/T3/T5–T8 stay guide.

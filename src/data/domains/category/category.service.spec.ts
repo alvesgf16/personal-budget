@@ -3,6 +3,8 @@ import { COLLECTIONS } from '../../store/types';
 import { CategoryService } from './category.service';
 import { provideDocumentStoreHarness } from '../../store/document-store/document-store.harness';
 
+const missingCategoryId = 'missing-id';
+
 describe('CategoryService', () => {
   const storeHarness = provideDocumentStoreHarness('pb-20-category-service');
   let service: CategoryService;
@@ -173,7 +175,7 @@ describe('CategoryService', () => {
   });
 
   it('rejects rename when the category id is missing', async () => {
-    await expect(service.rename('missing-id', 'Paycheck')).rejects.toThrow(/not found/i);
+    await expect(service.rename(missingCategoryId, 'Paycheck')).rejects.toThrow(/not found/i);
   });
 
   it('hides a category from listByType and lists it under listHiddenByType', async () => {
@@ -231,12 +233,12 @@ describe('CategoryService', () => {
   });
 
   it('rejects hide when the category id is missing', async () => {
-    await expect(service.hide('missing-id')).rejects.toThrow(/not found/i);
+    await expect(service.hide(missingCategoryId)).rejects.toThrow(/not found/i);
     expect(service.revision()).toBe(0);
   });
 
   it('rejects unhide when the category id is missing', async () => {
-    await expect(service.unhide('missing-id')).rejects.toThrow(/not found/i);
+    await expect(service.unhide(missingCategoryId)).rejects.toThrow(/not found/i);
     expect(service.revision()).toBe(0);
   });
 });
