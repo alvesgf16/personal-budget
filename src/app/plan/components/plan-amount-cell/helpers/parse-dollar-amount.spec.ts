@@ -1,5 +1,7 @@
 import { parseDollarAmount } from './parse-dollar-amount';
 
+const invalidAmountMessage = 'Enter a non-negative dollar amount.';
+
 describe('parseDollarAmount', () => {
   it('parses whole dollars and two-decimal amounts', () => {
     expect(parseDollarAmount('1234')).toEqual({ status: 'ok', amountCents: 123_400 });
@@ -16,15 +18,15 @@ describe('parseDollarAmount', () => {
   it('rejects negatives and invalid shapes', () => {
     expect(parseDollarAmount('-1')).toEqual({
       status: 'invalid',
-      message: 'Enter a non-negative dollar amount.',
+      message: invalidAmountMessage,
     });
     expect(parseDollarAmount('1.234')).toEqual({
       status: 'invalid',
-      message: 'Enter a non-negative dollar amount.',
+      message: invalidAmountMessage,
     });
     expect(parseDollarAmount('abc')).toEqual({
       status: 'invalid',
-      message: 'Enter a non-negative dollar amount.',
+      message: invalidAmountMessage,
     });
   });
 });

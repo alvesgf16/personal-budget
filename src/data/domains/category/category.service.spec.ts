@@ -1,7 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { COLLECTIONS } from '../../store/types';
 import { CategoryService } from './category.service';
-import { provideDocumentStoreHarness } from '../../store/document-store/document-store.harness';
+import {
+  deferFirstStoreInsert,
+  provideDocumentStoreHarness,
+} from '../../store/document-store/document-store.harness';
+
+const missingCategoryId = 'missing-id';
 
 describe('CategoryService', () => {
   const storeHarness = provideDocumentStoreHarness('pb-20-category-service');
@@ -95,25 +100,12 @@ describe('CategoryService', () => {
   });
 
   it('keeps overlapping adds on distinct sortOrders', async () => {
-    const originalInsert = storeHarness.store.insert.bind(storeHarness.store);
-    let releaseInsert: () => void = () => undefined;
-    const insertHold = new Promise<void>((resolve) => {
-      releaseInsert = resolve;
-    });
-    let enteredInsert: () => void = () => undefined;
-    const insertStarted = new Promise<void>((resolve) => {
-      enteredInsert = resolve;
-    });
-    storeHarness.store.insert = async (collection, payload) => {
-      enteredInsert();
-      await insertHold;
-      return originalInsert(collection, payload);
-    };
+    const { whenFirstInsertArrives, releaseFirstInsert } = deferFirstStoreInsert(storeHarness);
 
     const first = service.add('income', 'Salary');
-    await insertStarted;
+    await whenFirstInsertArrives;
     const second = service.add('income', 'Bonus');
-    releaseInsert();
+    releaseFirstInsert();
     const [salary, bonus] = await Promise.all([first, second]);
     const listed = await storeHarness.store.list(COLLECTIONS.categories);
 
@@ -173,7 +165,7 @@ describe('CategoryService', () => {
   });
 
   it('rejects rename when the category id is missing', async () => {
-    await expect(service.rename('missing-id', 'Paycheck')).rejects.toThrow(/not found/i);
+    await expect(service.rename(missingCategoryId, 'Paycheck')).rejects.toThrow(/not found/i);
   });
 
   it('hides a category from listByType and lists it under listHiddenByType', async () => {
@@ -231,12 +223,12 @@ describe('CategoryService', () => {
   });
 
   it('rejects hide when the category id is missing', async () => {
-    await expect(service.hide('missing-id')).rejects.toThrow(/not found/i);
+    await expect(service.hide(missingCategoryId)).rejects.toThrow(/not found/i);
     expect(service.revision()).toBe(0);
   });
 
   it('rejects unhide when the category id is missing', async () => {
-    await expect(service.unhide('missing-id')).rejects.toThrow(/not found/i);
+    await expect(service.unhide(missingCategoryId)).rejects.toThrow(/not found/i);
     expect(service.revision()).toBe(0);
   });
 });

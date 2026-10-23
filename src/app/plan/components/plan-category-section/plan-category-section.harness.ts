@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { CategoryType } from '../../../../data/domains/category/category';
+import { commitInputByAriaLabel } from '../../../shared/harness/commit-input-by-aria-label.harness';
 import { PlanCategorySection } from './plan-category-section';
 
 /** Shared render/DOM helpers for PlanCategorySection specs. Call after provideDocumentStoreHarness. */
@@ -56,23 +57,11 @@ export function planCategorySectionHarness() {
     form.dispatchEvent(new Event('submit'));
   };
 
-  const setCell = async (
+  const setCell = (
     fixture: ComponentFixture<PlanCategorySection>,
     ariaLabel: string,
     value: string,
-  ) => {
-    const input = fixture.nativeElement.querySelector(
-      `input[aria-label="${ariaLabel}"]`,
-    ) as HTMLInputElement;
-
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-
-    input.dispatchEvent(new Event('blur'));
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
+  ) => commitInputByAriaLabel(fixture, ariaLabel, value);
 
   const renameByAriaLabel = async (
     fixture: ComponentFixture<PlanCategorySection>,

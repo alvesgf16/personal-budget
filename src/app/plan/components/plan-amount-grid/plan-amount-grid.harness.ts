@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { Category } from '../../../../data/domains/category/category';
 import { COLLECTIONS, type StoreDocument } from '../../../../data/store/types';
 import type { DocumentStoreHarness } from '../../../../data/store/document-store/document-store.harness-types';
+import { commitInputByAriaLabel } from '../../../shared/harness/commit-input-by-aria-label.harness';
 import { PlanAmountGrid } from './plan-amount-grid';
 
 /** Shared insert/render helpers for PlanAmountGrid specs. Call after provideDocumentStoreHarness. */
@@ -52,18 +53,11 @@ export function planAmountGridHarness(storeHarness: DocumentStoreHarness) {
     return input;
   };
 
-  const commitCell = async (
+  const commitCell = (
     fixture: ComponentFixture<PlanAmountGrid>,
     ariaLabel: string,
     value: string,
-  ) => {
-    const input = typeCell(fixture, ariaLabel, value);
-
-    input.dispatchEvent(new Event('blur'));
-
-    await fixture.whenStable();
-    fixture.detectChanges();
-  };
+  ) => commitInputByAriaLabel(fixture, ariaLabel, value);
 
   const outputText = (fixture: ComponentFixture<PlanAmountGrid>, ariaLabel: string) =>
     fixture.nativeElement.querySelector(`output[aria-label="${ariaLabel}"]`)?.textContent?.trim();

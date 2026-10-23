@@ -62,16 +62,17 @@ describe('DocumentStore', () => {
   });
 
   it('ignores caller meta on insert', async () => {
+    const staleTimestamp = '2000-01-01T00:00:00.000Z';
     const doc = await storeHarness.store.insert(COLLECTIONS.settings, {
       title: 'X',
       id: 'caller-id',
-      updatedAt: '2000-01-01T00:00:00.000Z',
-      deletedAt: '2000-01-01T00:00:00.000Z',
+      updatedAt: staleTimestamp,
+      deletedAt: staleTimestamp,
       collection: 'hijack',
     } as { title: string });
 
     expect(doc.id).not.toBe('caller-id');
-    expect(doc.updatedAt).not.toBe('2000-01-01T00:00:00.000Z');
+    expect(doc.updatedAt).not.toBe(staleTimestamp);
     expect(doc.deletedAt).toBeNull();
   });
 

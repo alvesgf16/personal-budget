@@ -8,6 +8,10 @@ import {
 import { PlanCategorySection } from './plan-category-section';
 import { planCategorySectionHarness } from './plan-category-section.harness';
 
+const couldNotSave = 'Could not save';
+const salaryJanuaryLabel = 'Salary January';
+const hideSalaryLabel = 'Hide Salary';
+
 describe('PlanCategorySection', () => {
   const storeHarness = provideDocumentStoreHarness('pb-21-plan-section', {
     imports: [PlanCategorySection],
@@ -99,7 +103,7 @@ describe('PlanCategorySection', () => {
     await submitName(fixture, 'income', 'Salary');
     const saved = await storeHarness.store.list(COLLECTIONS.categories);
 
-    expect(alertText(fixture)).toContain('Could not save');
+    expect(alertText(fixture)).toContain(couldNotSave);
     expect(draftNameValue(fixture, 'income')).toBe('Salary');
     expect(saved).toEqual([]);
   });
@@ -124,7 +128,7 @@ describe('PlanCategorySection', () => {
   it('renames in the grid and updates rename and cell aria-labels', async () => {
     const fixture = await render('income', 2026);
     await submitName(fixture, 'income', 'Salary');
-    await setCell(fixture, 'Salary January', '1000');
+    await setCell(fixture, salaryJanuaryLabel, '1000');
 
     await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
 
@@ -135,7 +139,7 @@ describe('PlanCategorySection', () => {
   it('keeps budgetCells intact when renaming in the grid', async () => {
     const fixture = await render('income', 2026);
     await submitName(fixture, 'income', 'Salary');
-    await setCell(fixture, 'Salary January', '1000');
+    await setCell(fixture, salaryJanuaryLabel, '1000');
 
     await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
     const cells = await storeHarness.store.list<BudgetCell>(COLLECTIONS.budgetCells);
@@ -159,7 +163,7 @@ describe('PlanCategorySection', () => {
     await renameByAriaLabel(fixture, 'Salary', 'Paycheck');
     const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);
 
-    expect(alertText(fixture)).toContain('Could not save');
+    expect(alertText(fixture)).toContain(couldNotSave);
     expect(saved[0]?.name).toBe('Salary');
   });
 
@@ -167,7 +171,7 @@ describe('PlanCategorySection', () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
 
-    await clickNamedButton(fixture, 'Hide Salary');
+    await clickNamedButton(fixture, hideSalaryLabel);
 
     expect(listItems(fixture)).toEqual([]);
     expect(hiddenCategoriesText(fixture)).toContain('Salary');
@@ -178,7 +182,7 @@ describe('PlanCategorySection', () => {
     const fixture = await render('income');
     await submitName(fixture, 'income', 'Salary');
 
-    await clickNamedButton(fixture, 'Hide Salary');
+    await clickNamedButton(fixture, hideSalaryLabel);
     const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);
 
     expect(saved).toHaveLength(1);
@@ -188,11 +192,11 @@ describe('PlanCategorySection', () => {
   it('hides in the grid, drops section totals, and shows Hidden', async () => {
     const fixture = await render('income', 2026);
     await submitName(fixture, 'income', 'Salary');
-    await setCell(fixture, 'Salary January', '1000');
+    await setCell(fixture, salaryJanuaryLabel, '1000');
 
-    await clickNamedButton(fixture, 'Hide Salary');
+    await clickNamedButton(fixture, hideSalaryLabel);
 
-    expect(inputByAriaLabel(fixture, 'Salary January')).toBeNull();
+    expect(inputByAriaLabel(fixture, salaryJanuaryLabel)).toBeNull();
     expect(outputText(fixture, 'Total January')).toBe('0');
     expect(hiddenCategoriesText(fixture)).toContain('Salary');
   });
@@ -200,9 +204,9 @@ describe('PlanCategorySection', () => {
   it('leaves budgetCells intact when hiding in the grid', async () => {
     const fixture = await render('income', 2026);
     await submitName(fixture, 'income', 'Salary');
-    await setCell(fixture, 'Salary January', '1000');
+    await setCell(fixture, salaryJanuaryLabel, '1000');
 
-    await clickNamedButton(fixture, 'Hide Salary');
+    await clickNamedButton(fixture, hideSalaryLabel);
     const cells = await storeHarness.store.list<BudgetCell>(COLLECTIONS.budgetCells);
     const categories = await storeHarness.store.list<Category>(COLLECTIONS.categories);
 
@@ -219,14 +223,14 @@ describe('PlanCategorySection', () => {
   it('unhides a category and restores its January amount in the grid', async () => {
     const fixture = await render('income', 2026);
     await submitName(fixture, 'income', 'Salary');
-    await setCell(fixture, 'Salary January', '1000');
-    await clickNamedButton(fixture, 'Hide Salary');
+    await setCell(fixture, salaryJanuaryLabel, '1000');
+    await clickNamedButton(fixture, hideSalaryLabel);
 
     await clickNamedButton(fixture, 'Unhide Salary');
     const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);
 
     expect(hiddenCategoriesText(fixture)).toBeNull();
-    expect(inputByAriaLabel(fixture, 'Salary January')?.value).toBe('1000');
+    expect(inputByAriaLabel(fixture, salaryJanuaryLabel)?.value).toBe('1000');
     expect(outputText(fixture, 'Total January')).toBe('1000');
     expect(saved[0]?.active).toBe(true);
   });
@@ -236,10 +240,10 @@ describe('PlanCategorySection', () => {
     await submitName(fixture, 'income', 'Salary');
     storeHarness.store.update = () => Promise.reject(new Error('unavailable'));
 
-    await clickNamedButton(fixture, 'Hide Salary');
+    await clickNamedButton(fixture, hideSalaryLabel);
     const saved = await storeHarness.store.list<Category>(COLLECTIONS.categories);
 
-    expect(alertText(fixture)).toContain('Could not save');
+    expect(alertText(fixture)).toContain(couldNotSave);
     expect(listItems(fixture)).toEqual(['Salary']);
     expect(saved[0]?.active).toBe(true);
   });

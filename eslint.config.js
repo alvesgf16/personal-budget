@@ -5,6 +5,7 @@ const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 const eslintConfigPrettier = require('eslint-config-prettier');
 const vitest = require('@vitest/eslint-plugin');
+const unicorn = require('eslint-plugin-unicorn').default;
 
 module.exports = defineConfig([
   {
@@ -15,6 +16,9 @@ module.exports = defineConfig([
       tseslint.configs.stylistic,
       angular.configs.tsRecommended,
     ],
+    plugins: {
+      unicorn,
+    },
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -136,8 +140,19 @@ module.exports = defineConfig([
       'max-classes-per-file': ['error', 1],
       'max-lines': ['error', { max: 100, skipBlankLines: true, skipComments: true }],
       '@angular-eslint/sort-lifecycle-methods': 'error',
-      '@angular-eslint/component-max-inline-declarations': 'error',
+      // Clean Code Ch.17 (PB-104) G1: require templateUrl / styleUrl
+      '@angular-eslint/component-max-inline-declarations': ['error', { template: 0, styles: 0 }],
       '@angular-eslint/use-injectable-provided-in': 'error',
+      // Clean Code Ch.17 (PB-104): Smells — MIT unicorn + core (not LGPL sonarjs)
+      'no-nested-ternary': 'error',
+      'no-useless-return': 'error',
+      'unicorn/no-lonely-if': 'error',
+      'unicorn/no-negated-condition': 'error',
+      'unicorn/no-useless-fallback-in-spread': 'error',
+      'unicorn/no-useless-length-check': 'error',
+      'unicorn/no-useless-spread': 'error',
+      'unicorn/prefer-array-find': 'error',
+      'unicorn/prefer-includes': 'error',
     },
   },
   // Clean Code Ch.9 (PB-98): Unit Tests — Vitest gates + dual-standard Ch.3/Ch.10 size offs
