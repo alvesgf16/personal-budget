@@ -2,8 +2,8 @@ import type { PendingTasks, WritableSignal } from '@angular/core';
 import { signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 import type { CategoryType } from '../../../../../../data/domains/category/category';
-import { attemptMutation, loadCategories } from './category-section-list-commands';
-import { createRevisionCounter } from './create-revision-counter';
+import { createRevisionCounter } from '../../../../../shared/helpers/create-revision-counter';
+import { attemptMutation, loadCategories, matchesSnapshot } from './category-section-list-commands';
 
 interface ListCommandsContextOptions {
   error: WritableSignal<string | null>;
@@ -174,6 +174,33 @@ describe('attemptMutation', () => {
     await pending;
 
     expect(error()).toBeNull();
+  });
+});
+
+describe('matchesSnapshot', () => {
+  it('is true when revision and type still match', () => {
+    const { revisionCounter, context } = createTestContext();
+    const snapshot = { type: context.type(), revision: revisionCounter.next() };
+
+    expect(matchesSnapshot(revisionCounter, snapshot, context)).toBe(true);
+  });
+
+  it('is false when a newer revision has begun', () => {
+    const { revisionCounter, context } = createTestContext();
+    const snapshot = { type: context.type(), revision: revisionCounter.next() };
+    revisionCounter.next();
+
+    expect(matchesSnapshot(revisionCounter, snapshot, context)).toBe(false);
+  });
+
+  it('is false when the type has changed', () => {
+    const type = signal<CategoryType>('income');
+    const { revisionCounter } = createTestContext();
+    const context = createListCommandsContext({ type: () => type(), error: signal(null) });
+    const snapshot = { type: context.type(), revision: revisionCounter.next() };
+    type.set('expense');
+
+    expect(matchesSnapshot(revisionCounter, snapshot, context)).toBe(false);
   });
 });
 

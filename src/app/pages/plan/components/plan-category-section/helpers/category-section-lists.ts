@@ -2,13 +2,16 @@ import type { PendingTasks, WritableSignal } from '@angular/core';
 import type { Category, CategoryType } from '../../../../../../data/domains/category/category';
 import type { CategoryService } from '../../../../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../../../../data/store/types';
-import type { RevisionCounter, CategoryTypeSnapshot } from '../types';
+import {
+  createRevisionCounter,
+  type RevisionCounter,
+} from '../../../../../shared/helpers/create-revision-counter';
+import type { CategoryTypeSnapshot } from '../types';
 import {
   attemptMutation as runAttemptMutation,
   loadCategories,
+  matchesSnapshot,
 } from './category-section-list-commands';
-import { matchesSnapshot } from './category-section-list-snapshots';
-import { createRevisionCounter } from './create-revision-counter';
 
 interface CategorySectionListsContext {
   categoryService: Pick<CategoryService, 'listPartitionedByType'>;
