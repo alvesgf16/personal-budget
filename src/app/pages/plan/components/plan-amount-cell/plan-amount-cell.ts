@@ -1,0 +1,100 @@
+import { Component, effect, inject, input, output, PendingTasks, signal } from '@angular/core';
+import { formatCentsAsDollarInput } from './helpers/format-cents-as-dollar-input';
+import { parseDollarAmount } from './helpers/parse-dollar-amount';
+import { BudgetCellService } from '../../../../../data/domains/budget-cell/budget-cell.service';
+import { attemptWhilePending } from '../../../../shared/helpers/attempt-while-pending';
+
+@Component({
+  selector: 'app-plan-amount-cell',
+  styleUrl: './plan-amount-cell.css',
+  templateUrl: './plan-amount-cell.html',
+})
+export class PlanAmountCell {
+  private readonly budgetCells = inject(BudgetCellService);
+  private readonly pendingTasks = inject(PendingTasks);
+
+  readonly categoryId = input.required<string>();
+  readonly month = input.required<number>();
+  readonly year = input.required<number>();
+  readonly label = input.required<string>();
+  /** Stored cents; `null` means no sparse cell. */
+  readonly amountCents = input<number | null>(null);
+  readonly saveError = output<string>();
+  /** Fired after a successful persist so the grid can refresh its amounts map. */
+  readonly committed = output<number | null>();
+
+  protected readonly dollarInput = signal('');
+
+  constructor() {
+    effect(() => {
+      const amountCents = this.amountCents();
+
+      this.dollarInput.set(amountCents === null ? '' : formatCentsAsDollarInput(amountCents));
+    });
+  }
+
+  protected onDollarInput(event: Event): void {
+    this.dollarInput.set((event.target as HTMLInputElement).value);
+  }
+
+  protected async save(): Promise<void> {
+    const year = this.year();
+    const amountCents = this.parseDollarInput();
+
+    if (amountCents === undefined) {
+      return;
+    }
+
+    if (amountCents === this.amountCents()) {
+      this.resetDollarInput(amountCents);
+
+      return;
+    }
+
+    await this.persistAmount(year, amountCents);
+  }
+
+  private parseDollarInput(): number | null | undefined {
+    const parsed = parseDollarAmount(this.dollarInput());
+
+    if (parsed.status === 'invalid') {
+      this.saveError.emit(parsed.message);
+
+      return undefined;
+    }
+
+    return parsed.status === 'empty' ? null : parsed.amountCents;
+  }
+
+  private resetDollarInput(amountCents: number | null): void {
+    this.dollarInput.set(amountCents === null ? '' : formatCentsAsDollarInput(amountCents));
+  }
+
+  private async persistAmount(year: number, amountCents: number | null): Promise<void> {
+    await attemptWhilePending(
+      () => this.commitAmount(year, amountCents),
+      this.pendingTasks,
+      () => {
+        if (this.year() === year) {
+          this.saveError.emit('Could not save the amount. Try again.');
+        }
+      },
+    );
+  }
+
+  private async commitAmount(year: number, amountCents: number | null): Promise<void> {
+    await this.budgetCells.save({
+      categoryId: this.categoryId(),
+      year,
+      month: this.month(),
+      amountCents,
+    });
+
+    if (this.year() !== year) {
+      return;
+    }
+
+    this.resetDollarInput(amountCents);
+    this.committed.emit(amountCents);
+  }
+}
