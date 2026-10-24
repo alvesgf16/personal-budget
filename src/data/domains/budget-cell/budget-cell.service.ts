@@ -57,10 +57,11 @@ export class BudgetCellService {
   }
 
   private async clearExisting(existing: StoreDocument<BudgetCell> | undefined): Promise<void> {
-    if (existing) {
-      await this.store.softDelete(COLLECTIONS.budgetCells, existing.id);
+    if (!existing) {
+      return;
     }
 
+    await this.store.softDelete(COLLECTIONS.budgetCells, existing.id);
     this.bumpRevision();
   }
 

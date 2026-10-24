@@ -6,7 +6,6 @@ import {
   clearErrorThen,
   matchesSnapshot,
   reportFailureIfStillRelevant,
-  type FailureReportOptions,
   type ListCommandsContext,
   type RefreshLists,
 } from './category-section-list-snapshots';
@@ -26,11 +25,6 @@ interface RunAttemptOptions {
   revisionCounter: RevisionCounter;
   failMessage: string;
   context: ListCommandsContext;
-}
-
-interface MutationFailureOptions extends FailureReportOptions {
-  refresh: RefreshLists;
-  revisionCounter: RevisionCounter;
 }
 
 export async function loadCategories(
@@ -53,13 +47,7 @@ export async function attemptMutation(
   try {
     await runMutationWhilePending(mutation, snapshot.revision, options);
   } catch {
-    await recoverFailedMutation({
-      snapshot,
-      failMessage: 'Could not save the category. Try again.',
-      context: options.context,
-      refresh: options.refresh,
-      revisionCounter: options.revisionCounter,
-    });
+    await recoverFailedMutation(snapshot, options);
   }
 }
 
@@ -69,17 +57,13 @@ async function runMutationWhilePending(
   { refresh, context }: AttemptMutationOptions,
 ): Promise<void> {
   await runWhilePending(
-    () => clearErrorThen(() => mutateThenRefresh(mutation, () => refresh(revision)), context.error),
+    () =>
+      clearErrorThen(async () => {
+        await mutation();
+        await refresh(revision);
+      }, context.error),
     context.pendingTasks,
   );
-}
-
-async function mutateThenRefresh(
-  mutation: () => Promise<void>,
-  refresh: () => Promise<void>,
-): Promise<void> {
-  await mutation();
-  await refresh();
 }
 
 async function runAttempt(
@@ -95,17 +79,18 @@ async function runAttempt(
   );
 }
 
-async function recoverFailedMutation({
-  snapshot,
-  failMessage,
-  context,
-  refresh,
-  revisionCounter,
-}: MutationFailureOptions): Promise<void> {
+async function recoverFailedMutation(
+  snapshot: ReturnType<typeof captureAttempt>,
+  { refresh, revisionCounter, context }: AttemptMutationOptions,
+): Promise<void> {
   if (!matchesSnapshot(revisionCounter, snapshot, context)) {
     return;
   }
 
-  context.error.set(failMessage);
-  await runWhilePending(() => refresh(revisionCounter.next()), context.pendingTasks);
+  context.error.set('Could not save the category. Try again.');
+  await attemptWhilePending(
+    () => refresh(revisionCounter.next()),
+    context.pendingTasks,
+    () => undefined,
+  );
 }

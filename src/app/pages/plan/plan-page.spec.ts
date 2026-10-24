@@ -7,13 +7,14 @@ import { planHarness } from './plan-page.harness';
 
 describe('Plan year header', () => {
   const storeHarness = provideDocumentStoreHarness('pb-19-plan', { imports: [PlanPage] });
-  const { seedStartingYear, renderPlan, headerText } = planHarness(storeHarness);
+  const { seedStartingYear, renderPlan, headerText, hasYearDigits, alertText } =
+    planHarness(storeHarness);
 
   it('does not invent a year when none is saved', async () => {
     const fixture = await renderPlan();
 
     expect(headerText(fixture)).toBe('Plan');
-    expect(fixture.nativeElement.textContent).not.toMatch(/\d{4}/);
+    expect(hasYearDigits(fixture)).toBe(false);
   });
 
   it('shows the stored starting year in the header', async () => {
@@ -22,6 +23,14 @@ describe('Plan year header', () => {
     const fixture = await renderPlan();
 
     expect(headerText(fixture)).toBe('2026');
+  });
+
+  it('shows an error when the plan year cannot be loaded', async () => {
+    storeHarness.store.list = () => Promise.reject(new Error('unavailable'));
+
+    const fixture = await renderPlan();
+
+    expect(alertText(fixture)).toContain('Could not load the plan year');
   });
 });
 

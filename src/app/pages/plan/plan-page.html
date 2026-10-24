@@ -5,6 +5,9 @@
     {{ startingYear() }}
   }
 </h1>
+@if (error()) {
+  <p role="alert">{{ error() }}</p>
+}
 @if (startingYear(); as planYear) {
   <app-plan-allocation-status [year]="planYear" />
 }

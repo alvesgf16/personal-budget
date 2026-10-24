@@ -70,6 +70,13 @@ export function planHarness(storeHarness: DocumentStoreHarness) {
   const headerText = (fixture: ComponentFixture<PlanPage>) =>
     fixture.nativeElement.querySelector('h1')?.textContent?.trim() ?? '';
 
+  const bodyText = (fixture: ComponentFixture<PlanPage>) => fixture.nativeElement.textContent ?? '';
+
+  const hasYearDigits = (fixture: ComponentFixture<PlanPage>) => /\d{4}/.test(bodyText(fixture));
+
+  const alertText = (fixture: ComponentFixture<PlanPage>) =>
+    fixture.nativeElement.querySelector('[role="alert"]')?.textContent ?? null;
+
   return {
     seedStartingYear,
     renderPlan,
@@ -81,5 +88,8 @@ export function planHarness(storeHarness: DocumentStoreHarness) {
     listNames,
     inputByAriaLabel,
     headerText,
+    bodyText,
+    hasYearDigits,
+    alertText,
   };
 }
