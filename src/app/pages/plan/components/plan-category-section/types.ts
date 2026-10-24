@@ -1,4 +1,4 @@
-import type { CategoryType } from '../../../../../data/domains/category/category';
+import type { CategoryType } from '../../../../../data/lib/category-type';
 
 export interface CategoryTypeSnapshot {
   type: CategoryType;
