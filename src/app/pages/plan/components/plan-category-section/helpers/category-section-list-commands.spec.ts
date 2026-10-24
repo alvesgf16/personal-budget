@@ -125,6 +125,26 @@ describe('attemptMutation', () => {
     expect(refreshCount).toBe(1);
   });
 
+  it('sets a load error when the mutation commits but refresh fails', async () => {
+    const { error, revisionCounter, context } = createTestContext();
+    let mutationRan = false;
+
+    await attemptMutation(
+      () => {
+        mutationRan = true;
+        return Promise.resolve();
+      },
+      {
+        refresh: () => Promise.reject(new Error('unavailable')),
+        revisionCounter,
+        context,
+      },
+    );
+
+    expect(mutationRan).toBe(true);
+    expect(error()).toBe('Could not load categories. Refresh and try again.');
+  });
+
   it('skips the save error when the type changes mid-flight', async () => {
     const type = signal<CategoryType>('income');
 

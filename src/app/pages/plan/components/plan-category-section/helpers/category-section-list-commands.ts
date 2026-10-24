@@ -28,7 +28,7 @@ export async function loadCategories(
   await attemptWhilePending(
     () => clearErrorThen(() => refresh(snapshot.revision), options.context.error),
     options.context.pendingTasks,
-    () => reportFailureIfStillRelevant(options.revisionCounter, snapshot, options.context),
+    () => reportLoadFailureIfStillRelevant(options.revisionCounter, snapshot, options.context),
   );
 }
 
@@ -40,16 +40,19 @@ export async function attemptMutation(
 
   try {
     await runWhilePending(
-      () =>
-        clearErrorThen(async () => {
-          await mutation();
-          await options.refresh(snapshot.revision);
-        }, options.context.error),
+      () => clearErrorThen(mutation, options.context.error),
       options.context.pendingTasks,
     );
   } catch {
     await recoverFailedMutation(snapshot, options);
+    return;
   }
+
+  await attemptWhilePending(
+    () => options.refresh(snapshot.revision),
+    options.context.pendingTasks,
+    () => reportLoadFailureIfStillRelevant(options.revisionCounter, snapshot, options.context),
+  );
 }
 
 export function matchesSnapshot(
@@ -75,7 +78,7 @@ async function clearErrorThen(
   await run();
 }
 
-function reportFailureIfStillRelevant(
+function reportLoadFailureIfStillRelevant(
   revisionCounter: RevisionCounter,
   snapshot: CategoryTypeSnapshot,
   context: ListCommandsContext,
