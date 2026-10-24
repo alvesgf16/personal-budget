@@ -1,6 +1,6 @@
 import type { PeriodBalance, PeriodBalanceStatus } from '../../../../../../data/lib/period-balance';
-import { formatCentsAsDollarInput } from '../../plan-amount-cell/helpers/format-cents-as-dollar-input';
-import { PLAN_MONTH_LONG, PLAN_MONTH_SHORT } from '../../plan-amount-grid/constants';
+import { formatCentsAsDollarInput } from '../../../format-cents-as-dollar-input';
+import { PLAN_MONTH_LONG, PLAN_MONTH_SHORT } from '../../../plan-months';
 
 export interface MonthAllocationView {
   month: number;

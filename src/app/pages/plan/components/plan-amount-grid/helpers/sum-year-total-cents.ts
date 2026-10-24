@@ -1,5 +1,5 @@
 import { buildCellKey } from './build-cell-key';
-import { PLAN_MONTHS } from '../constants';
+import { PLAN_MONTHS } from '../../../plan-months';
 
 export function sumYearTotalCents(amounts: Record<string, number>, categoryId: string): number {
   let total = 0;

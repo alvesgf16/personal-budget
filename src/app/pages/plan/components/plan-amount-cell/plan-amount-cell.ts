@@ -1,5 +1,5 @@
 import { Component, effect, inject, input, output, PendingTasks, signal } from '@angular/core';
-import { formatCentsAsDollarInput } from './helpers/format-cents-as-dollar-input';
+import { formatCentsAsDollarInput } from '../../format-cents-as-dollar-input';
 import { parseDollarAmount } from './helpers/parse-dollar-amount';
 import { BudgetCellService } from '../../../../../data/domains/budget-cell/budget-cell.service';
 import { attemptWhilePending } from '../../../../shared/helpers/attempt-while-pending';

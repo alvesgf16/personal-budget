@@ -3,7 +3,7 @@ import type { CategoryType } from '../../../../../../data/domains/category/categ
 import type { PeriodTotals } from '../../../../../../data/lib/period-balance';
 import type { CategoryRef } from '../../../category-ref';
 import { filterActiveCategories } from '../../../sum-over-active-categories';
-import { PLAN_MONTHS } from '../../plan-amount-grid/constants';
+import { PLAN_MONTHS } from '../../../plan-months';
 
 const EMPTY_TOTALS = (): PeriodTotals => ({
   incomeCents: 0,

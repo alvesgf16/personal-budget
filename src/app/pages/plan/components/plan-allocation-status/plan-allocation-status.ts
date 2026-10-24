@@ -3,7 +3,7 @@ import { BudgetCellService } from '../../../../../data/domains/budget-cell/budge
 import { CategoryService } from '../../../../../data/domains/category/category.service';
 import { computePeriodBalance } from '../../../../../data/lib/period-balance';
 import { attemptWhilePending } from '../../../../shared/helpers/attempt-while-pending';
-import { PLAN_MONTHS } from '../plan-amount-grid/constants';
+import { PLAN_MONTHS } from '../../plan-months';
 import { computePeriodTotalsByMonth } from './helpers/compute-period-totals-by-month';
 import { type MonthAllocationView, buildMonthView } from './helpers/build-month-view';
 
