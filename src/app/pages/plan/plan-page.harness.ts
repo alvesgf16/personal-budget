@@ -9,12 +9,16 @@ export function planHarness(storeHarness: DocumentStoreHarness) {
   const seedStartingYear = (startingYear: number) =>
     storeHarness.store.insert(COLLECTIONS.settings, { startingYear });
 
+  const awaitSettled = async (fixture: ComponentFixture<PlanPage>) => {
+    await fixture.whenStable();
+    fixture.detectChanges();
+  };
+
   const renderPlan = async () => {
     const fixture = TestBed.createComponent(PlanPage);
 
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await awaitSettled(fixture);
 
     return fixture;
   };
@@ -35,8 +39,7 @@ export function planHarness(storeHarness: DocumentStoreHarness) {
     fixture.detectChanges();
 
     form.dispatchEvent(new Event('submit'));
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await awaitSettled(fixture);
   };
 
   const setCell = (fixture: ComponentFixture<PlanPage>, ariaLabel: string, value: string) =>
@@ -80,6 +83,7 @@ export function planHarness(storeHarness: DocumentStoreHarness) {
   return {
     seedStartingYear,
     renderPlan,
+    awaitSettled,
     submitInSection,
     setCell,
     enterExpenseAndSavingsJanuary,

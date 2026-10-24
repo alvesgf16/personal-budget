@@ -233,6 +233,30 @@ export function deferFirstStoreInsert(storeHarness: DocumentStoreHarness): Inser
   };
 }
 
+/** Holds the first `insert`, then rejects it; later inserts pass through. */
+export function rejectFirstStoreInsert(storeHarness: DocumentStoreHarness): InsertDeferralControls {
+  const originalInsert = storeHarness.store.insert.bind(storeHarness.store);
+  const firstInsertRelease = createDeferred();
+  const firstInsertArrival = createDeferred();
+  let isFirstInsert = true;
+
+  storeHarness.store.insert = async (collection, payload) => {
+    if (!isFirstInsert) {
+      return originalInsert(collection, payload);
+    }
+
+    isFirstInsert = false;
+    firstInsertArrival.notify();
+    await firstInsertRelease.whenNotified;
+    throw new Error('unavailable');
+  };
+
+  return {
+    whenFirstInsertArrives: firstInsertArrival.whenNotified,
+    releaseFirstInsert: firstInsertRelease.notify,
+  };
+}
+
 function createDeferred(): Deferred {
   let notify!: () => void;
 

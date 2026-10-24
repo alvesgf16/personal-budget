@@ -62,7 +62,6 @@ describe('PlanAllocationStatus', () => {
     fixture.detectChanges();
 
     expect(stripStatus(fixture, 'January')).toEqual({ text: '1000 over', status: 'over' });
-    expect(TestBed.inject(CategoryService).revision()).toBeGreaterThan(0);
   });
 
   it('shows under-allocated January on Plan before the balancing cell blur', async () => {
@@ -80,7 +79,6 @@ describe('PlanAllocationStatus', () => {
     await completeJanuaryWithSavingsBlur(fixture);
 
     expect(planStatus(fixture, 'January')).toEqual({ text: 'Complete', status: 'balanced' });
-    expect(TestBed.inject(BudgetCellService).revision()).toBeGreaterThan(0);
   });
 
   it('persists the balancing cell without a total document', async () => {

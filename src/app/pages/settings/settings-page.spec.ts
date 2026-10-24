@@ -2,6 +2,7 @@ import { COLLECTIONS } from '../../../data/store/types';
 import {
   deferFirstStoreSettingsList,
   provideDocumentStoreHarness,
+  rejectFirstStoreInsert,
 } from '../../../data/store/document-store/document-store.harness';
 import type { Settings } from '../../../data/domains/settings/settings';
 import { PlanPage } from '../plan/plan-page';
@@ -108,29 +109,11 @@ describe('Settings starting year', () => {
   });
 
   it('ignores a stale save error after a later save succeeds', async () => {
-    const originalInsert = storeHarness.store.insert.bind(storeHarness.store);
-    let releaseFirstInsert: () => void = () => undefined;
-    const firstInsertHold = new Promise<void>((resolve) => {
-      releaseFirstInsert = resolve;
-    });
-    let enteredFirstInsert: () => void = () => undefined;
-    const firstInsertStarted = new Promise<void>((resolve) => {
-      enteredFirstInsert = resolve;
-    });
-    let insertCount = 0;
-    storeHarness.store.insert = async (collection, payload) => {
-      insertCount += 1;
-      if (insertCount === 1) {
-        enteredFirstInsert();
-        await firstInsertHold;
-        throw new Error('unavailable');
-      }
-      return originalInsert(collection, payload);
-    };
-
+    const { whenFirstInsertArrives, releaseFirstInsert } = rejectFirstStoreInsert(storeHarness);
     const fixture = await renderSettings();
+
     submitYearWithoutWaiting(fixture, '2026');
-    await firstInsertStarted;
+    await whenFirstInsertArrives;
     submitYearWithoutWaiting(fixture, '2027');
     releaseFirstInsert();
     await fixture.whenStable();
