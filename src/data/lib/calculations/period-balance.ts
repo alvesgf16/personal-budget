@@ -22,7 +22,7 @@ export interface PeriodBalance {
  * `untouched` is remaining 0 with no inputs — not “complete.”
  * `balanced` is remaining 0 after real income (every dollar allocated).
  */
-export function computePeriodBalance(totals: PeriodTotals): PeriodBalance {
+export function calculatePeriodBalance(totals: PeriodTotals): PeriodBalance {
   const remainingCents = totals.incomeCents - totals.expenseCents - totals.savingsCents;
 
   return {

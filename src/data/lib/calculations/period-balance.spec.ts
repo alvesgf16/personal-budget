@@ -1,4 +1,4 @@
-import { computePeriodBalance, periodKey } from './period-balance';
+import { calculatePeriodBalance, periodKey } from './period-balance';
 
 describe('periodKey', () => {
   it('formats year and zero-padded month', () => {
@@ -7,9 +7,9 @@ describe('periodKey', () => {
   });
 });
 
-describe('computePeriodBalance', () => {
+describe('calculatePeriodBalance', () => {
   it('marks all-zero totals as untouched (not balanced)', () => {
-    expect(computePeriodBalance({ incomeCents: 0, expenseCents: 0, savingsCents: 0 })).toEqual({
+    expect(calculatePeriodBalance({ incomeCents: 0, expenseCents: 0, savingsCents: 0 })).toEqual({
       remainingCents: 0,
       status: 'untouched',
     });
@@ -17,19 +17,19 @@ describe('computePeriodBalance', () => {
 
   it('marks positive remaining as under', () => {
     expect(
-      computePeriodBalance({ incomeCents: 100_000, expenseCents: 40_000, savingsCents: 10_000 }),
+      calculatePeriodBalance({ incomeCents: 100_000, expenseCents: 40_000, savingsCents: 10_000 }),
     ).toEqual({ remainingCents: 50_000, status: 'under' });
   });
 
   it('marks zero remaining with income as balanced', () => {
     expect(
-      computePeriodBalance({ incomeCents: 100_000, expenseCents: 70_000, savingsCents: 30_000 }),
+      calculatePeriodBalance({ incomeCents: 100_000, expenseCents: 70_000, savingsCents: 30_000 }),
     ).toEqual({ remainingCents: 0, status: 'balanced' });
   });
 
   it('marks negative remaining as over', () => {
     expect(
-      computePeriodBalance({ incomeCents: 100_000, expenseCents: 80_000, savingsCents: 40_000 }),
+      calculatePeriodBalance({ incomeCents: 100_000, expenseCents: 80_000, savingsCents: 40_000 }),
     ).toEqual({ remainingCents: -20_000, status: 'over' });
   });
 
@@ -37,7 +37,7 @@ describe('computePeriodBalance', () => {
     const incomeCents = 250_000;
     const expenseCents = 90_000;
     const savingsCents = 35_000;
-    const result = computePeriodBalance({ incomeCents, expenseCents, savingsCents });
+    const result = calculatePeriodBalance({ incomeCents, expenseCents, savingsCents });
     expect(result.remainingCents).toBe(incomeCents - expenseCents - savingsCents);
   });
 });

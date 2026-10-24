@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { planYearSchema } from '../../lib/plan-year';
+import { planYearSchema } from '../../lib/schemas/plan-year';
 
 /**
  * Sparse: a missing cell means “no amount entered,” not a stored zero.

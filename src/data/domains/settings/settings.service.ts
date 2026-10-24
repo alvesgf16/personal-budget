@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { COLLECTIONS } from '../../store/types';
 import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
 import { PersistQueue } from '../../lib/persist-queue';
-import type { Settings } from './settings';
+import { settingsSchema, type Settings } from './settings';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
@@ -22,15 +22,23 @@ export class SettingsService {
   private async readSettings(): Promise<Settings | null> {
     const [settingsDoc] = await this.store.list<Settings>(COLLECTIONS.settings);
     this.documentId = settingsDoc?.id ?? null;
-    return settingsDoc ? { startingYear: settingsDoc.startingYear } : null;
+
+    if (!settingsDoc) {
+      return null;
+    }
+
+    return settingsSchema.parse(settingsDoc);
   }
 
   private async upsert(payload: Settings): Promise<void> {
+    const validated = settingsSchema.parse(payload);
+
     if (this.documentId) {
-      await this.store.update(COLLECTIONS.settings, this.documentId, payload);
+      await this.store.update(COLLECTIONS.settings, this.documentId, validated);
       return;
     }
-    const created = await this.store.insert(COLLECTIONS.settings, payload);
+
+    const created = await this.store.insert(COLLECTIONS.settings, validated);
     this.documentId = created.id;
   }
 }

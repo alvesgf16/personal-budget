@@ -9,7 +9,7 @@ alwaysApply: false
 ## Folder map
 
 - `domains/` — persisted domain folders (`settings/`, `category/`, `budget-cell/`): Zod model + service + specs
-- `lib/` — pure helpers (`plan-year`, `period-balance`, `persist-queue`)
+- `lib/` — pure leaf helpers by role: `schemas/` (Zod primitives), `calculations/` (pure compute); `persist-queue` at the lib root
 - `store/` — `types.ts` (collections + document shapes), `database.ts` (Dexie), `document-store/` (DocumentStore, token, harness, specs)
 
 ## Layering (Clean Code Ch.11 / PB-100)

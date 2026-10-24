@@ -1,13 +1,13 @@
-import { computePeriodTotalsByMonth } from './compute-period-totals-by-month';
+import { calculatePeriodTotalsByMonth } from './calculate-period-totals-by-month';
 
-describe('computePeriodTotalsByMonth', () => {
+describe('calculatePeriodTotalsByMonth', () => {
   const salary = { id: 'salary', type: 'income' as const, active: true };
   const rent = { id: 'rent', type: 'expense' as const, active: true };
   const emergency = { id: 'emergency', type: 'savings' as const, active: true };
   const oldJob = { id: 'old-job', type: 'income' as const, active: false };
 
   it('returns twelve all-zero totals when there are no cells', () => {
-    const totals = computePeriodTotalsByMonth([], [salary, rent, emergency]);
+    const totals = calculatePeriodTotalsByMonth([], [salary, rent, emergency]);
     expect(totals).toHaveLength(12);
     expect(
       totals.every(
@@ -20,7 +20,7 @@ describe('computePeriodTotalsByMonth', () => {
   });
 
   it('splits income, expense, and savings for one month', () => {
-    const totals = computePeriodTotalsByMonth(
+    const totals = calculatePeriodTotalsByMonth(
       [
         { categoryId: 'salary', month: 1, amountCents: 100_000 },
         { categoryId: 'rent', month: 1, amountCents: 70_000 },
@@ -42,7 +42,7 @@ describe('computePeriodTotalsByMonth', () => {
   });
 
   it('ignores cells for inactive categories', () => {
-    const totals = computePeriodTotalsByMonth(
+    const totals = calculatePeriodTotalsByMonth(
       [
         { categoryId: 'salary', month: 3, amountCents: 10_000 },
         { categoryId: 'old-job', month: 3, amountCents: 100_000 },

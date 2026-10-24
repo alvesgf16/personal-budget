@@ -1,10 +1,10 @@
 import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
 import { BudgetCellService } from '../../../../../data/domains/budget-cell/budget-cell.service';
 import { CategoryService } from '../../../../../data/domains/category/category.service';
-import { computePeriodBalance } from '../../../../../data/lib/period-balance';
+import { calculatePeriodBalance } from '../../../../../data/lib/calculations/period-balance';
 import { attemptWhilePending } from '../../../../shared/helpers/attempt-while-pending';
 import { PLAN_MONTHS } from '../../plan-months';
-import { computePeriodTotalsByMonth } from './helpers/compute-period-totals-by-month';
+import { calculatePeriodTotalsByMonth } from './helpers/calculate-period-totals-by-month';
 import { type MonthAllocationView, buildMonthView } from './helpers/build-month-view';
 
 interface AllocationStatusSnapshot {
@@ -66,10 +66,12 @@ export class PlanAllocationStatus {
       return;
     }
 
-    const totals = computePeriodTotalsByMonth(cells, categories);
+    const totals = calculatePeriodTotalsByMonth(cells, categories);
 
     this.months.set(
-      PLAN_MONTHS.map((month, index) => buildMonthView(month, computePeriodBalance(totals[index]))),
+      PLAN_MONTHS.map((month, index) =>
+        buildMonthView(month, calculatePeriodBalance(totals[index])),
+      ),
     );
   }
 
