@@ -24,12 +24,6 @@ describe('App', () => {
     }).compileComponents();
   });
 
-  it('creates the root component', () => {
-    const fixture = TestBed.createComponent(App);
-
-    expect(fixture.componentInstance).toBeTruthy();
-  });
-
   it('renders tab labels that match APP_TABS', async () => {
     const fixture = await renderAt('/');
     const labels = navLinks(fixture).map((link) => link.textContent?.trim());

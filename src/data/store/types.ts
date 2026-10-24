@@ -1,7 +1,3 @@
-/**
- * Named piles (“collections”) in the document store.
- * Prefer these constants; store and service APIs only accept CollectionName.
- */
 export const COLLECTIONS = {
   settings: 'settings',
   categories: 'categories',
@@ -12,10 +8,6 @@ export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
 
 export type StoreDocument<T extends object = Record<string, unknown>> = T & DocumentMeta;
 
-/**
- * Shared metadata on every persisted document.
- * Domain payloads (settings, categories, …) extend this via StoreDocument<T>.
- */
 interface DocumentMeta {
   id: string;
   updatedAt: string;
@@ -23,10 +15,7 @@ interface DocumentMeta {
   deletedAt: string | null;
 }
 
-/**
- * Internal IndexedDB row: metadata + collection name + domain fields.
- * Callers never see `collection`; the API scopes by it.
- */
+/** Internal IndexedDB row; callers never see `collection`. */
 export type StoredRow<T extends object = Record<string, unknown>> = StoreDocument<T> & {
   collection: CollectionName;
 };

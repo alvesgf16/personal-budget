@@ -1,6 +1,5 @@
 import type { PendingTasks } from '@angular/core';
 
-/** Spec stub: counts open PendingTasks slots without Angular DI. */
 export function stubPendingTasks(): { pendingTasks: PendingTasks; open: () => number } {
   let open = 0;
   const pendingTasks = {

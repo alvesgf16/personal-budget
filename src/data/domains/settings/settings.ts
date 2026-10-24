@@ -1,10 +1,6 @@
 import { z } from 'zod';
 import { planYearSchema } from '../../lib/plan-year';
 
-/**
- * App settings payload (domain fields only).
- * The document store adds id / updatedAt / deletedAt when saving.
- */
 export const settingsSchema = z.object({
   /** Calendar year that drives the Plan year header. */
   startingYear: planYearSchema,

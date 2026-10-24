@@ -68,7 +68,10 @@ export function useDocumentStoreHarness(prefix: string): DocumentStoreHarness {
   return harness;
 }
 
-/** Unique IndexedDB plus DOCUMENT_STORE override for TestBed specs. */
+/**
+ * Unique IndexedDB plus DOCUMENT_STORE for TestBed specs.
+ * Feature harnesses assume this ran in beforeEach.
+ */
 export function provideDocumentStoreHarness(
   prefix: string,
   options: Pick<TestModuleMetadata, 'imports'> = {},
@@ -222,6 +225,30 @@ export function deferFirstStoreInsert(storeHarness: DocumentStoreHarness): Inser
     firstInsertArrival.notify();
     await firstInsertRelease.whenNotified;
     return originalInsert(collection, payload);
+  };
+
+  return {
+    whenFirstInsertArrives: firstInsertArrival.whenNotified,
+    releaseFirstInsert: firstInsertRelease.notify,
+  };
+}
+
+/** Holds the first `insert`, then rejects it; later inserts pass through. */
+export function rejectFirstStoreInsert(storeHarness: DocumentStoreHarness): InsertDeferralControls {
+  const originalInsert = storeHarness.store.insert.bind(storeHarness.store);
+  const firstInsertRelease = createDeferred();
+  const firstInsertArrival = createDeferred();
+  let isFirstInsert = true;
+
+  storeHarness.store.insert = async (collection, payload) => {
+    if (!isFirstInsert) {
+      return originalInsert(collection, payload);
+    }
+
+    isFirstInsert = false;
+    firstInsertArrival.notify();
+    await firstInsertRelease.whenNotified;
+    throw new Error('unavailable');
   };
 
   return {

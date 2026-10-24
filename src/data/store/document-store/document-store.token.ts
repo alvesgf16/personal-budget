@@ -1,10 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import { createDocumentStore, type DocumentStore } from './document-store';
 
-/**
- * Root token for the plain DocumentStore.
- * Tests override this with a unique DB name; domain services inject it directly.
- */
+/** Specs override with a unique DB name via provideDocumentStoreHarness. */
 export const DOCUMENT_STORE = new InjectionToken<DocumentStore>('DOCUMENT_STORE', {
   providedIn: 'root',
   factory: () => createDocumentStore(),

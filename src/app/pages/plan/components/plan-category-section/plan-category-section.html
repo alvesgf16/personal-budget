@@ -1,0 +1,66 @@
+<section [attr.data-type]="type()">
+  <h2>{{ title() }}</h2>
+  <form (submit)="add($event)">
+    <label [attr.for]="'category-name-' + type()">Name</label>
+    <input
+      [id]="'category-name-' + type()"
+      type="text"
+      name="categoryName"
+      autocomplete="off"
+      [value]="nameInput()"
+      (input)="onNameInput($event)"
+      [attr.aria-invalid]="error() ? 'true' : null"
+      [attr.aria-describedby]="error() ? 'category-error-' + type() : null"
+    />
+    <button type="submit">Add</button>
+  </form>
+  @if (error()) {
+    <p [id]="'category-error-' + type()" role="alert">{{ error() }}</p>
+  }
+  @if (year(); as planYear) {
+    <app-plan-amount-grid
+      [year]="planYear"
+      [categories]="activeCategories()"
+      (nameChange)="rename($event.id, $event.name)"
+      (hide)="hide($event.id)"
+    />
+  } @else {
+    <ul class="active-categories">
+      @for (category of activeCategories(); track category.id) {
+        <li class="row-actions">
+          <app-plan-category-name-input
+            [categoryId]="category.id"
+            [name]="category.name"
+            (nameChange)="rename($event.id, $event.name)"
+          />
+          <button
+            type="button"
+            [attr.aria-label]="'Hide ' + category.name"
+            (click)="hide(category.id)"
+          >
+            Hide
+          </button>
+        </li>
+      }
+    </ul>
+  }
+  @if (hiddenCategories().length) {
+    <details class="hidden-categories">
+      <summary>Hidden ({{ hiddenCategories().length }})</summary>
+      <ul>
+        @for (category of hiddenCategories(); track category.id) {
+          <li class="row-actions">
+            <span>{{ category.name }}</span>
+            <button
+              type="button"
+              [attr.aria-label]="'Unhide ' + category.name"
+              (click)="unhide(category.id)"
+            >
+              Unhide
+            </button>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+</section>

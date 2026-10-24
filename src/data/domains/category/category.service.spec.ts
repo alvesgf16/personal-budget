@@ -74,15 +74,9 @@ describe('CategoryService', () => {
   });
 
   it('rejects a blank name', async () => {
-    let addError: unknown;
-    try {
-      await service.add('income', '   ');
-    } catch (error) {
-      addError = error;
-    }
+    await expect(service.add('income', '   ')).rejects.toThrow();
     const listed = await storeHarness.store.list(COLLECTIONS.categories);
 
-    expect(addError).toBeInstanceOf(Error);
     expect(listed).toEqual([]);
   });
 
@@ -152,15 +146,9 @@ describe('CategoryService', () => {
   it('rejects a blank rename and does not write', async () => {
     const created = await service.add('income', 'Salary');
 
-    let renameError: unknown;
-    try {
-      await service.rename(created.id, '   ');
-    } catch (error) {
-      renameError = error;
-    }
+    await expect(service.rename(created.id, '   ')).rejects.toThrow();
     const listed = await service.listByType('income');
 
-    expect(renameError).toBeInstanceOf(Error);
     expect(listed.map((doc) => doc.name)).toEqual(['Salary']);
   });
 

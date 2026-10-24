@@ -49,6 +49,7 @@ Prefer one verb per idea. Store API: `list` / `getById` / `insert` / `update` (s
 
 CS/Angular vocabulary is fine where it fits (`Router`, `signal`, `inject`, `schema`, queue, map). In feature/domain code prefer PB vocabulary:
 
+- Routed screens: `*Page` under `src/app/pages/` (domain `Settings` stays the settings payload)
 - `Category`, `CategoryType` (`income` | `expense` | `savings`)
 - `BudgetCell`, `Settings`
 - Money amounts in **cents** (`amountCents`, `*Cents` totals)

@@ -4,11 +4,6 @@ import { COLLECTIONS, type StoreDocument } from '../../store/types';
 import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
 import { PersistQueue } from '../../lib/persist-queue';
 
-/**
- * Budget-cell document access: list by plan year and upsert/clear one month cell.
- * Sparse — a missing document means “no amount entered,” not zero.
- * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
- */
 @Injectable({ providedIn: 'root' })
 export class BudgetCellService {
   private readonly store = inject(DOCUMENT_STORE);
@@ -62,10 +57,11 @@ export class BudgetCellService {
   }
 
   private async clearExisting(existing: StoreDocument<BudgetCell> | undefined): Promise<void> {
-    if (existing) {
-      await this.store.softDelete(COLLECTIONS.budgetCells, existing.id);
+    if (!existing) {
+      return;
     }
 
+    await this.store.softDelete(COLLECTIONS.budgetCells, existing.id);
     this.bumpRevision();
   }
 
