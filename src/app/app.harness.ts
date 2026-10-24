@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { App } from './app';
 
-/** Shared render/DOM helpers for App specs. Call after TestBed is configured with App + router. */
 export function appHarness() {
   const renderAt = async (url: string) => {
     const fixture = TestBed.createComponent(App);

@@ -4,10 +4,6 @@ import { DOCUMENT_STORE } from '../../store/document-store/document-store.token'
 import { PersistQueue } from '../../lib/persist-queue';
 import type { Settings } from './settings';
 
-/**
- * Settings document access: get the singleton and serialize overlapping gets and saves.
- * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
- */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly store = inject(DOCUMENT_STORE);

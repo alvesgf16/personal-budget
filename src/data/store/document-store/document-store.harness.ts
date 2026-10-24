@@ -68,7 +68,10 @@ export function useDocumentStoreHarness(prefix: string): DocumentStoreHarness {
   return harness;
 }
 
-/** Unique IndexedDB plus DOCUMENT_STORE override for TestBed specs. */
+/**
+ * Unique IndexedDB plus DOCUMENT_STORE for TestBed specs.
+ * Feature harnesses assume this ran in beforeEach.
+ */
 export function provideDocumentStoreHarness(
   prefix: string,
   options: Pick<TestModuleMetadata, 'imports'> = {},

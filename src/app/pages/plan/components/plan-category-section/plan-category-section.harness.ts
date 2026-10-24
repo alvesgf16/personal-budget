@@ -3,7 +3,6 @@ import type { CategoryType } from '../../../../../data/domains/category/category
 import { commitInputByAriaLabel } from '../../../../shared/harness/commit-input-by-aria-label.harness';
 import { PlanCategorySection } from './plan-category-section';
 
-/** Shared render/DOM helpers for PlanCategorySection specs. Call after provideDocumentStoreHarness. */
 export function planCategorySectionHarness() {
   const render = async (type: CategoryType = 'income', year: number | null = null) => {
     const fixture = TestBed.createComponent(PlanCategorySection);

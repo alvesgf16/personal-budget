@@ -5,7 +5,6 @@ import type { DocumentStoreHarness } from '../../../data/store/document-store/do
 import { commitInputByAriaLabel } from '../../shared/harness/commit-input-by-aria-label.harness';
 import { PlanPage } from './plan-page';
 
-/** Shared seed/render helpers for Plan specs. Call after provideDocumentStoreHarness. */
 export function planHarness(storeHarness: DocumentStoreHarness) {
   const seedStartingYear = (startingYear: number) =>
     storeHarness.store.insert(COLLECTIONS.settings, { startingYear });

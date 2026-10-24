@@ -21,7 +21,6 @@ export class PlanAmountCell {
   /** Stored cents; `null` means no sparse cell. */
   readonly amountCents = input<number | null>(null);
   readonly saveError = output<string>();
-  /** Fired after a successful persist so the grid can refresh its amounts map. */
   readonly committed = output<number | null>();
 
   protected readonly dollarInput = signal('');

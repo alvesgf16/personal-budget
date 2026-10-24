@@ -4,10 +4,6 @@ import { COLLECTIONS, type StoreDocument } from '../../store/types';
 import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
 import { PersistQueue } from '../../lib/persist-queue';
 
-/**
- * Category document access: list/add, rename, and hide/unhide (active flag).
- * Feature screens inject this — they do not touch DOCUMENT_STORE or Dexie.
- */
 @Injectable({ providedIn: 'root' })
 export class CategoryService {
   private readonly store = inject(DOCUMENT_STORE);
@@ -62,17 +58,15 @@ export class CategoryService {
     });
   }
 
-  /** Patch display name only — sortOrder, type, active, and budgetCells stay put. */
   rename(id: string, name: string): Promise<StoreDocument<Category>> {
     return this.persist.enqueue(() => this.applyRename(id, name));
   }
 
-  /** Soft-hide: set active false; document and budgetCells remain. */
+  /** Soft-hide: document and budgetCells remain. */
   hide(id: string): Promise<StoreDocument<Category>> {
     return this.persist.enqueue(() => this.setActive(id, false));
   }
 
-  /** Restore a hidden category to the active grid. */
   unhide(id: string): Promise<StoreDocument<Category>> {
     return this.persist.enqueue(() => this.setActive(id, true));
   }

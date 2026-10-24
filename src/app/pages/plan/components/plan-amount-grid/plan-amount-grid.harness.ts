@@ -5,7 +5,6 @@ import type { DocumentStoreHarness } from '../../../../../data/store/document-st
 import { commitInputByAriaLabel } from '../../../../shared/harness/commit-input-by-aria-label.harness';
 import { PlanAmountGrid } from './plan-amount-grid';
 
-/** Shared insert/render helpers for PlanAmountGrid specs. Call after provideDocumentStoreHarness. */
 export function planAmountGridHarness(storeHarness: DocumentStoreHarness) {
   const insertCategory = (
     name: string,

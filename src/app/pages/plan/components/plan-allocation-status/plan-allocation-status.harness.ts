@@ -6,7 +6,6 @@ import { planHarness } from '../../plan-page.harness';
 import { PlanPage } from '../../plan-page';
 import { PlanAllocationStatus } from './plan-allocation-status';
 
-/** Shared seed/render helpers for PlanAllocationStatus specs. Call after provideDocumentStoreHarness. */
 export function planAllocationStatusHarness(storeHarness: DocumentStoreHarness) {
   const { seedStartingYear, renderPlan, submitInSection, setCell } = planHarness(storeHarness);
 

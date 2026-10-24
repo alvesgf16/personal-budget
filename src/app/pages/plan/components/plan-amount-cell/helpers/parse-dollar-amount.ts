@@ -1,12 +1,9 @@
-/**
- * Parse a dollar amount typed in the Plan grid into integer cents.
- * Empty / whitespace → `empty` (caller soft-deletes the sparse cell).
- */
 export type DollarAmountParse =
   | { status: 'empty' }
   | { status: 'ok'; amountCents: number }
   | { status: 'invalid'; message: string };
 
+/** Empty / whitespace → `empty` (caller soft-deletes the sparse cell). */
 export function parseDollarAmount(dollarInput: string): DollarAmountParse {
   const amountDollars = dollarInput.trim();
 

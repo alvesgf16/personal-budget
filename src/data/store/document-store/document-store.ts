@@ -3,10 +3,7 @@ import { BudgetDatabase } from '../database';
 
 const META_KEYS = new Set(['id', 'updatedAt', 'deletedAt', 'collection']);
 
-/**
- * Generic collection API over IndexedDB.
- * Domain services inject DOCUMENT_STORE; this class stays free of Angular DI.
- */
+/** Domain services inject DOCUMENT_STORE; this class stays free of Angular DI. */
 export class DocumentStore {
   constructor(private readonly database: BudgetDatabase) {}
 

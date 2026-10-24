@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SettingsPage } from './settings-page';
 
-/** Shared render/submit helpers for Settings specs. Call after provideDocumentStoreHarness. */
 export function settingsHarness() {
   const renderSettings = async () => {
     const fixture = TestBed.createComponent(SettingsPage);
