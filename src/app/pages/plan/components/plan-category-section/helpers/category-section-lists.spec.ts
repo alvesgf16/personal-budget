@@ -7,7 +7,7 @@ import type { StoreDocument } from '../../../../../../data/store/types';
 import { createCategorySectionLists } from './category-section-lists';
 
 interface ListsHarnessOptions {
-  categoryService: Pick<CategoryService, 'listByType' | 'listHiddenByType'>;
+  categoryService: Pick<CategoryService, 'listPartitionedByType'>;
   type?: WritableSignal<CategoryType>;
 }
 
@@ -29,8 +29,7 @@ describe('createCategorySectionLists', () => {
   it('load sets an error when listing fails', async () => {
     const { lists, error } = listsHarness({
       categoryService: {
-        listByType: () => Promise.reject(new Error('unavailable')),
-        listHiddenByType: () => Promise.resolve([]),
+        listPartitionedByType: () => Promise.reject(new Error('unavailable')),
       },
     });
 
@@ -44,13 +43,9 @@ describe('createCategorySectionLists', () => {
     const steps: string[] = [];
     const { lists, activeCategories } = listsHarness({
       categoryService: {
-        listByType: () => {
-          steps.push('listByType');
-          return Promise.resolve(active);
-        },
-        listHiddenByType: () => {
-          steps.push('listHiddenByType');
-          return Promise.resolve([]);
+        listPartitionedByType: () => {
+          steps.push('listPartitionedByType');
+          return Promise.resolve({ active, hidden: [] });
         },
       },
     });
@@ -60,8 +55,7 @@ describe('createCategorySectionLists', () => {
       return Promise.resolve();
     });
 
-    expect(steps[0]).toBe('mutation');
-    expect(steps.slice(1).sort()).toEqual(['listByType', 'listHiddenByType']);
+    expect(steps).toEqual(['mutation', 'listPartitionedByType']);
     expect(activeCategories()).toEqual(active);
   });
 
@@ -72,15 +66,14 @@ describe('createCategorySectionLists', () => {
     const fresh = [categoryDoc('new', 'Fresh')];
     const { lists, activeCategories } = listsHarness({
       categoryService: {
-        listByType: async () => {
+        listPartitionedByType: async () => {
           listCalls += 1;
           if (listCalls === 1) {
             await firstList.wait;
-            return stale;
+            return { active: stale, hidden: [] };
           }
-          return fresh;
+          return { active: fresh, hidden: [] };
         },
-        listHiddenByType: () => Promise.resolve([]),
       },
     });
 
@@ -100,11 +93,13 @@ describe('createCategorySectionLists', () => {
     const fresh = [categoryDoc('new', 'Fresh')];
     const { lists, activeCategories } = listsHarness({
       categoryService: {
-        listByType: () => {
+        listPartitionedByType: () => {
           listCalls += 1;
-          return Promise.resolve(listCalls === 1 ? fresh : stale);
+          return Promise.resolve({
+            active: listCalls === 1 ? fresh : stale,
+            hidden: [],
+          });
         },
-        listHiddenByType: () => Promise.resolve([]),
       },
     });
 
@@ -126,14 +121,13 @@ describe('createCategorySectionLists', () => {
     const existing = [categoryDoc('a', 'Salary')];
     const { lists, activeCategories, error } = listsHarness({
       categoryService: {
-        listByType: async () => {
+        listPartitionedByType: async () => {
           listCalls += 1;
           if (listCalls === 1) {
             await firstList.wait;
           }
-          return existing;
+          return { active: existing, hidden: [] };
         },
-        listHiddenByType: () => Promise.resolve([]),
       },
     });
 
@@ -152,11 +146,10 @@ describe('createCategorySectionLists', () => {
     const { lists, activeCategories } = listsHarness({
       type,
       categoryService: {
-        listByType: () => {
+        listPartitionedByType: () => {
           type.set('expense');
-          return Promise.resolve([categoryDoc('a', 'Salary')]);
+          return Promise.resolve({ active: [categoryDoc('a', 'Salary')], hidden: [] });
         },
-        listHiddenByType: () => Promise.resolve([]),
       },
     });
 
@@ -194,8 +187,7 @@ function categoryDoc(id: string, name: string, active = true): StoreDocument<Cat
 
 function stubLists(active: StoreDocument<Category>[], hidden: StoreDocument<Category>[]) {
   return {
-    listByType: () => Promise.resolve(active),
-    listHiddenByType: () => Promise.resolve(hidden),
+    listPartitionedByType: () => Promise.resolve({ active, hidden }),
   };
 }
 

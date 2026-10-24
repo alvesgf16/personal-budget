@@ -60,22 +60,28 @@ export class PlanAllocationStatus {
   }
 
   private async loadMonthsForYear(statusSnapshot: AllocationStatusSnapshot): Promise<void> {
-    const [income, expense, savings, cells] = await Promise.all([
-      this.categories.listByType('income'),
-      this.categories.listByType('expense'),
-      this.categories.listByType('savings'),
-      this.budgetCells.listForYear(statusSnapshot.year),
-    ]);
+    const { categories, cells } = await this.fetchAllocationInputs(statusSnapshot.year);
 
     if (!this.isSnapshotCurrent(statusSnapshot)) {
       return;
     }
 
-    const totals = computePeriodTotalsByMonth(cells, [...income, ...expense, ...savings]);
+    const totals = computePeriodTotalsByMonth(cells, categories);
 
     this.months.set(
       PLAN_MONTHS.map((month, index) => buildMonthView(month, computePeriodBalance(totals[index]))),
     );
+  }
+
+  private async fetchAllocationInputs(year: number) {
+    const [income, expense, savings, cells] = await Promise.all([
+      this.categories.listByType('income'),
+      this.categories.listByType('expense'),
+      this.categories.listByType('savings'),
+      this.budgetCells.listForYear(year),
+    ]);
+
+    return { categories: [...income, ...expense, ...savings], cells };
   }
 
   private isSnapshotCurrent(statusSnapshot: AllocationStatusSnapshot): boolean {

@@ -42,13 +42,13 @@ export class PlanAmountGrid {
     effect(() => {
       const year = this.year();
 
-      this.clearStaleYearAmounts();
+      this.clearStaleYearUi();
       void this.loadCells(year);
     });
   }
 
   /** Clear before reload so cells never show the previous year's values. */
-  private clearStaleYearAmounts(): void {
+  private clearStaleYearUi(): void {
     this.amounts.set({});
     this.error.set(null);
   }

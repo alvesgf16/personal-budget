@@ -7,10 +7,11 @@ import {
   attemptMutation as runAttemptMutation,
   loadCategories,
 } from './category-section-list-commands';
+import { matchesSnapshot } from './category-section-list-snapshots';
 import { createRevisionCounter } from './create-revision-counter';
 
 interface CategorySectionListsContext {
-  categoryService: Pick<CategoryService, 'listByType' | 'listHiddenByType'>;
+  categoryService: Pick<CategoryService, 'listPartitionedByType'>;
   pendingTasks: PendingTasks;
   type: () => CategoryType;
   error: WritableSignal<string | null>;
@@ -59,14 +60,6 @@ function createRefresh(
   };
 }
 
-function matchesSnapshot(
-  revisionCounter: RevisionCounter,
-  snapshot: CategoryTypeSnapshot,
-  context: CategorySectionListsContext,
-): boolean {
-  return snapshot.revision === revisionCounter.current() && context.type() === snapshot.type;
-}
-
 function applyCategoryLists(
   lists: CategoryLists | null,
   context: CategorySectionListsContext,
@@ -80,14 +73,11 @@ function applyCategoryLists(
 }
 
 async function listSectionCategoriesIfSnapshotMatches(
-  categoryService: Pick<CategoryService, 'listByType' | 'listHiddenByType'>,
+  categoryService: Pick<CategoryService, 'listPartitionedByType'>,
   type: CategoryType,
   snapshotMatches: () => boolean,
 ): Promise<CategoryLists | null> {
-  const [active, hidden] = await Promise.all([
-    categoryService.listByType(type),
-    categoryService.listHiddenByType(type),
-  ]);
+  const lists = await categoryService.listPartitionedByType(type);
 
-  return snapshotMatches() ? { active, hidden } : null;
+  return snapshotMatches() ? lists : null;
 }

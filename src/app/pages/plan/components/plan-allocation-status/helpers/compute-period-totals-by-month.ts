@@ -2,6 +2,7 @@ import type { BudgetCell } from '../../../../../../data/domains/budget-cell/budg
 import type { CategoryType } from '../../../../../../data/domains/category/category';
 import type { PeriodTotals } from '../../../../../../data/lib/period-balance';
 import type { CategoryRef } from '../../../category-ref';
+import { filterActiveCategories } from '../../../sum-over-active-categories';
 import { PLAN_MONTHS } from '../../plan-amount-grid/constants';
 
 const EMPTY_TOTALS = (): PeriodTotals => ({
@@ -32,10 +33,8 @@ export function computePeriodTotalsByMonth(
 function activeTypeById(categories: readonly CategoryRef[]): Map<string, CategoryType> {
   const typeById = new Map<string, CategoryType>();
 
-  for (const category of categories) {
-    if (category.active) {
-      typeById.set(category.id, category.type);
-    }
+  for (const category of filterActiveCategories(categories)) {
+    typeById.set(category.id, category.type);
   }
 
   return typeById;

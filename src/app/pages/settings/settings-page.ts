@@ -3,6 +3,7 @@ import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../../data/lib/plan-year';
 import { parseSettings, type Settings } from '../../../data/domains/settings/settings';
 import { SettingsService } from '../../../data/domains/settings/settings.service';
 import { attemptWhilePending } from '../../shared/helpers/attempt-while-pending';
+import { inputValueFromEvent } from '../../shared/helpers/input-value-from-event';
 
 @Component({
   selector: 'app-settings',
@@ -51,7 +52,7 @@ export class SettingsPage implements OnInit {
 
   protected onYearInput(event: Event): void {
     this.revision += 1;
-    this.yearInput.set((event.target as HTMLInputElement).value);
+    this.yearInput.set(inputValueFromEvent(event));
   }
 
   protected async save(event: Event): Promise<void> {

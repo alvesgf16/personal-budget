@@ -27,6 +27,16 @@ export class CategoryService {
     return this.listFiltered(type, (category) => !category.active);
   }
 
+  async listPartitionedByType(
+    type: CategoryType,
+  ): Promise<{ active: StoreDocument<Category>[]; hidden: StoreDocument<Category>[] }> {
+    const ofType = await this.listFiltered(type, () => true);
+    return {
+      active: ofType.filter((category) => category.active),
+      hidden: ofType.filter((category) => !category.active),
+    };
+  }
+
   private async listFiltered(
     type: CategoryType,
     isIncluded: (category: StoreDocument<Category>) => boolean,
@@ -42,9 +52,12 @@ export class CategoryService {
       const siblings = (await this.store.list<Category>(COLLECTIONS.categories)).filter(
         (category) => category.type === type,
       );
-      const sortOrder =
-        siblings.length === 0 ? 0 : Math.max(...siblings.map((category) => category.sortOrder)) + 1;
-      const payload = categorySchema.parse({ type, name, sortOrder, active: true });
+      const payload = categorySchema.parse({
+        type,
+        name,
+        sortOrder: nextSortOrder(siblings),
+        active: true,
+      });
       return this.store.insert(COLLECTIONS.categories, payload);
     });
   }
@@ -89,4 +102,12 @@ export class CategoryService {
     }
     return updated;
   }
+}
+
+function nextSortOrder(siblings: readonly { sortOrder: number }[]): number {
+  if (siblings.length === 0) {
+    return 0;
+  }
+
+  return Math.max(...siblings.map((category) => category.sortOrder)) + 1;
 }

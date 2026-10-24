@@ -1,5 +1,6 @@
 import { Component, effect, input, output, signal } from '@angular/core';
 import { parseCategoryName } from '../../../../../data/domains/category/category';
+import { inputValueFromEvent } from '../../../../shared/helpers/input-value-from-event';
 
 @Component({
   selector: 'app-plan-category-name-input',
@@ -20,7 +21,7 @@ export class PlanCategoryNameInput {
   }
 
   protected onNameInput(event: Event): void {
-    this.nameInput.set((event.target as HTMLInputElement).value);
+    this.nameInput.set(inputValueFromEvent(event));
   }
 
   protected commit(): void {

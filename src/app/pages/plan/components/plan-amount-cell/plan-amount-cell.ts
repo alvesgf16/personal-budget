@@ -3,6 +3,7 @@ import { formatCentsAsDollarInput } from './helpers/format-cents-as-dollar-input
 import { parseDollarAmount } from './helpers/parse-dollar-amount';
 import { BudgetCellService } from '../../../../../data/domains/budget-cell/budget-cell.service';
 import { attemptWhilePending } from '../../../../shared/helpers/attempt-while-pending';
+import { inputValueFromEvent } from '../../../../shared/helpers/input-value-from-event';
 
 @Component({
   selector: 'app-plan-amount-cell',
@@ -34,7 +35,7 @@ export class PlanAmountCell {
   }
 
   protected onDollarInput(event: Event): void {
-    this.dollarInput.set((event.target as HTMLInputElement).value);
+    this.dollarInput.set(inputValueFromEvent(event));
   }
 
   protected async save(): Promise<void> {

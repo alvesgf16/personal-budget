@@ -63,20 +63,14 @@ describe('PlanCategorySection', () => {
   });
 
   it('ignores a stale load when a mutation refresh finishes first', async () => {
-    const {
-      whenFirstListArrives,
-      whenSiblingListCompletes,
-      armNextListWatch,
-      whenNextListCompletes,
-      releaseFirstList,
-    } = deferFirstStoreCategoryList(storeHarness);
+    const { whenFirstListArrives, armNextListWatch, whenNextListCompletes, releaseFirstList } =
+      deferFirstStoreCategoryList(storeHarness);
     const fixture = await startSectionLoadWithoutWaiting('income');
 
     await whenFirstListArrives;
-    await whenSiblingListCompletes;
+    // Add sibling list + partitioned refresh list while the initial load is held.
+    armNextListWatch(2);
     submitNameWithoutWaiting(fixture, 'income', 'Salary');
-    // Add pre-insert list + active and hidden refresh lists.
-    armNextListWatch(3);
     await whenNextListCompletes;
     releaseFirstList();
     await fixture.whenStable();

@@ -6,6 +6,7 @@ import {
 } from '../../../../../data/domains/category/category';
 import { CategoryService } from '../../../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../../../data/store/types';
+import { inputValueFromEvent } from '../../../../shared/helpers/input-value-from-event';
 import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';
 import { PlanCategoryNameInput } from '../plan-category-name-input/plan-category-name-input';
 import { SECTION_TITLES } from './constants';
@@ -52,7 +53,7 @@ export class PlanCategorySection {
   }
 
   protected onNameInput(event: Event): void {
-    this.nameInput.set((event.target as HTMLInputElement).value);
+    this.nameInput.set(inputValueFromEvent(event));
   }
 
   protected async add(event: Event): Promise<void> {
