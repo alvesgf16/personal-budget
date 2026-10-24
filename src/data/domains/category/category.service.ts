@@ -1,5 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { categorySchema, type Category, type CategoryType } from './category';
+import { categorySchema, type Category } from './category';
+import type { CategoryType } from '../../lib/category-type';
 import { COLLECTIONS, type StoreDocument } from '../../store/types';
 import { DOCUMENT_STORE } from '../../store/document-store/document-store.token';
 import { PersistQueue } from '../../lib/persist-queue';

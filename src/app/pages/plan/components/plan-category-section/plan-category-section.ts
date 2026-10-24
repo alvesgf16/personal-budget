@@ -1,10 +1,7 @@
 import { Component, computed, effect, inject, input, PendingTasks, signal } from '@angular/core';
-import {
-  parseCategoryName,
-  type Category,
-  type CategoryType,
-} from '../../../../../data/domains/category/category';
+import { parseCategoryName, type Category } from '../../../../../data/domains/category/category';
 import { CategoryService } from '../../../../../data/domains/category/category.service';
+import type { CategoryType } from '../../../../../data/lib/category-type';
 import type { StoreDocument } from '../../../../../data/store/types';
 import { inputValueFromEvent } from '../../../../shared/helpers/input-value-from-event';
 import { PlanAmountGrid } from '../plan-amount-grid/plan-amount-grid';

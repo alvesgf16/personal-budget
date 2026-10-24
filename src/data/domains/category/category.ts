@@ -1,8 +1,5 @@
 import { z } from 'zod';
-
-const categoryTypeSchema = z.enum(['income', 'expense', 'savings']);
-
-export type CategoryType = z.infer<typeof categoryTypeSchema>;
+import { categoryTypeSchema } from '../../lib/category-type';
 
 export const categorySchema = z.object({
   type: categoryTypeSchema,

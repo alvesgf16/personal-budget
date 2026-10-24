@@ -1,7 +1,7 @@
 import type { PendingTasks, WritableSignal } from '@angular/core';
 import { signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
-import type { CategoryType } from '../../../../../../data/domains/category/category';
+import type { CategoryType } from '../../../../../../data/lib/category-type';
 import { createRevisionCounter } from '../../../../../shared/helpers/create-revision-counter';
 import { attemptMutation, loadCategories, matchesSnapshot } from './category-section-list-commands';
 

@@ -1,5 +1,5 @@
 import type { PendingTasks, WritableSignal } from '@angular/core';
-import type { CategoryType } from '../../../../../../data/domains/category/category';
+import type { CategoryType } from '../../../../../../data/lib/category-type';
 import { attemptWhilePending } from '../../../../../shared/helpers/attempt-while-pending';
 import type { RevisionCounter } from '../../../../../shared/helpers/create-revision-counter';
 import { runWhilePending } from '../../../../../shared/helpers/run-while-pending';

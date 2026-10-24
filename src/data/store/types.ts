@@ -2,6 +2,7 @@ export const COLLECTIONS = {
   settings: 'settings',
   categories: 'categories',
   budgetCells: 'budgetCells',
+  transactions: 'transactions',
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

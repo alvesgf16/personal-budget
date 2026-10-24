@@ -1,5 +1,5 @@
 import type { BudgetCell } from '../../../../../../data/domains/budget-cell/budget-cell';
-import type { CategoryType } from '../../../../../../data/domains/category/category';
+import type { CategoryType } from '../../../../../../data/lib/category-type';
 import type { PeriodTotals } from '../../../../../../data/lib/period-balance';
 import type { CategoryRef } from '../../../category-ref';
 import { filterActiveCategories } from '../../../sum-over-active-categories';

@@ -1,7 +1,8 @@
 import type { PendingTasks, WritableSignal } from '@angular/core';
 import { signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
-import type { Category, CategoryType } from '../../../../../../data/domains/category/category';
+import type { Category } from '../../../../../../data/domains/category/category';
+import type { CategoryType } from '../../../../../../data/lib/category-type';
 import type { CategoryService } from '../../../../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../../../../data/store/types';
 import { createCategorySectionLists } from './category-section-lists';

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { CategoryType } from '../../../data/domains/category/category';
+import type { CategoryType } from '../../../data/lib/category-type';
 import { COLLECTIONS } from '../../../data/store/types';
 import type { DocumentStoreHarness } from '../../../data/store/document-store/document-store.harness-types';
 import { commitInputByAriaLabel } from '../../shared/harness/commit-input-by-aria-label.harness';
