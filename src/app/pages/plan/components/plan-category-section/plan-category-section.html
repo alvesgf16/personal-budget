@@ -1,5 +1,5 @@
 <section [attr.data-type]="type()">
-  <h2>{{ title }}</h2>
+  <h2>{{ title() }}</h2>
   <form (submit)="add($event)">
     <label [attr.for]="'category-name-' + type()">Name</label>
     <input

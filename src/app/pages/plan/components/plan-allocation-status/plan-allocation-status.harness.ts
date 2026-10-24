@@ -47,6 +47,26 @@ export function planAllocationStatusHarness(storeHarness: DocumentStoreHarness) 
     return { salary, rent };
   };
 
+  const insertCategory = (
+    type: Category['type'],
+    name: string,
+    extras: Partial<Pick<Category, 'active' | 'sortOrder'>> = {},
+  ) =>
+    storeHarness.store.insert(COLLECTIONS.categories, {
+      type,
+      name,
+      sortOrder: extras.sortOrder ?? 0,
+      active: extras.active ?? true,
+    });
+
+  const insertCell = (categoryId: string, month: number, amountCents: number) =>
+    storeHarness.store.insert(COLLECTIONS.budgetCells, {
+      categoryId,
+      year: 2026,
+      month,
+      amountCents,
+    });
+
   const completeJanuaryWithSavingsBlur = async (fixture: ComponentFixture<PlanPage>) => {
     await submitInSection(fixture, 'savings', 'Emergency');
     await setCell(fixture, 'Emergency January', '300');
@@ -77,26 +97,6 @@ export function planAllocationStatusHarness(storeHarness: DocumentStoreHarness) 
 
   const planStatus = (fixture: ComponentFixture<PlanPage>, monthLong: string) =>
     statusFor(fixture.nativeElement, monthLong);
-
-  const insertCategory = (
-    type: Category['type'],
-    name: string,
-    extras: Partial<Pick<Category, 'active' | 'sortOrder'>> = {},
-  ) =>
-    storeHarness.store.insert(COLLECTIONS.categories, {
-      type,
-      name,
-      sortOrder: extras.sortOrder ?? 0,
-      active: extras.active ?? true,
-    });
-
-  const insertCell = (categoryId: string, month: number, amountCents: number) =>
-    storeHarness.store.insert(COLLECTIONS.budgetCells, {
-      categoryId,
-      year: 2026,
-      month,
-      amountCents,
-    });
 
   const statusFor = (host: HTMLElement, monthLong: string) => {
     const state = host.querySelector(

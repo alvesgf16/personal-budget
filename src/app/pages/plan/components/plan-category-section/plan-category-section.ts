@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, PendingTasks, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, PendingTasks, signal } from '@angular/core';
 import {
   parseCategoryName,
   type Category,
@@ -27,6 +27,7 @@ export class PlanCategorySection {
   /** Null hides amount columns (empty state owned elsewhere). */
   readonly year = input<number | null>(null);
 
+  protected readonly title = computed(() => SECTION_TITLES[this.type()]);
   protected readonly nameInput = signal('');
   protected readonly error = signal<string | null>(null);
   protected readonly activeCategories = signal<StoreDocument<Category>[]>([]);
@@ -40,10 +41,6 @@ export class PlanCategorySection {
     activeCategories: this.activeCategories,
     hiddenCategories: this.hiddenCategories,
   });
-
-  protected get title(): string {
-    return SECTION_TITLES[this.type()];
-  }
 
   constructor() {
     effect(() => {

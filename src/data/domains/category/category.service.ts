@@ -38,6 +38,7 @@ export class CategoryService {
     isIncluded: (category: StoreDocument<Category>) => boolean,
   ): Promise<StoreDocument<Category>[]> {
     const categories = await this.store.list<Category>(COLLECTIONS.categories);
+
     return categories
       .filter((category) => category.type === type && isIncluded(category))
       .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id));
@@ -54,6 +55,7 @@ export class CategoryService {
         sortOrder: nextSortOrder(siblings),
         active: true,
       });
+
       return this.store.insert(COLLECTIONS.categories, payload);
     });
   }
@@ -73,12 +75,15 @@ export class CategoryService {
 
   private async applyRename(id: string, name: string): Promise<StoreDocument<Category>> {
     const trimmed = categorySchema.shape.name.parse(name);
+
     return this.patchCategory(id, { name: trimmed });
   }
 
   private async setActive(id: string, active: boolean): Promise<StoreDocument<Category>> {
     const updated = await this.patchCategory(id, { active });
+
     this.revision.update((revision) => revision + 1);
+
     return updated;
   }
 
@@ -87,13 +92,17 @@ export class CategoryService {
     patch: Partial<Category>,
   ): Promise<StoreDocument<Category>> {
     const existing = await this.store.getById<Category>(COLLECTIONS.categories, id);
+
     if (!existing) {
       throw new Error(`Category not found: ${id}`);
     }
+
     const updated = await this.store.update<Category>(COLLECTIONS.categories, id, patch);
+
     if (!updated) {
       throw new Error(`Category not found: ${id}`);
     }
+
     return updated;
   }
 }
