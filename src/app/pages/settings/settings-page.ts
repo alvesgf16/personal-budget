@@ -3,6 +3,7 @@ import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../../data/lib/plan-year';
 import { parseSettings, type Settings } from '../../../data/domains/settings/settings';
 import { SettingsService } from '../../../data/domains/settings/settings.service';
 import { attemptWhilePending } from '../../shared/helpers/attempt-while-pending';
+import { createRevisionCounter } from '../../shared/helpers/create-revision-counter';
 import { inputValueFromEvent } from '../../shared/helpers/input-value-from-event';
 
 @Component({
@@ -13,23 +14,23 @@ import { inputValueFromEvent } from '../../shared/helpers/input-value-from-event
 export class SettingsPage implements OnInit {
   private readonly settingsService = inject(SettingsService);
   private readonly pendingTasks = inject(PendingTasks);
+  private readonly revisionCounter = createRevisionCounter();
 
   protected readonly yearInput = signal('');
   protected readonly error = signal<string | null>(null);
-  private revision = 0;
 
   ngOnInit(): void {
     void this.load();
   }
 
   private async load(): Promise<void> {
-    const revision = ++this.revision;
+    const revision = this.revisionCounter.next();
 
     await attemptWhilePending(
       () => this.loadSettings(revision),
       this.pendingTasks,
       () => {
-        if (revision === this.revision) {
+        if (revision === this.revisionCounter.current()) {
           this.error.set('Could not load the starting year. Refresh and try again.');
         }
       },
@@ -41,7 +42,7 @@ export class SettingsPage implements OnInit {
 
     const settings = await this.settingsService.get();
 
-    if (revision !== this.revision) {
+    if (revision !== this.revisionCounter.current()) {
       return;
     }
 
@@ -51,7 +52,7 @@ export class SettingsPage implements OnInit {
   }
 
   protected onYearInput(event: Event): void {
-    this.revision += 1;
+    this.revisionCounter.next();
     this.yearInput.set(inputValueFromEvent(event));
   }
 
@@ -66,7 +67,7 @@ export class SettingsPage implements OnInit {
       return;
     }
 
-    const revision = ++this.revision;
+    const revision = this.revisionCounter.next();
 
     await attemptWhilePending(
       () => this.saveSettings(settings),
@@ -82,7 +83,7 @@ export class SettingsPage implements OnInit {
   }
 
   private reportSaveFailure(revision: number): void {
-    if (revision === this.revision) {
+    if (revision === this.revisionCounter.current()) {
       this.error.set('Could not save the starting year. Try again.');
     }
   }
