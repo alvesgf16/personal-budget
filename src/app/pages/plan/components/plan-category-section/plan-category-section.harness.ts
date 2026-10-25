@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { CategoryType } from '../../../../../data/lib/category-type';
+import type { CategoryType } from '../../../../../data/lib/schemas/category-type';
 import { commitInputByAriaLabel } from '../../../../shared/harness/commit-input-by-aria-label.harness';
 import { PlanCategorySection } from './plan-category-section';
 

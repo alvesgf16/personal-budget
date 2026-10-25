@@ -1,6 +1,6 @@
 import type { BudgetCell } from '../../../../../../data/domains/budget-cell/budget-cell';
-import type { CategoryType } from '../../../../../../data/lib/category-type';
-import type { PeriodTotals } from '../../../../../../data/lib/period-balance';
+import type { CategoryType } from '../../../../../../data/lib/schemas/category-type';
+import type { PeriodTotals } from '../../../../../../data/lib/calculations/period-balance';
 import type { CategoryRef } from '../../../category-ref';
 import { filterActiveCategories } from '../../../sum-over-active-categories';
 import { PLAN_MONTHS } from '../../../plan-months';
@@ -16,7 +16,7 @@ const EMPTY_TOTALS = (): PeriodTotals => ({
  * Inactive categories are skipped (same rule as section totals).
  * Missing cells count as 0.
  */
-export function computePeriodTotalsByMonth(
+export function calculatePeriodTotalsByMonth(
   cells: readonly Pick<BudgetCell, 'categoryId' | 'month' | 'amountCents'>[],
   categories: readonly CategoryRef[],
 ): PeriodTotals[] {

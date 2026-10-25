@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
-import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../../data/lib/plan-year';
+import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../../data/lib/schemas/plan-year';
 import { parseSettings, type Settings } from '../../../data/domains/settings/settings';
 import { SettingsService } from '../../../data/domains/settings/settings.service';
 import { attemptWhilePending } from '../../shared/helpers/attempt-while-pending';

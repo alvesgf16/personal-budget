@@ -8,6 +8,17 @@ import {
 import type { Settings } from './settings';
 import { SettingsService } from './settings.service';
 
+const defaults2026: Settings = {
+  startingYear: 2026,
+  shiftLateIncome: 'inactive',
+  shiftLateIncomeStartingDay: 1,
+};
+const active2026: Settings = {
+  startingYear: 2026,
+  shiftLateIncome: 'active',
+  shiftLateIncomeStartingDay: 20,
+};
+
 describe('SettingsService', () => {
   const storeHarness = provideDocumentStoreHarness('pb-settings-service');
   let service: SettingsService;
@@ -20,25 +31,27 @@ describe('SettingsService', () => {
     expect(await service.get()).toBeNull();
   });
 
-  it('gets the starting year from the store', async () => {
+  it('gets settings from the store and fills late-income defaults', async () => {
     await storeHarness.store.insert(COLLECTIONS.settings, { startingYear: 2026 });
 
-    expect(await service.get()).toEqual({ startingYear: 2026 });
+    expect(await service.get()).toEqual(defaults2026);
   });
 
   it('inserts a settings document on first save', async () => {
-    await service.save({ startingYear: 2026 });
+    await service.save(active2026);
     const created = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
 
     expect(created).toHaveLength(1);
     expect(created[0]?.startingYear).toBe(2026);
+    expect(created[0]?.shiftLateIncome).toBe('active');
+    expect(created[0]?.shiftLateIncomeStartingDay).toBe(20);
   });
 
   it('updates the same settings document on a later save', async () => {
-    await service.save({ startingYear: 2026 });
+    await service.save(defaults2026);
     const created = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
 
-    await service.save({ startingYear: 2027 });
+    await service.save({ ...defaults2026, startingYear: 2027 });
     const updated = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
 
     expect(updated).toHaveLength(1);
@@ -46,17 +59,23 @@ describe('SettingsService', () => {
     expect(updated[0]?.startingYear).toBe(2027);
   });
 
+  it('round-trips late-income fields through get after save', async () => {
+    await service.save(active2026);
+
+    expect(await service.get()).toEqual(active2026);
+  });
+
   it('serializes save behind an in-flight get so documentId stays consistent', async () => {
     const { whenFirstListArrives, releaseFirstList } = deferFirstStoreSettingsList(storeHarness);
     const pendingGet = service.get();
 
     await whenFirstListArrives;
-    const pendingSave = service.save({ startingYear: 2027 });
+    const pendingSave = service.save({ ...defaults2026, startingYear: 2027 });
     releaseFirstList();
     await Promise.all([pendingGet, pendingSave]);
     const afterOverlap = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
 
-    await service.save({ startingYear: 2028 });
+    await service.save({ ...defaults2026, startingYear: 2028 });
     const saved = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
 
     expect(saved).toHaveLength(1);
@@ -67,9 +86,9 @@ describe('SettingsService', () => {
   it('keeps overlapping saves on a single settings document', async () => {
     const { whenFirstInsertArrives, releaseFirstInsert } = deferFirstStoreInsert(storeHarness);
 
-    const first = service.save({ startingYear: 2026 });
+    const first = service.save(defaults2026);
     await whenFirstInsertArrives;
-    const second = service.save({ startingYear: 2027 });
+    const second = service.save({ ...defaults2026, startingYear: 2027 });
     releaseFirstInsert();
     await Promise.all([first, second]);
     const saved = await storeHarness.store.list<Settings>(COLLECTIONS.settings);

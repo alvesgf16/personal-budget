@@ -1,4 +1,4 @@
-import type { CategoryType } from '../../../../../data/lib/category-type';
+import type { CategoryType } from '../../../../../data/lib/schemas/category-type';
 
 export const SECTION_TITLES: Record<CategoryType, string> = {
   income: 'Income',

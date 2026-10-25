@@ -1,6 +1,6 @@
 import type { PendingTasks, WritableSignal } from '@angular/core';
 import type { Category } from '../../../../../../data/domains/category/category';
-import type { CategoryType } from '../../../../../../data/lib/category-type';
+import type { CategoryType } from '../../../../../../data/lib/schemas/category-type';
 import type { CategoryService } from '../../../../../../data/domains/category/category.service';
 import type { StoreDocument } from '../../../../../../data/store/types';
 import {

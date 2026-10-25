@@ -1,4 +1,7 @@
-import type { PeriodBalance, PeriodBalanceStatus } from '../../../../../../data/lib/period-balance';
+import type {
+  PeriodBalance,
+  PeriodBalanceStatus,
+} from '../../../../../../data/lib/calculations/period-balance';
 import { formatCentsAsDollarInput } from '../../../format-cents-as-dollar-input';
 import { PLAN_MONTH_LONG, PLAN_MONTH_SHORT } from '../../../plan-months';
 

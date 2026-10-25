@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { categoryTypeSchema } from '../../lib/category-type';
+import { categoryTypeSchema } from '../../lib/schemas/category-type';
 
 /**
  * Logged money movement for Tracking. Amounts are positive integer cents.
