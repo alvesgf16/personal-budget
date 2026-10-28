@@ -10,13 +10,13 @@ import { SettingsService } from './settings.service';
 
 const defaults2026: Settings = {
   startingYear: 2026,
-  shiftLateIncome: 'inactive',
-  shiftLateIncomeStartingDay: 1,
+  lateIncomeShift: 'inactive',
+  lateIncomeShiftStartingDay: 1,
 };
 const active2026: Settings = {
   startingYear: 2026,
-  shiftLateIncome: 'active',
-  shiftLateIncomeStartingDay: 20,
+  lateIncomeShift: 'active',
+  lateIncomeShiftStartingDay: 20,
 };
 
 describe('SettingsService', () => {
@@ -43,8 +43,8 @@ describe('SettingsService', () => {
 
     expect(created).toHaveLength(1);
     expect(created[0]?.startingYear).toBe(2026);
-    expect(created[0]?.shiftLateIncome).toBe('active');
-    expect(created[0]?.shiftLateIncomeStartingDay).toBe(20);
+    expect(created[0]?.lateIncomeShift).toBe('active');
+    expect(created[0]?.lateIncomeShiftStartingDay).toBe(20);
   });
 
   it('updates the same settings document on a later save', async () => {

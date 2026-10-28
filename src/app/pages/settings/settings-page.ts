@@ -1,10 +1,24 @@
-import { Component, inject, OnInit, PendingTasks, signal } from '@angular/core';
-import { PLAN_YEAR_MAX, PLAN_YEAR_MIN } from '../../../data/lib/schemas/plan-year';
-import { parseSettings, type Settings } from '../../../data/domains/settings/settings';
+import {
+  Component,
+  inject,
+  OnInit,
+  PendingTasks,
+  signal,
+  type WritableSignal,
+} from '@angular/core';
+import { parseSettings, type ParseSettingsInput } from '../../../data/domains/settings/settings';
 import { SettingsService } from '../../../data/domains/settings/settings.service';
-import { attemptWhilePending } from '../../shared/helpers/attempt-while-pending';
+import { LATE_INCOME_SHIFT_DEFAULT } from '../../../data/lib/schemas/late-income-shift';
+import {
+  LATE_INCOME_SHIFT_STARTING_DAY_MAX,
+  LATE_INCOME_SHIFT_STARTING_DAY_MIN,
+} from '../../../data/lib/schemas/late-income-shift-starting-day';
 import { createRevisionCounter } from '../../shared/helpers/create-revision-counter';
 import { inputValueFromEvent } from '../../shared/helpers/input-value-from-event';
+import { settingsFormInput } from './helpers/settings-form';
+import { loadSettingsPage, persistSettingsPage } from './helpers/load-persist-settings';
+import { settingsValidationFailure } from './helpers/settings-validation-failure';
+import type { SettingsFormField } from './types';
 
 @Component({
   selector: 'app-settings',
@@ -15,76 +29,78 @@ export class SettingsPage implements OnInit {
   private readonly settingsService = inject(SettingsService);
   private readonly pendingTasks = inject(PendingTasks);
   private readonly revisionCounter = createRevisionCounter();
+  private readonly dirtyFields = new Set<SettingsFormField>();
 
-  protected readonly yearInput = signal('');
+  readonly startingYearInput = signal('');
+  readonly lateIncomeShift = signal(LATE_INCOME_SHIFT_DEFAULT);
+  readonly lateIncomeShiftStartingDay = signal(String(LATE_INCOME_SHIFT_STARTING_DAY_MIN));
+  protected readonly dayMin = LATE_INCOME_SHIFT_STARTING_DAY_MIN;
+  protected readonly dayMax = LATE_INCOME_SHIFT_STARTING_DAY_MAX;
+  protected readonly formReady = signal(false);
+  protected readonly invalidField = signal<SettingsFormField | null>(null);
   protected readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
-    void this.load();
+    void loadSettingsPage({
+      ...this.statusHandlers(),
+      pendingTasks: this.pendingTasks,
+      revisions: this.revisionCounter,
+      fetch: () => this.settingsService.get(),
+      fields: this,
+      dirtyFields: this.dirtyFields,
+      markReady: () => this.formReady.set(true),
+    });
   }
 
-  private async load(): Promise<void> {
-    const revision = this.revisionCounter.next();
-
-    await attemptWhilePending(
-      () => this.loadSettings(revision),
-      this.pendingTasks,
-      () => {
-        if (revision === this.revisionCounter.current()) {
-          this.error.set('Could not load the starting year. Refresh and try again.');
-        }
-      },
-    );
-  }
-
-  private async loadSettings(revision: number): Promise<void> {
-    this.error.set(null);
-
-    const settings = await this.settingsService.get();
-
-    if (revision !== this.revisionCounter.current()) {
-      return;
-    }
-
-    if (settings) {
-      this.yearInput.set(String(settings.startingYear));
-    }
-  }
-
-  protected onYearInput(event: Event): void {
+  protected setFieldFromEvent(
+    target: WritableSignal<string>,
+    event: Event,
+    field: SettingsFormField,
+  ): void {
     this.revisionCounter.next();
-    this.yearInput.set(inputValueFromEvent(event));
+    this.dirtyFields.add(field);
+    target.set(inputValueFromEvent(event));
   }
 
   protected async save(event: Event): Promise<void> {
     event.preventDefault();
 
-    const settings = parseSettings(this.yearInput());
+    if (!this.formReady()) {
+      return;
+    }
+
+    const input = settingsFormInput(this);
+    const settings = parseSettings(input);
 
     if (!settings) {
-      this.error.set(`Enter a whole year between ${PLAN_YEAR_MIN} and ${PLAN_YEAR_MAX}.`);
+      this.showValidationFailure(input);
 
       return;
     }
 
-    const revision = this.revisionCounter.next();
-
-    await attemptWhilePending(
-      () => this.saveSettings(settings),
-      this.pendingTasks,
-      () => this.reportSaveFailure(revision),
-    );
+    await persistSettingsPage({
+      ...this.statusHandlers(),
+      settings,
+      pendingTasks: this.pendingTasks,
+      revisions: this.revisionCounter,
+      save: (value) => this.settingsService.save(value),
+      clearDirty: () => this.dirtyFields.clear(),
+    });
   }
 
-  private async saveSettings(settings: Settings): Promise<void> {
-    this.error.set(null);
-
-    await this.settingsService.save(settings);
+  private statusHandlers() {
+    return {
+      clear: () => {
+        this.error.set(null);
+        this.invalidField.set(null);
+      },
+      fail: (message: string) => this.error.set(message),
+    };
   }
 
-  private reportSaveFailure(revision: number): void {
-    if (revision === this.revisionCounter.current()) {
-      this.error.set('Could not save the starting year. Try again.');
-    }
+  private showValidationFailure(input: ParseSettingsInput): void {
+    const failure = settingsValidationFailure(input);
+    this.invalidField.set(failure.field);
+    this.error.set(failure.message);
   }
 }

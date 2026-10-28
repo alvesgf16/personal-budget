@@ -1,11 +1,11 @@
 import type { CategoryType } from '../schemas/category-type';
-import type { ShiftLateIncome } from '../schemas/shift-late-income';
+import type { LateIncomeShift } from '../schemas/late-income-shift';
 
 export interface CalculateEffectiveDateInput {
   date: string;
   type: CategoryType;
-  shiftLateIncome: ShiftLateIncome;
-  shiftLateIncomeStartingDay: number;
+  lateIncomeShift: LateIncomeShift;
+  lateIncomeShiftStartingDay: number;
 }
 
 /**
@@ -21,11 +21,11 @@ export function calculateEffectiveDate(input: CalculateEffectiveDateInput): stri
 }
 
 function shouldShiftToNextMonth(input: CalculateEffectiveDateInput): boolean {
-  if (input.shiftLateIncome !== 'active' || input.type !== 'income') {
+  if (input.lateIncomeShift !== 'active' || input.type !== 'income') {
     return false;
   }
 
-  return dayOfMonth(input.date) >= input.shiftLateIncomeStartingDay;
+  return dayOfMonth(input.date) >= input.lateIncomeShiftStartingDay;
 }
 
 function dayOfMonth(isoDate: string): number {

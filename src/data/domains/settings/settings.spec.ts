@@ -3,8 +3,8 @@ import { useDocumentStoreHarness } from '../../store/document-store/document-sto
 import { parseSettings, settingsSchema, type Settings } from './settings';
 
 const defaultLateIncome = {
-  shiftLateIncome: 'inactive',
-  shiftLateIncomeStartingDay: 1,
+  lateIncomeShift: 'inactive',
+  lateIncomeShiftStartingDay: 1,
 } as const;
 
 describe('settingsSchema', () => {
@@ -19,13 +19,13 @@ describe('settingsSchema', () => {
     expect(
       settingsSchema.parse({
         startingYear: 2026,
-        shiftLateIncome: 'active',
-        shiftLateIncomeStartingDay: 20,
+        lateIncomeShift: 'active',
+        lateIncomeShiftStartingDay: 20,
       }),
     ).toEqual({
       startingYear: 2026,
-      shiftLateIncome: 'active',
-      shiftLateIncomeStartingDay: 20,
+      lateIncomeShift: 'active',
+      lateIncomeShiftStartingDay: 20,
     });
   });
 
@@ -46,26 +46,26 @@ describe('settingsSchema', () => {
     expect(() => settingsSchema.parse({ startingYear: 2101 })).toThrow();
   });
 
-  it('rejects an invalid shiftLateIncome value', () => {
+  it('rejects an invalid lateIncomeShift value', () => {
     expect(() =>
       settingsSchema.parse({
         startingYear: 2026,
-        shiftLateIncome: 'maybe',
+        lateIncomeShift: 'maybe',
       }),
     ).toThrow();
   });
 
-  it('rejects a starting day outside 1â€“31', () => {
+  it('rejects a starting day outside 1–31', () => {
     expect(() =>
       settingsSchema.parse({
         startingYear: 2026,
-        shiftLateIncomeStartingDay: 0,
+        lateIncomeShiftStartingDay: 0,
       }),
     ).toThrow();
     expect(() =>
       settingsSchema.parse({
         startingYear: 2026,
-        shiftLateIncomeStartingDay: 32,
+        lateIncomeShiftStartingDay: 32,
       }),
     ).toThrow();
   });
@@ -74,24 +74,65 @@ describe('settingsSchema', () => {
     expect(() =>
       settingsSchema.parse({
         startingYear: 2026,
-        shiftLateIncomeStartingDay: 15.5,
+        lateIncomeShiftStartingDay: 15.5,
       }),
     ).toThrow();
   });
 });
 
+const defaultLateIncomeInput = {
+  lateIncomeShift: 'inactive',
+  lateIncomeShiftStartingDay: '1',
+} as const;
+
 describe('parseSettings', () => {
-  it('parses a whole year in range with late-income defaults', () => {
-    expect(parseSettings(' 2026 ')).toEqual({
+  it('parses a whole year in range with late-income fields', () => {
+    expect(
+      parseSettings({
+        startingYear: ' 2026 ',
+        ...defaultLateIncomeInput,
+      }),
+    ).toEqual({
       startingYear: 2026,
       ...defaultLateIncome,
     });
   });
 
-  it('returns null for empty or invalid input', () => {
-    expect(parseSettings('')).toBeNull();
-    expect(parseSettings('1899')).toBeNull();
-    expect(parseSettings('2026.5')).toBeNull();
+  it('parses an active late-income configuration', () => {
+    expect(
+      parseSettings({
+        startingYear: '2026',
+        lateIncomeShift: 'active',
+        lateIncomeShiftStartingDay: '20',
+      }),
+    ).toEqual({
+      startingYear: 2026,
+      lateIncomeShift: 'active',
+      lateIncomeShiftStartingDay: 20,
+    });
+  });
+
+  it('returns null for empty or invalid year', () => {
+    expect(parseSettings({ startingYear: '', ...defaultLateIncomeInput })).toBeNull();
+    expect(parseSettings({ startingYear: '1899', ...defaultLateIncomeInput })).toBeNull();
+    expect(parseSettings({ startingYear: '2026.5', ...defaultLateIncomeInput })).toBeNull();
+  });
+
+  it('returns null for a day outside 1–31', () => {
+    expect(
+      parseSettings({
+        startingYear: '2026',
+        lateIncomeShift: 'active',
+        lateIncomeShiftStartingDay: '0',
+      }),
+    ).toBeNull();
+    expect(
+      parseSettings({
+        startingYear: '2026',
+        lateIncomeShift: 'active',
+        lateIncomeShiftStartingDay: '32',
+      }),
+    ).toBeNull();
   });
 });
 
@@ -101,15 +142,15 @@ describe('settings store round-trip', () => {
   it('inserts and reads a parsed settings payload', async () => {
     const payload = settingsSchema.parse({
       startingYear: 2026,
-      shiftLateIncome: 'active',
-      shiftLateIncomeStartingDay: 20,
+      lateIncomeShift: 'active',
+      lateIncomeShiftStartingDay: 20,
     });
     const created = await storeHarness.store.insert(COLLECTIONS.settings, payload);
     const found = await storeHarness.store.getById<Settings>(COLLECTIONS.settings, created.id);
 
     expect(found).toEqual(created);
     expect(found?.startingYear).toBe(2026);
-    expect(found?.shiftLateIncome).toBe('active');
-    expect(found?.shiftLateIncomeStartingDay).toBe(20);
+    expect(found?.lateIncomeShift).toBe('active');
+    expect(found?.lateIncomeShiftStartingDay).toBe(20);
   });
 });

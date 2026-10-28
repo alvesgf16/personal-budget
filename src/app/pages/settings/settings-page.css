@@ -11,12 +11,19 @@ label {
 }
 
 input,
+select,
 button {
   font: inherit;
 }
 
-input {
+input,
+select {
   padding: 0.35rem 0.5rem;
+}
+
+input:disabled {
+  color: #777;
+  background: #f0f0f0;
 }
 
 button {

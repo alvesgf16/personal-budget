@@ -1,8 +1,8 @@
 import { calculateEffectiveDate } from './effective-date';
 
 const activeShiftDay20 = {
-  shiftLateIncome: 'active' as const,
-  shiftLateIncomeStartingDay: 20,
+  lateIncomeShift: 'active' as const,
+  lateIncomeShiftStartingDay: 20,
 };
 
 describe('calculateEffectiveDate', () => {
@@ -11,8 +11,8 @@ describe('calculateEffectiveDate', () => {
       calculateEffectiveDate({
         date: '2026-12-25',
         type: 'income',
-        shiftLateIncome: 'inactive',
-        shiftLateIncomeStartingDay: 20,
+        lateIncomeShift: 'inactive',
+        lateIncomeShiftStartingDay: 20,
       }),
     ).toBe('2026-12-25');
   });
