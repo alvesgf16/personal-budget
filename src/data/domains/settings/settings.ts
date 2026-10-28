@@ -1,23 +1,39 @@
 import { z } from 'zod';
+import { numberFromTrimmed } from '../../lib/number-from-trimmed';
 import { planYearSchema } from '../../lib/schemas/plan-year';
-import { shiftLateIncomeSchema } from '../../lib/schemas/shift-late-income';
+import {
+  LATE_INCOME_SHIFT_DEFAULT,
+  lateIncomeShiftSchema,
+} from '../../lib/schemas/late-income-shift';
+import {
+  LATE_INCOME_SHIFT_STARTING_DAY_MIN,
+  lateIncomeShiftStartingDaySchema,
+} from '../../lib/schemas/late-income-shift-starting-day';
 
 export const settingsSchema = z.object({
   /** Calendar year that drives the Plan year header. */
   startingYear: planYearSchema,
   /** When active, income on or after the starting day counts toward the next month. */
-  shiftLateIncome: shiftLateIncomeSchema.default('inactive'),
-  /** Calendar day (1–31) that starts the late-income shift window. */
-  shiftLateIncomeStartingDay: z.number().int().min(1).max(31).default(1),
+  lateIncomeShift: lateIncomeShiftSchema.default(LATE_INCOME_SHIFT_DEFAULT),
+  /** Calendar day that starts the late-income shift window. */
+  lateIncomeShiftStartingDay: lateIncomeShiftStartingDaySchema.default(
+    LATE_INCOME_SHIFT_STARTING_DAY_MIN,
+  ),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
 
-export function parseSettings(unparsedYear: string): Settings | null {
-  const startingYearString = unparsedYear.trim();
+export interface ParseSettingsInput {
+  startingYear: string;
+  lateIncomeShift: string;
+  lateIncomeShiftStartingDay: string;
+}
 
+export function parseSettings(input: ParseSettingsInput): Settings | null {
   const parsed = settingsSchema.safeParse({
-    startingYear: startingYearString === '' ? Number.NaN : Number(startingYearString),
+    startingYear: numberFromTrimmed(input.startingYear),
+    lateIncomeShift: input.lateIncomeShift,
+    lateIncomeShiftStartingDay: numberFromTrimmed(input.lateIncomeShiftStartingDay),
   });
 
   return parsed.success ? parsed.data : null;
