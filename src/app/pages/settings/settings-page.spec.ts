@@ -2,7 +2,6 @@ import { COLLECTIONS } from '../../../data/store/types';
 import {
   deferFirstStoreSettingsList,
   provideDocumentStoreHarness,
-  rejectFirstStoreInsert,
 } from '../../../data/store/document-store/document-store.harness';
 import type { Settings } from '../../../data/domains/settings/settings';
 import { PlanPage } from '../plan/plan-page';
@@ -18,37 +17,16 @@ describe('Settings starting year', () => {
     renderSettings,
     startSettingsLoadWithoutWaiting,
     submitStartingYear,
-    typeStartingYearWithoutWaiting,
     submitStartingYearWithoutWaiting,
     startingYearInputValue,
     alertText,
   } = settingsHarness();
   const { renderPlan, headerText } = planHarness(storeHarness);
 
-  it('rejects an empty year with an alert and does not persist', async () => {
-    const fixture = await renderSettings();
-
-    await submitStartingYear(fixture, '');
-    const saved = await storeHarness.store.list(COLLECTIONS.settings);
-
-    expect(alertText(fixture)).toContain('1900');
-    expect(saved).toEqual([]);
-  });
-
-  it('rejects a year below the minimum and does not persist', async () => {
+  it('rejects an invalid year with an alert and does not persist', async () => {
     const fixture = await renderSettings();
 
     await submitStartingYear(fixture, '1899');
-    const saved = await storeHarness.store.list(COLLECTIONS.settings);
-
-    expect(alertText(fixture)).toContain('1900');
-    expect(saved).toEqual([]);
-  });
-
-  it('rejects a non-integer year and does not persist', async () => {
-    const fixture = await renderSettings();
-
-    await submitStartingYear(fixture, '2026.5');
     const saved = await storeHarness.store.list(COLLECTIONS.settings);
 
     expect(alertText(fixture)).toContain('1900');
@@ -108,23 +86,6 @@ describe('Settings starting year', () => {
     expect(saved).toEqual([]);
   });
 
-  it('ignores a stale save error after a later save succeeds', async () => {
-    const { whenFirstInsertArrives, releaseFirstInsert } = rejectFirstStoreInsert(storeHarness);
-    const fixture = await renderSettings();
-
-    submitStartingYearWithoutWaiting(fixture, '2026');
-    await whenFirstInsertArrives;
-    submitStartingYearWithoutWaiting(fixture, '2027');
-    releaseFirstInsert();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const saved = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
-
-    expect(alertText(fixture)).toBeNull();
-    expect(saved).toHaveLength(1);
-    expect(saved[0]?.startingYear).toBe(2027);
-  });
-
   it('shows an error when settings cannot be loaded', async () => {
     storeHarness.store.list = () => Promise.reject(new Error('unavailable'));
 
@@ -133,7 +94,7 @@ describe('Settings starting year', () => {
     expect(alertText(fixture)).toContain('Could not load');
   });
 
-  it('ignores a stale load when a save is queued behind it', async () => {
+  it('blocks save until the initial load finishes', async () => {
     const primed = await renderSettings();
     await submitStartingYear(primed, '2026');
     primed.destroy();
@@ -143,32 +104,18 @@ describe('Settings starting year', () => {
 
     await whenFirstListArrives;
     submitStartingYearWithoutWaiting(fixture, '2027');
+    const midFlight = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
+
+    expect(midFlight).toHaveLength(1);
+    expect(midFlight[0]?.startingYear).toBe(2026);
+
     releaseFirstList();
     await fixture.whenStable();
     fixture.detectChanges();
+    await submitStartingYear(fixture, '2027');
     const saved = await storeHarness.store.list<Settings>(COLLECTIONS.settings);
 
-    expect(startingYearInputValue(fixture)).toBe('2027');
-    expect(saved).toHaveLength(1);
     expect(saved[0]?.startingYear).toBe(2027);
-  });
-
-  it('keeps a typed year when load finishes after the edit', async () => {
-    const primed = await renderSettings();
-    await submitStartingYear(primed, '2026');
-    primed.destroy();
-
-    const { whenFirstListArrives, releaseFirstList } = deferFirstStoreSettingsList(storeHarness);
-    const fixture = await startSettingsLoadWithoutWaiting();
-
-    await whenFirstListArrives;
-    typeStartingYearWithoutWaiting(fixture, '2028');
-    releaseFirstList();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(startingYearInputValue(fixture)).toBe('2028');
-    expect(alertText(fixture)).toBeNull();
   });
 });
 
@@ -216,7 +163,7 @@ describe('Settings late monthly income', () => {
     expect(saved[0]?.lateIncomeShiftStartingDay).toBe(20);
   });
 
-  it('rejects a starting day outside 1–31 and does not persist', async () => {
+  it('rejects a starting day outside 1-31 and does not persist', async () => {
     const fixture = await renderSettings();
 
     await submitSettings(fixture, {

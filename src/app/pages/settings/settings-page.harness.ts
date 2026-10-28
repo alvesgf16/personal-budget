@@ -1,10 +1,27 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { Settings } from '../../../data/domains/settings/settings';
 import { SettingsPage } from './settings-page';
+import type { SettingsFormSignals } from './types';
 
-export interface SettingsFormValues {
+interface SettingsFormValues {
   startingYear: string;
   lateIncomeShift?: string;
   lateIncomeShiftStartingDay?: string;
+}
+
+export const storedSettings: Settings = {
+  startingYear: 2026,
+  lateIncomeShift: 'active',
+  lateIncomeShiftStartingDay: 20,
+};
+
+export function emptyFormSignals(): SettingsFormSignals {
+  return {
+    startingYearInput: signal(''),
+    lateIncomeShift: signal('inactive'),
+    lateIncomeShiftStartingDay: signal('1'),
+  };
 }
 
 export function settingsHarness() {
@@ -35,14 +52,6 @@ export function settingsHarness() {
     submitSettingsWithoutWaiting(fixture, values);
     await fixture.whenStable();
     fixture.detectChanges();
-  };
-
-  /** Type without awaiting whenStable (a deferred list would hang). */
-  const typeStartingYearWithoutWaiting = (
-    fixture: ComponentFixture<SettingsPage>,
-    startingYear: string,
-  ) => {
-    setInputValue(fixture, '#starting-year', startingYear);
   };
 
   const submitStartingYear = async (
@@ -105,7 +114,6 @@ export function settingsHarness() {
     startSettingsLoadWithoutWaiting,
     submitStartingYear,
     submitSettings,
-    typeStartingYearWithoutWaiting,
     submitStartingYearWithoutWaiting,
     startingYearInputValue,
     lateIncomeShiftValue,

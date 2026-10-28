@@ -7,9 +7,11 @@
     inputmode="numeric"
     step="1"
     [value]="startingYearInput()"
-    (input)="setFieldFromEvent(startingYearInput, $event)"
-    [attr.aria-invalid]="error() ? 'true' : null"
-    [attr.aria-describedby]="error() ? 'starting-year-help settings-error' : 'starting-year-help'"
+    (input)="setFieldFromEvent(startingYearInput, $event, 'startingYear')"
+    [attr.aria-invalid]="invalidField() === 'startingYear' ? 'true' : null"
+    [attr.aria-describedby]="
+      invalidField() === 'startingYear' ? 'starting-year-help settings-error' : 'starting-year-help'
+    "
   />
   <p id="starting-year-help">This year appears in the Plan tab header.</p>
 
@@ -18,8 +20,13 @@
     id="late-income-shift"
     name="lateIncomeShift"
     [value]="lateIncomeShift()"
-    (change)="setFieldFromEvent(lateIncomeShift, $event)"
-    aria-describedby="late-income-shift-help"
+    (change)="setFieldFromEvent(lateIncomeShift, $event, 'lateIncomeShift')"
+    [attr.aria-invalid]="invalidField() === 'lateIncomeShift' ? 'true' : null"
+    [attr.aria-describedby]="
+      invalidField() === 'lateIncomeShift'
+        ? 'late-income-shift-help settings-error'
+        : 'late-income-shift-help'
+    "
   >
     <option value="inactive">Inactive</option>
     <option value="active">Active</option>
@@ -35,25 +42,24 @@
     name="lateIncomeShiftStartingDay"
     inputmode="numeric"
     step="1"
-    [min]="lateIncomeShiftStartingDayMin"
-    [max]="lateIncomeShiftStartingDayMax"
+    [min]="dayMin"
+    [max]="dayMax"
     [value]="lateIncomeShiftStartingDay()"
-    (input)="setFieldFromEvent(lateIncomeShiftStartingDay, $event)"
+    (input)="setFieldFromEvent(lateIncomeShiftStartingDay, $event, 'lateIncomeShiftStartingDay')"
     [disabled]="lateIncomeShift() === 'inactive'"
-    [attr.aria-invalid]="error() ? 'true' : null"
+    [attr.aria-invalid]="invalidField() === 'lateIncomeShiftStartingDay' ? 'true' : null"
     [attr.aria-describedby]="
-      error()
+      invalidField() === 'lateIncomeShiftStartingDay'
         ? 'late-income-shift-starting-day-help settings-error'
         : 'late-income-shift-starting-day-help'
     "
   />
   <p id="late-income-shift-starting-day-help">
-    Day of the month ({{ lateIncomeShiftStartingDayMin }}–{{ lateIncomeShiftStartingDayMax }}) when
-    the shift begins.
+    Day of the month ({{ dayMin }}&ndash;{{ dayMax }}) when the shift begins.
   </p>
 
   @if (error()) {
     <p id="settings-error" role="alert">{{ error() }}</p>
   }
-  <button type="submit">Save</button>
+  <button type="submit" [disabled]="!formReady()">Save</button>
 </form>
