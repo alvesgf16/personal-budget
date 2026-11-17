@@ -27,6 +27,7 @@ export class TransactionService {
   add(transaction: Transaction): Promise<StoreDocument<Transaction>> {
     return this.persist.enqueue(async () => {
       const payload = transactionSchema.parse(transaction);
+      // TODO: Detect missing, hidden, or type-mismatched categoryId (PB-82).
       const created = await this.store.insert(COLLECTIONS.transactions, payload);
 
       this.revision.update((revision) => revision + 1);
