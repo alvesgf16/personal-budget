@@ -426,7 +426,7 @@ PB concurrency is cooperative async on one thread: Promises, `async`/`await`, an
 
 ### Single Responsibility (Concurrency-Related Code)
 
-Keep async orchestration at clear boundaries: domain mutations via `PersistQueue`; UI busy/error via `runWhilePending` / `attemptWhilePending`; cross-component refresh via domain `revision` signals and `effect`. Do not scatter ad-hoc promise chains or duplicate `PendingTasks.add` / `done` in feature components.
+Keep async orchestration at clear boundaries: domain mutations via `PersistQueue`; UI busy/error via `runWhilePending` / `attemptWhilePending`; cross-component refresh via domain `revision` signals and `effect`. Domain `revision` is same-tab only — it does not broadcast to other tabs; v1 has no `BroadcastChannel` / storage-event sync (reload or revisit is enough). Do not scatter ad-hoc promise chains or duplicate `PendingTasks.add` / `done` in feature components.
 
 ### Limit the Scope of Data
 
@@ -446,7 +446,7 @@ Prefer `PersistQueue`, pending helpers, Angular `PendingTasks`, signals, and `ef
 
 ### Know Your Execution Models
 
-PB models: serialized writer chain (`PersistQueue`); `effect` triggers async via `void` loaders; revision-driven reload. N/A: producer-consumer thread pools, readers-writers locks, dining philosophers, synchronized monitors.
+PB models: serialized writer chain (`PersistQueue`); `effect` triggers async via `void` loaders; same-tab revision-driven reload. `PersistQueue` does not dedupe work — domain `add` / `insert` is not idempotent; a second enqueue after a successful write is a second document. UI keeps submit behind `attemptWhilePending` / pending and must not auto-retry a resolved mutate. N/A: producer-consumer thread pools, readers-writers locks, dining philosophers, synchronized monitors. Idempotency keys, at-least-once API delivery, and cross-tab revision broadcast are out of v1 scope.
 
 ### Beware Dependencies Between Synchronized Methods / Keep Synchronized Sections Small
 
