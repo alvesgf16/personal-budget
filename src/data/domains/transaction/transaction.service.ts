@@ -10,8 +10,9 @@ export class TransactionService {
   private readonly persist = new PersistQueue();
 
   /**
-   * Bumps after a successful add so Tracking surfaces can reload without
-   * sharing in-memory transaction lists across components.
+   * Bumps after a successful add so Tracking surfaces in this tab can reload
+   * without sharing in-memory transaction lists across components. Same-tab
+   * only; other tabs are not notified (v1 has no cross-tab sync).
    */
   readonly revision = signal(0);
 
