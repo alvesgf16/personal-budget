@@ -446,7 +446,7 @@ Prefer `PersistQueue`, pending helpers, Angular `PendingTasks`, signals, and `ef
 
 ### Know Your Execution Models
 
-PB models: serialized writer chain (`PersistQueue`); `effect` triggers async via `void` loaders; revision-driven reload. N/A: producer-consumer thread pools, readers-writers locks, dining philosophers, synchronized monitors.
+PB models: serialized writer chain (`PersistQueue`); `effect` triggers async via `void` loaders; revision-driven reload. `PersistQueue` does not dedupe work — domain `add` / `insert` is not idempotent; a second enqueue after a successful write is a second document. UI keeps submit behind `attemptWhilePending` / pending and must not auto-retry a resolved mutate. N/A: producer-consumer thread pools, readers-writers locks, dining philosophers, synchronized monitors. Idempotency keys and at-least-once API delivery are out of v1 scope.
 
 ### Beware Dependencies Between Synchronized Methods / Keep Synchronized Sections Small
 

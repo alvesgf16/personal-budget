@@ -23,6 +23,7 @@ export class TransactionService {
     return this.store.getById<Transaction>(COLLECTIONS.transactions, id);
   }
 
+  /** Each call inserts a new document; PersistQueue does not dedupe retries. */
   add(transaction: Transaction): Promise<StoreDocument<Transaction>> {
     return this.persist.enqueue(async () => {
       const payload = transactionSchema.parse(transaction);
