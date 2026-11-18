@@ -64,7 +64,7 @@ Add enough context when bare names are ambiguous (`monthIncomeCents` vs bare `am
 
 ## Functions (Ch.3)
 
-ESLint (prod TS): `complexity` 5, `max-depth` 2, `max-params` 3, `max-lines-per-function` 20 (skip blank/comments); `no-restricted-syntax` bans inline object types on parameters. Specs exclude the size/`max-*`/`complexity` rules (dual standard — see `.cursor/rules/unit-tests.mdc`).
+ESLint (prod TS): `complexity` 5, `max-depth` 2, `max-params` 3, `max-lines-per-function` 20 (skip blank/comments); `no-restricted-syntax` bans inline object types on parameters. Specs exclude the size/`max-*`/`complexity` rules (dual standard — see `.cursor/rules/unit-tests.mdc`). HTML templates: `@angular-eslint/template/cyclomatic-complexity` with `maxComplexity` 5 (`variant: "classic"`) — same intent as TS `complexity` for `@if` / `@for` / `@switch` and legacy structural directives.
 
 ### Small!
 

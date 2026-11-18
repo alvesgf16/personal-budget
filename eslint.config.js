@@ -386,7 +386,13 @@ module.exports = defineConfig([
   {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
-    rules: {},
+    rules: {
+      // Clean Code Ch.3 (PB-111): template control-flow complexity
+      '@angular-eslint/template/cyclomatic-complexity': [
+        'error',
+        { maxComplexity: 5, variant: 'classic' },
+      ],
+    },
   },
   eslintConfigPrettier,
 ]);
