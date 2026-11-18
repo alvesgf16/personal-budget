@@ -13,7 +13,7 @@
     name="categoryId"
     [value]="categoryId()"
     (change)="setTextFromEvent(categoryId, $event)"
-    [disabled]="type() === ''"
+    [disabled]="type() === '' || categoriesLoading()"
   >
     <option value="">Select a category</option>
     @for (category of categories(); track category.id) {

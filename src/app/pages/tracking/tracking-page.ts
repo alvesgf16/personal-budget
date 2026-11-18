@@ -23,6 +23,7 @@ export class TrackingPage {
   protected readonly amountInput = signal('');
   protected readonly details = signal('');
   protected readonly categories = signal<StoreDocument<Category>[]>([]);
+  protected readonly categoriesLoading = signal(false);
 
   protected setTextFromEvent(target: WritableSignal<string>, event: Event): void {
     target.set(inputValueFromEvent(event));
@@ -33,12 +34,15 @@ export class TrackingPage {
 
     this.type.set(nextType);
     this.categoryId.set('');
+    this.categories.set([]);
 
     if (nextType === '') {
-      this.categories.set([]);
+      this.categoriesLoading.set(false);
 
       return;
     }
+
+    this.categoriesLoading.set(true);
 
     await runWhilePending(async () => {
       const listed = await this.categoryService.listByType(nextType);
@@ -48,6 +52,7 @@ export class TrackingPage {
       }
 
       this.categories.set(listed);
+      this.categoriesLoading.set(false);
     }, this.pendingTasks);
   }
 }
