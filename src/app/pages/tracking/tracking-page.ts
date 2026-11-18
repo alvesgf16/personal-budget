@@ -1,12 +1,10 @@
 import { Component, inject, PendingTasks, signal, type WritableSignal } from '@angular/core';
 import type { Category } from '../../../data/domains/category/category';
 import { CategoryService } from '../../../data/domains/category/category.service';
-import type { CategoryType } from '../../../data/lib/schemas/category-type';
+import { CATEGORY_TYPES, type CategoryType } from '../../../data/lib/schemas/category-type';
 import type { StoreDocument } from '../../../data/store/types';
 import { attemptWhilePending } from '../../shared/helpers/attempt-while-pending';
 import { inputValueFromEvent } from '../../shared/helpers/input-value-from-event';
-
-const CATEGORY_TYPES: readonly CategoryType[] = ['income', 'expense', 'savings'];
 
 @Component({
   selector: 'app-tracking',
