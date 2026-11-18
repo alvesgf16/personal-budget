@@ -41,7 +41,13 @@ export class TrackingPage {
     }
 
     await runWhilePending(async () => {
-      this.categories.set(await this.categoryService.listByType(nextType));
+      const listed = await this.categoryService.listByType(nextType);
+
+      if (this.type() !== nextType) {
+        return;
+      }
+
+      this.categories.set(listed);
     }, this.pendingTasks);
   }
 }
