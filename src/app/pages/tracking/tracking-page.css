@@ -1,0 +1,26 @@
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 22rem;
+}
+
+label {
+  font-weight: 600;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+}
+
+select:disabled {
+  color: #777;
+  background: #f0f0f0;
+}
+
+[role='alert'] {
+  color: #b00000;
+}

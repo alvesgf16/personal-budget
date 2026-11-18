@@ -9,7 +9,7 @@
 
 ## Working style
 
-- **One Jira story per session** — do not mix Foundation tasks or feature stories
+- **One Jira ticket per session** — Story, Task, or Sub-task; do not mix tickets in one branch/PR
 - Node **24 LTS** (from PB-13 scaffold)
 - Before finishing a ticket: `npm run lint` and `npm test` must pass
 
@@ -22,7 +22,7 @@
 
 ## Branches
 
-- **Feature work:** one branch per story, open a PR — do not push feature commits to `main`
+- **Feature work:** one branch per ticket (Story, Task, or Sub-task), open a PR — do not push feature commits to `main`
 
 ## Clean Code
 

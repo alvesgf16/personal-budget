@@ -5,9 +5,9 @@ alwaysApply: true
 
 # Personal Budget (PB)
 
-- Jira project **PB**. Prefer **one story per session**.
+- Jira project **PB**. Prefer **one ticket per session** (Story, Task, or Sub-task).
 - Stack: **Angular web, local-only** — no cloud API and no native shell in v1.
 - Persistence is a **document store** (Dexie / IndexedDB via `DOCUMENT_STORE` and domain services), not SQL.
 - Commits: Conventional Commits; put the Jira key in the **body**, not the summary.
-- **Feature work:** one branch per story, open a PR — do not push feature commits to `main`. Never `--no-verify`.
+- **Feature work:** one branch per ticket (Story, Task, or Sub-task), open a PR — do not push feature commits to `main`. Never `--no-verify`.
 - Keep changes scoped; run `npm run lint` and `npm test` before claiming done.
