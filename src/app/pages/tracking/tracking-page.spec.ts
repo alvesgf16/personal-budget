@@ -10,6 +10,8 @@ describe('TrackingPage add form', () => {
   it('shows only active Plan categories for the chosen type', async () => {
     await addCategory('income', 'Salary');
     await addCategory('expense', 'Rent');
+    const hidden = await addCategory('expense', 'Utilities');
+    await TestBed.inject(CategoryService).hide(hidden.id);
     const fixture = await render();
 
     await chooseType(fixture, 'expense');
