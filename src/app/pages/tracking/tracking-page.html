@@ -1,0 +1,44 @@
+<form>
+  <label for="transaction-type">Type</label>
+  <select id="transaction-type" name="type" [value]="type()" (change)="onTypeChange($event)">
+    <option value="">Select a type</option>
+    @for (categoryType of categoryTypes; track categoryType) {
+      <option [value]="categoryType">{{ categoryType }}</option>
+    }
+  </select>
+
+  <label for="transaction-category">Category</label>
+  <select
+    id="transaction-category"
+    name="categoryId"
+    [value]="categoryId()"
+    (change)="setTextFromEvent(categoryId, $event)"
+    [disabled]="type() === ''"
+  >
+    <option value="">Select a category</option>
+    @for (category of categories(); track category.id) {
+      <option [value]="category.id">{{ category.name }}</option>
+    }
+  </select>
+
+  <label for="transaction-amount">Amount</label>
+  <input
+    id="transaction-amount"
+    type="text"
+    name="amount"
+    inputmode="decimal"
+    autocomplete="off"
+    [value]="amountInput()"
+    (input)="setTextFromEvent(amountInput, $event)"
+  />
+
+  <label for="transaction-details">Details</label>
+  <input
+    id="transaction-details"
+    type="text"
+    name="details"
+    autocomplete="off"
+    [value]="details()"
+    (input)="setTextFromEvent(details, $event)"
+  />
+</form>
