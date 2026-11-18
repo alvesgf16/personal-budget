@@ -20,3 +20,7 @@ select:disabled {
   color: #777;
   background: #f0f0f0;
 }
+
+[role='alert'] {
+  color: #b00000;
+}

@@ -41,4 +41,8 @@
     [value]="details()"
     (input)="setTextFromEvent(details, $event)"
   />
+
+  @if (error()) {
+    <p id="tracking-error" role="alert">{{ error() }}</p>
+  }
 </form>
